@@ -13,35 +13,37 @@
 // GNU General Public License for more details.
 //
 // DESCRIPTION:
-//  AutoMap module.
-//
+//  Nil.
+//    
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
 
-#include "d_event.h"
+#ifndef __M_ARGV__
+#define __M_ARGV__
+
 #include "doomtype.h"
-#include "m_cheat.h"
 
-// Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a' << 24) + ('m' << 16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e' << 8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x' << 8))
+//
+// MISC
+//
+extern  int	myargc;
+extern  char**	myargv;
 
-// Called by main loop.
-boolean AM_Responder(event_t *ev);
+// Returns the position of the given parameter
+// in the arg list (0 if not found).
+int M_CheckParm (char* check);
 
-// Called by main loop.
-void AM_Ticker(void);
+// Same as M_CheckParm, but checks that num_args arguments are available
+// following the specified argument.
+int M_CheckParmWithArgs(char *check, int num_args);
 
-// Called by main loop,
-// called instead of view drawer if automap active.
-void AM_Drawer(void);
+void M_FindResponseFile(void);
 
-// Called to force the automap to quit
-// if the level is completed while it is up.
-void AM_Stop(void);
+// Parameter has been specified?
 
-extern cheatseq_t cheat_amap;
+boolean M_ParmExists(char *check);
+
+// Get name of executable used to run this program:
+
+char *M_GetExecutableName(void);
 
 #endif

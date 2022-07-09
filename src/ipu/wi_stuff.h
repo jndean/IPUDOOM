@@ -13,35 +13,35 @@
 // GNU General Public License for more details.
 //
 // DESCRIPTION:
-//  AutoMap module.
+//  Intermission.
 //
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
+#ifndef __WI_STUFF__
+#define __WI_STUFF__
 
-#include "d_event.h"
-#include "doomtype.h"
-#include "m_cheat.h"
+//#include "v_video.h"
 
-// Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a' << 24) + ('m' << 16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e' << 8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x' << 8))
+#include "d_player.h"
 
-// Called by main loop.
-boolean AM_Responder(event_t *ev);
+// States for the intermission
 
-// Called by main loop.
-void AM_Ticker(void);
+typedef enum {
+  NoState = -1,
+  StatCount,
+  ShowNextLoc,
+} stateenum_t;
+
+// Called by main loop, animate the intermission.
+void WI_Ticker(void);
 
 // Called by main loop,
-// called instead of view drawer if automap active.
-void AM_Drawer(void);
+// draws the intermission directly into the screen buffer.
+void WI_Drawer(void);
 
-// Called to force the automap to quit
-// if the level is completed while it is up.
-void AM_Stop(void);
+// Setup for an intermission screen.
+void WI_Start(wbstartstruct_t *wbstartstruct);
 
-extern cheatseq_t cheat_amap;
+// Shut down the intermission screen
+void WI_End(void);
 
 #endif

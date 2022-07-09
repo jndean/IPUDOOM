@@ -13,35 +13,25 @@
 // GNU General Public License for more details.
 //
 // DESCRIPTION:
-//  AutoMap module.
+//
 //
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
+#ifndef __M_RANDOM__
+#define __M_RANDOM__
 
-#include "d_event.h"
 #include "doomtype.h"
-#include "m_cheat.h"
 
-// Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a' << 24) + ('m' << 16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e' << 8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x' << 8))
+// Returns a number from 0 to 255,
+// from a lookup table.
+int M_Random(void);
 
-// Called by main loop.
-boolean AM_Responder(event_t *ev);
+// As M_Random, but used only by the play simulation.
+int P_Random(void);
 
-// Called by main loop.
-void AM_Ticker(void);
+// Fix randoms for demos.
+void M_ClearRandom(void);
 
-// Called by main loop,
-// called instead of view drawer if automap active.
-void AM_Drawer(void);
-
-// Called to force the automap to quit
-// if the level is completed while it is up.
-void AM_Stop(void);
-
-extern cheatseq_t cheat_amap;
+// Defined version of P_Random() - P_Random()
+int P_SubRandom(void);
 
 #endif

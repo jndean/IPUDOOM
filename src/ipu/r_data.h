@@ -13,35 +13,30 @@
 // GNU General Public License for more details.
 //
 // DESCRIPTION:
-//  AutoMap module.
+//  Refresh module, data I/O, caching, retrieval of graphics
+//  by name.
 //
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
+#ifndef __R_DATA__
+#define __R_DATA__
 
-#include "d_event.h"
 #include "doomtype.h"
-#include "m_cheat.h"
 
-// Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a' << 24) + ('m' << 16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e' << 8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x' << 8))
+// Retrieve column data for span blitting.
+byte *R_GetColumn(int tex, int col);
 
-// Called by main loop.
-boolean AM_Responder(event_t *ev);
+// I/O, setting up the stuff.
+void R_InitData(void);
+void R_PrecacheLevel(void);
 
-// Called by main loop.
-void AM_Ticker(void);
+// Retrieval.
+// Floor/ceiling opaque texture tiles,
+// lookup by name. For animation?
+int R_FlatNumForName(char *name);
 
-// Called by main loop,
-// called instead of view drawer if automap active.
-void AM_Drawer(void);
-
-// Called to force the automap to quit
-// if the level is completed while it is up.
-void AM_Stop(void);
-
-extern cheatseq_t cheat_amap;
+// Called by P_Ticker for switches and animations,
+// returns the texture number for the texture name.
+int R_TextureNumForName(char *name);
+int R_CheckTextureNumForName(char *name);
 
 #endif

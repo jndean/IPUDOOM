@@ -1164,7 +1164,7 @@ void AM_Drawer(void) {
     return;
 
 
-  AM_clearFB(BACKGROUND);
+  // AM_clearFB(BACKGROUND); // ON IPU
   IPU_AM_Drawer() ;
   if (grid)
     AM_drawGrid(GRIDCOLORS);
