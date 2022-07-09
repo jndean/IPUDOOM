@@ -46,6 +46,9 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "ipu/ipu_host.h"
+
+
 // For use if I do walls with outsides/insides
 #define REDS (256 - 5 * 16)
 #define REDRANGE 16
@@ -504,6 +507,7 @@ void AM_Start(void) {
   stopped = false;
   if (lastlevel != gamemap || lastepisode != gameepisode) {
     AM_LevelInit();
+    IPU_AM_LevelInit();
     lastlevel = gamemap;
     lastepisode = gameepisode;
   }
@@ -1159,7 +1163,9 @@ void AM_Drawer(void) {
   if (!automapactive)
     return;
 
+
   AM_clearFB(BACKGROUND);
+  IPU_AM_Drawer() ;
   if (grid)
     AM_drawGrid(GRIDCOLORS);
   AM_drawWalls();

@@ -5,6 +5,7 @@
 
 
 typedef uint8_t pixel_t;
+void AM_LevelInit(void);
 void AM_Drawer(pixel_t*);
 
 

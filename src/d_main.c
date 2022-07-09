@@ -68,6 +68,8 @@
 #include "wi_stuff.h"
 #include "z_zone.h"
 
+#include "ipu/ipu_host.h"
+
 //
 // D-DoomLoop()
 // Not a globally visible function,
@@ -793,6 +795,9 @@ void D_DoomMain(void) {
   // int numiwadlumps;
 
   // print banner
+
+  printf("IPU_Init: Initialise IPU device and compute graph \n");
+  IPU_Init();
 
   printf("Z_Init: Init zone memory allocation daemon. \n");
   Z_Init();

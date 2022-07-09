@@ -14,7 +14,7 @@ extern "C" {
 class AM_LevelInit_Vertex : public poplar::Vertex {
  public:
   bool compute() {
-    AM_LevelInit();
+    AM_LevelInit(); 
     return true;
   }
 };
