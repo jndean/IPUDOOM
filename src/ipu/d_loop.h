@@ -30,6 +30,7 @@
 typedef boolean (*netgame_startup_callback_t)(int ready_players,
                                               int num_players);
 
+/* JOSEF
 typedef struct
 {
     // Read events from the event queue, and process them.
@@ -52,6 +53,7 @@ typedef struct
 
 // Register callback functions for the main loop code to use.
 void D_RegisterLoopCallbacks(loop_interface_t *i);
+*/
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate (void);

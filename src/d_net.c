@@ -62,7 +62,7 @@ static void PlayerQuitGame(player_t *player) {
   }
 }
 
-static void RunTic(ticcmd_t *cmds, boolean *ingame) {
+void D_RunTic(ticcmd_t *cmds, boolean *ingame) {
   extern boolean advancedemo;
   unsigned int i;
 
@@ -85,8 +85,8 @@ static void RunTic(ticcmd_t *cmds, boolean *ingame) {
   G_Ticker();
 }
 
-static loop_interface_t doom_loop_interface = {D_ProcessEvents, G_BuildTiccmd,
-                                               RunTic, M_Ticker};
+// static loop_interface_t doom_loop_interface = {D_ProcessEvents, G_BuildTiccmd,
+                                              //  RunTic, M_Ticker};
 
 // Load game settings from the specified structure and
 // set global variables.
@@ -217,7 +217,7 @@ void D_CheckNetGame(void) {
     autostart = true;
   }
 
-  D_RegisterLoopCallbacks(&doom_loop_interface);
+  // D_RegisterLoopCallbacks(&doom_loop_interface);
 
   SaveGameSettings(&settings);
   D_StartNetGame(&settings, NULL);

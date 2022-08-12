@@ -22,12 +22,15 @@
 
 #include "d_event.h"
 #include "d_loop.h"
+#include "d_main.h"
 #include "d_ticcmd.h"
+#include "g_game.h"
 #include "i_system.h"
 #include "i_timer.h"
 #include "i_video.h"
 #include "m_argv.h"
 #include "m_fixed.h"
+#include "m_menu.h"
 #include "net_client.h"
 #include "net_io.h"
 #include "net_loop.h"
@@ -101,7 +104,9 @@ static boolean  new_sync = true;
 
 // Callback functions for loop code.
 
-static loop_interface_t *loop_interface = NULL;
+// static loop_interface_t *loop_interface = NULL;
+void D_RunTic(ticcmd_t *cmds, boolean *ingame); // JOSEF
+
 
 // Current players in the multiplayer game.
 // This is distinct from playeringame[] used by the game code, which may
@@ -143,11 +148,13 @@ static boolean BuildNewTic(void)
     gameticdiv = gametic/ticdup;
 
     I_StartTic ();
-    loop_interface->ProcessEvents();
+    // loop_interface->ProcessEvents(); // JOSEF
+    D_ProcessEvents();
 
     // Always run the menu
 
-    loop_interface->RunMenu();
+    // loop_interface->RunMenu(); // JOSEF
+    M_Ticker();
 
     if (drone)
     {
@@ -177,7 +184,8 @@ static boolean BuildNewTic(void)
 
     //printf ("mk:%i ",maketic);
     memset(&cmd, 0, sizeof(ticcmd_t));
-    loop_interface->BuildTiccmd(&cmd, maketic);
+    // loop_interface->BuildTiccmd(&cmd, maketic); // JOSEF
+    G_BuildTiccmd(&cmd, maketic);
 
     if (net_client_connected)
     {
@@ -782,7 +790,8 @@ void TryRunTics (void)
 
             memcpy(local_playeringame, set->ingame, sizeof(local_playeringame));
 
-            loop_interface->RunTic(set->cmds, set->ingame);
+            // loop_interface->RunTic(set->cmds, set->ingame);
+            D_RunTic(set->cmds, set->ingame); // JOSEF
 	    gametic++;
 
 	    // modify command for duplicated tics
@@ -794,10 +803,10 @@ void TryRunTics (void)
     }
 }
 
-void D_RegisterLoopCallbacks(loop_interface_t *i)
-{
-    loop_interface = i;
-}
+// void D_RegisterLoopCallbacks(loop_interface_t *i)
+// {
+    // loop_interface = i; //JOSEF
+// }
 
 // TODO: Move nonvanilla demo functions into a dedicated file.
 #include "m_misc.h"

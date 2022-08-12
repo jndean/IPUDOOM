@@ -46,7 +46,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
-#include "ipu/ipu_host.h"
+#include "ipu_host.h"
 
 
 // For use if I do walls with outsides/insides
@@ -1163,9 +1163,9 @@ void AM_Drawer(void) {
   if (!automapactive)
     return;
 
+  IPU_AM_Drawer() ;
 
   // AM_clearFB(BACKGROUND); // ON IPU
-  IPU_AM_Drawer() ;
   if (grid)
     AM_drawGrid(GRIDCOLORS);
   AM_drawWalls();

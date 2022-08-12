@@ -24,6 +24,10 @@
 #include "d_ticcmd.h"
 #include "doomtype.h"
 
+
+// JOSEF TMP
+void G_DoLoadLevel(void);
+
 //
 // GAME
 //
@@ -72,6 +76,7 @@ void G_ScreenShot(void);
 
 void G_DrawMouseSpeedBox(void);
 int G_VanillaVersionCode(void);
+
 
 extern int vanilla_savegame_limit;
 extern int vanilla_demo_limit;

@@ -233,23 +233,250 @@ void AM_LevelInit(void) {
   scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
+//
+// Updates on Game Tick
+//
+void AM_Ticker(void) {
+  if (!automapactive) 
+    return;
+/* LATER
+
+  amclock++;
+
+  if (followplayer)
+    AM_doFollowPlayer();
+
+  // Change the zoom if necessary
+  if (ftom_zoommul != FRACUNIT)
+    AM_changeWindowScale();
+
+  // Change x,y location
+  if (m_paninc.x || m_paninc.y)
+    AM_changeWindowLoc();
+
+*/
+
+  // Update light level
+  // AM_updateLightLev(); // NOT JOSEF
+}
 
 //
 // Clear automap frame buffer.
 //
 void AM_clearFB(int color) { memset(fb, color, f_w * f_h * sizeof(*fb)); }
 
+//
+// Automap clipping of lines.
+//
+// Based on Cohen-Sutherland clipping algorithm but with a slightly
+// faster reject and precalculated slopes.  If the speed is needed,
+// use a hash algorithm to handle  the common cases.
+//
+boolean AM_clipMline(mline_t *ml, fline_t *fl) {
+  enum { LEFT = 1, RIGHT = 2, BOTTOM = 4, TOP = 8 };
+
+  register int outcode1 = 0;
+  register int outcode2 = 0;
+  register int outside;
+
+  fpoint_t tmp;
+  int dx;
+  int dy;
+
+#define DOOUTCODE(oc, mx, my)                                                  \
+  (oc) = 0;                                                                    \
+  if ((my) < 0)                                                                \
+    (oc) |= TOP;                                                               \
+  else if ((my) >= f_h)                                                        \
+    (oc) |= BOTTOM;                                                            \
+  if ((mx) < 0)                                                                \
+    (oc) |= LEFT;                                                              \
+  else if ((mx) >= f_w)                                                        \
+    (oc) |= RIGHT;
+
+  // do trivial rejects and outcodes
+  if (ml->a.y > m_y2)
+    outcode1 = TOP;
+  else if (ml->a.y < m_y)
+    outcode1 = BOTTOM;
+
+  if (ml->b.y > m_y2)
+    outcode2 = TOP;
+  else if (ml->b.y < m_y)
+    outcode2 = BOTTOM;
+
+  if (outcode1 & outcode2)
+    return false; // trivially outside
+
+  if (ml->a.x < m_x)
+    outcode1 |= LEFT;
+  else if (ml->a.x > m_x2)
+    outcode1 |= RIGHT;
+
+  if (ml->b.x < m_x)
+    outcode2 |= LEFT;
+  else if (ml->b.x > m_x2)
+    outcode2 |= RIGHT;
+
+  if (outcode1 & outcode2)
+    return false; // trivially outside
+
+  // transform to frame-buffer coordinates.
+  fl->a.x = CXMTOF(ml->a.x);
+  fl->a.y = CYMTOF(ml->a.y);
+  fl->b.x = CXMTOF(ml->b.x);
+  fl->b.y = CYMTOF(ml->b.y);
+
+  DOOUTCODE(outcode1, fl->a.x, fl->a.y);
+  DOOUTCODE(outcode2, fl->b.x, fl->b.y);
+
+  if (outcode1 & outcode2)
+    return false;
+
+  while (outcode1 | outcode2) {
+    // may be partially inside box
+    // find an outside point
+    if (outcode1)
+      outside = outcode1;
+    else
+      outside = outcode2;
+
+    // clip to each side
+    if (outside & TOP) {
+      dy = fl->a.y - fl->b.y;
+      dx = fl->b.x - fl->a.x;
+      tmp.x = fl->a.x + (dx * (fl->a.y)) / dy;
+      tmp.y = 0;
+    } else if (outside & BOTTOM) {
+      dy = fl->a.y - fl->b.y;
+      dx = fl->b.x - fl->a.x;
+      tmp.x = fl->a.x + (dx * (fl->a.y - f_h)) / dy;
+      tmp.y = f_h - 1;
+    } else if (outside & RIGHT) {
+      dy = fl->b.y - fl->a.y;
+      dx = fl->b.x - fl->a.x;
+      tmp.y = fl->a.y + (dy * (f_w - 1 - fl->a.x)) / dx;
+      tmp.x = f_w - 1;
+    } else if (outside & LEFT) {
+      dy = fl->b.y - fl->a.y;
+      dx = fl->b.x - fl->a.x;
+      tmp.y = fl->a.y + (dy * (-fl->a.x)) / dx;
+      tmp.x = 0;
+    } else {
+      tmp.x = 0;
+      tmp.y = 0;
+    }
+
+    if (outside == outcode1) {
+      fl->a = tmp;
+      DOOUTCODE(outcode1, fl->a.x, fl->a.y);
+    } else {
+      fl->b = tmp;
+      DOOUTCODE(outcode2, fl->b.x, fl->b.y);
+    }
+
+    if (outcode1 & outcode2)
+      return false; // trivially outside
+  }
+
+  return true;
+}
+#undef DOOUTCODE
+
+//
+// Classic Bresenham w/ whatever optimizations needed for speed
+//
+void AM_drawFline(fline_t *fl, int color) {
+  register int x;
+  register int y;
+  register int dx;
+  register int dy;
+  register int sx;
+  register int sy;
+  register int ax;
+  register int ay;
+  register int d;
+
+//   static int fuck = 0;
+
+//   // For debugging only
+//   if (fl->a.x < 0 || fl->a.x >= f_w || fl->a.y < 0 || fl->a.y >= f_h ||
+//       fl->b.x < 0 || fl->b.x >= f_w || fl->b.y < 0 || fl->b.y >= f_h) {
+//     fprintf(stderr, "fuck %d \r", fuck++);
+//     return;
+//   }
+
+#define PUTDOT(xx, yy, cc) fb[(yy)*f_w + (xx)] = (cc)
+
+  dx = fl->b.x - fl->a.x;
+  ax = 2 * (dx < 0 ? -dx : dx);
+  sx = dx < 0 ? -1 : 1;
+
+  dy = fl->b.y - fl->a.y;
+  ay = 2 * (dy < 0 ? -dy : dy);
+  sy = dy < 0 ? -1 : 1;
+
+  x = fl->a.x;
+  y = fl->a.y;
+
+  if (ax > ay) {
+    d = ay - ax / 2;
+    while (1) {
+      PUTDOT(x, y, color);
+      if (x == fl->b.x)
+        return;
+      if (d >= 0) {
+        y += sy;
+        d -= ax;
+      }
+      x += sx;
+      d += ay;
+    }
+  } else {
+    d = ax - ay / 2;
+    while (1) {
+      PUTDOT(x, y, color);
+      if (y == fl->b.y)
+        return;
+      if (d >= 0) {
+        x += sx;
+        d -= ay;
+      }
+      y += sy;
+      d += ax;
+    }
+  }
+}
+
+//
+// Clip lines, draw visible part sof lines.
+//
+void AM_drawMline(mline_t *ml, int color) {
+  static fline_t fl;
+
+  if (AM_clipMline(ml, &fl))
+    AM_drawFline(&fl, color); // draws it on frame buffer using fb coords
+}
+
+
 
 void AM_Drawer(pixel_t* fb_tensor) {
     fb = fb_tensor; // JOSEF
-    
+
     // if (!automapactive)  // LATER
     //     return;
 
     
-    AM_clearFB(BACKGROUND);
+    AM_clearFB(BACKGROUND); 
+    // if (grid) // LATER
+        // AM_drawGrid(GRIDCOLORS);
 
-    for (int i = 0; i < 100; ++i) {
-        fb[i * 321] = 56;
-    }
+    
+    // mline_t ln = {{0, 0}, {10<< FRACBITS, 20<< FRACBITS}};
+    fline_t fln = {{0, 0}, {10, 20}};
+    // AM_drawMline(&ln, 56);
+    AM_drawFline(&fln, 56);
+    // for (int i = 0; i < 100; ++i) {
+    //     fb[i * 321] = 56;
+    // }
 }

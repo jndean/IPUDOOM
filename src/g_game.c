@@ -62,6 +62,9 @@
 #include "wi_stuff.h"
 #include "z_zone.h"
 
+#include "ipu_host.h"
+
+
 #define SAVEGAMESIZE 0x2c000
 
 void G_ReadDemoTiccmd(ticcmd_t *cmd);
@@ -572,6 +575,8 @@ void G_DoLoadLevel(void) {
   if (testcontrols) {
     players[consoleplayer].message = "Press escape to quit.";
   }
+
+  IPU_G_DoLoadLevel();
 }
 
 static void SetJoyButtons(unsigned int buttons_mask) {

@@ -68,7 +68,7 @@
 #include "wi_stuff.h"
 #include "z_zone.h"
 
-#include "ipu/ipu_host.h"
+#include "ipu_host.h"
 
 //
 // D-DoomLoop()
@@ -530,6 +530,7 @@ void D_StartTitle(void) {
   D_AdvanceDemo();
 }
 
+/* JOSEF: Don't support Doom II
 static void SetMissionForPackName(char *pack_name) {
   int i;
   static const struct {
@@ -554,12 +555,18 @@ static void SetMissionForPackName(char *pack_name) {
 
   I_Error("Unknown mission pack name: %s", pack_name);
 }
+*/
 
 //
 // Find out what version of Doom is playing.
 //
 
 void D_IdentifyVersion(void) {
+  // JOSEF : I'm not supporting other options
+  gamemission = doom;
+  gamemode = shareware;
+
+  /*
   // gamemission is set up by the D_FindIWAD function.  But if
   // we specify '-iwad', we have to identify using
   // IdentifyIWADByName.  However, if the iwad does not match
@@ -622,7 +629,7 @@ void D_IdentifyVersion(void) {
     if (p > 0) {
       SetMissionForPackName(myargv[p + 1]);
     }
-  }
+  }*/
 }
 
 // Set the gamedescription string
@@ -977,6 +984,7 @@ void D_DoomMain(void) {
   // Now that we've loaded the IWAD, we can figure out what gamemission
   // we're playing and which version of Vanilla Doom we need to emulate.
   D_IdentifyVersion();
+  printf("Gamemode: %d\n", gamemode);
   InitGameVersion();
 
   // TODO: surely very related to init game version?
