@@ -1,7 +1,5 @@
 #include <Vertex.hpp>
 
-
-
 extern "C" {
     void P_SetupLevel(void);
 };
@@ -10,7 +8,7 @@ extern "C" {
 class P_SetupLevel_Vertex : public poplar::Vertex {
  public:
   bool compute() {
-    // P_SetupLevel(); 
+    P_SetupLevel(); 
     return true;
   }
 };

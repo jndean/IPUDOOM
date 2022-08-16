@@ -1,12 +1,14 @@
-#include <string.h>
+#include "doomstat.h"
 
-#include "r_defs.h"
-#include "r_state.h"
-#include "../ipu_transfer.h"
+#include "ipu_interface.h"
 
 
+void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
+  gameepisode = pack->gameepisode;
+  gamemap = pack->gamemap;
+}
 
-
+/*
 void IPU_UnpackVertexes(const unsigned char* buf) {
     IpuPackedLevel_t* pack = (IpuPackedLevel_t*) buf;
     uint32_t pos = 0;
@@ -28,3 +30,4 @@ void IPU_UnpackVertexes(const unsigned char* buf) {
 
 
 }
+ */

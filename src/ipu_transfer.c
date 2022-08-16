@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,28 +11,14 @@
 
 #include "ipu/ipu_interface.h"
 
-/*
-void IPU_P_SetupLevel(void* void_buf) {
-  printf("DBG: Packing level!!\n");
-
-  // find map name
-  char lumpname[9];
-  if (gamemode == commercial) {
-    if (gamemap < 10)
-      M_snprintf(lumpname, 9, "map0%i", gamemap);
-    else
-      M_snprintf(lumpname, 9, "map%i", gamemap);
-  } else {
-    lumpname[0] = 'E';
-    lumpname[1] = '0' + gameepisode;
-    lumpname[2] = 'M';
-    lumpname[3] = '0' + gamemap;
-    lumpname[4] = 0;
-  }
-  int baselump = W_GetNumForName(lumpname);
+void IPU_G_LoadLevel_PackMiscValues(void* buf) {
+  assert(sizeof(G_LoadLevel_MiscValues_t) <= IPUMISCVALUESSIZE);
   
-
-}*/
+  G_LoadLevel_MiscValues_t pack;
+  pack.gameepisode = gameepisode;
+  pack.gamemap = gamemap;
+  memcpy(buf, &pack, sizeof(pack));
+}
 
 
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {

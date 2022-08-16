@@ -3,6 +3,9 @@
 #include "r_defs.h"
 #include "doomstat.h"
 
+#include "ipu_print.h"
+
+
 //
 // MAP related Lookup tables.
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
@@ -104,12 +107,14 @@ void P_SetupLevel(void) {
   lumpname[1] = '0' + gameepisode;
   lumpname[2] = 'M';
   lumpname[3] = '0' + gamemap;
-  lumpname[4] = 0;
+  lumpname[4] = '\0';
 
   // lumpnum = W_GetNumForName(lumpname);
 
   leveltime = 0;
-  
+
+  reset_ipuprint();
+  ipuprint(lumpname);
 
   // note: most of this ordering is important
   /* LATER

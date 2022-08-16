@@ -2,6 +2,7 @@
 #include <Vertex.hpp>
 
 #include "doomtype.h"
+#include "ipu_print.h"
 
 
 typedef uint8_t pixel_t;
@@ -10,7 +11,6 @@ typedef uint8_t pixel_t;
 extern "C" {
     void AM_LevelInit(void);
     void AM_Drawer(pixel_t*);
-    void G_DoLoadLevel(void);
 };
 
 
@@ -34,6 +34,17 @@ class AM_Drawer_Vertex : public poplar::Vertex {
 };
 
 
+class IPU_GetPrintBuf_Vertex : public poplar::Vertex {
+ public:
+  poplar::Output<poplar::Vector<char>> printbuf;
+
+  bool compute() {
+    get_ipuprint_data(&printbuf[0], printbuf.size());
+    return true;
+  }
+};
+
+
 // class G_Ticker_Vertex : public poplar::Vertex { Call G_ticker in D_ProcessEvents
 //  public:
 
@@ -51,33 +62,3 @@ class D_ProcessEvents_Vertex : public poplar::Vertex {
   }
 };
 
-
-class TMP_UnpackTicTransfer_Vertex : public poplar::Vertex {
- public:
-
-  bool compute() {
-    // Temporary vertex to unpack state copied to IPU for dev, to keep
-    // cpu and ipu in sync
-    return true;
-  }
-};
-
-class G_DoLoadLevel_Vertex : public poplar::Vertex {
- public:
-    poplar::Input<poplar::Vector<unsigned char>> buf;
-
-  bool compute() {
-    G_DoLoadLevel();
-    return true;
-  }
-};
-
-class IPU_UnpackVertexes_Vertex : public poplar::Vertex {
- public:
-    poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-
-  bool compute() {
-    // IPU_UnpackLevel(&levelState[0]);
-    return true;
-  }
-};
