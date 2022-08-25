@@ -7,6 +7,8 @@ extern "C" {
 #include "ipu_interface.h"
 
 
+extern int gamelumpnum;
+extern int requestedlumpnum;
 void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack);
 
 

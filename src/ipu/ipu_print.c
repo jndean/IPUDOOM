@@ -19,6 +19,27 @@ void ipuprint(const char* str) {
   *printbuf_head = '\0';
 }
 
+void ipuprintnum(int x) {
+  if (x < 0) {
+    *(printbuf_head++) = '-';
+    x = -x;
+  }
+  if (x == 0) {
+    *(printbuf_head++) = '0';
+  }
+  const int MAX_DIGITS = 10;
+  char digits[MAX_DIGITS];
+  int i;
+  for (i = 0; x != 0 && i < MAX_DIGITS; ++i) {
+    digits[i] = 0x30 + (x % 10);
+    x /= 10;
+  }
+  for (i -= 1; i >= 0; --i) {
+    *(printbuf_head++) = digits[i];
+  }
+  *printbuf_head = '\0';
+}
+
 void get_ipuprint_data(char* dst, int dst_size) {
     int limit = (dst_size < IPUPRINTBUFSIZE) ? dst_size : IPUPRINTBUFSIZE;
     for (int i = 0; i < limit; ++i) {

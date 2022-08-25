@@ -1,11 +1,19 @@
 #include "doomstat.h"
+// #include "w_wad.h"
 
 #include "ipu_interface.h"
 
+int gamelumpnum;
+int requestedlumpnum;
 
 void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   gameepisode = pack->gameepisode;
   gamemap = pack->gamemap;
+  gamelumpnum = pack->lumpnum;
+}
+
+void IPU_getLump(int lumpnum) {
+
 }
 
 /*

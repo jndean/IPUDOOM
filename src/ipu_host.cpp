@@ -124,31 +124,33 @@ void IpuDoom::buildIpuGraph() {
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 10000000);
 
+  m_lumpBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUMAXLUMPBYTES}, "lumpBuf");
+  m_lumpNum = m_ipuGraph.addVariable(poplar::INT, {}, "lumpNum");
+  m_ipuGraph.setTileMapping(m_lumpBuf, 0);
+  m_ipuGraph.setTileMapping(m_lumpNum, 0);
+  auto lumpBufStream = m_ipuGraph.addHostToDeviceFIFO("lumpBuf-stream", poplar::UNSIGNED_CHAR, IPUMAXLUMPBYTES);
+  auto lumpNumStream = m_ipuGraph.addDeviceToHostFIFO("lumpNum-stream", poplar::INT, 1);
+  
   poplar::ComputeSet P_SetupLevel_CS = m_ipuGraph.addComputeSet("P_SetupLevel_CS");
-  vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_Vertex");
+  vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_pt0_Vertex", {{"lumpNum", m_lumpNum}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 100);
 
-  // m_lumpBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUMAXLUMPBYTES}, "lumpBuf");
-  // m_lumpNum = m_ipuGraph.addVariable(poplar::INT, {}, "lumpNum");
-  // m_ipuGraph.setTileMapping(m_lumpBuf, 0);
-  // m_ipuGraph.setTileMapping(m_lumpNum, 0);
-  // auto lumpBufStream = m_ipuGraph.addHostToDeviceFIFO("lumpBuf-stream", poplar::UNSIGNED_CHAR,
-  // IPUMAXLUMPBYTES); auto lumpNumStream = m_ipuGraph.addDeviceToHostFIFO("lumpNum-stream", poplar::INT, 1);
+  poplar::ComputeSet P_LoadBlockMap_CS = m_ipuGraph.addComputeSet("P_LoadBlockMap_CS");
+  vtx = m_ipuGraph.addVertex(P_LoadBlockMap_CS, "P_LoadBlockMap_Vertex", {
+    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 100);
 
-  // poplar::ComputeSet IPU_UnpackVertexes_CS = m_ipuGraph.addComputeSet("IPU_UnpackVertexes_CS");
-  // vtx = m_ipuGraph.addVertex(IPU_UnpackVertexes_CS, "IPU_UnpackVertexes_Vertex", {{"lumpBuf", m_lumpBuf}});
-  // m_ipuGraph.setTileMapping(vtx, 0);
-  // m_ipuGraph.setPerfEstimate(vtx, 10000000);
 
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_DoLoadLevel_CS),
       poplar::program::Execute(P_SetupLevel_CS),
+      poplar::program::Copy(m_lumpNum, lumpNumStream),
+      poplar::program::Copy(lumpBufStream, m_lumpBuf),
+      poplar::program::Execute(P_LoadBlockMap_CS),
       GetPrintbuf_prog,
-      // poplar::program::Copy(m_lumpNum, lumpNumStream),
-      // poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      // poplar::program::Execute(IPU_UnpackVertexes_CS),
       // poplar::program::Copy(lumpStream, m_lumpBuf),
       // poplar::program::Execute(IPU_UnpackLineDefs_CS),
   });
@@ -166,6 +168,7 @@ void IpuDoom::buildIpuGraph() {
   // m_ipuEngine->connectStream("frame-instream", I_VideoBuffer); // Can do this is IPU_Init run afer video
   // init m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
   m_ipuEngine->connectStreamToCallback("printbuf-stream", [](void* p) {
+    if (((char*)p)[0] == '\0') return;
     printf("[IPU] %.*s\n", IPUPRINTBUFSIZE, (char*)p);
   });
 
@@ -173,10 +176,11 @@ void IpuDoom::buildIpuGraph() {
     IPU_G_LoadLevel_PackMiscValues(p);
   });
   
-  // m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
-  // m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
-  //   IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
-  // });
+  m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
+  m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
+    printf("Fulfilling request for lump %d\n", m_lumpNum_h);
+    IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
+  });
 
   m_ipuEngine->load(m_ipuDevice);
 }

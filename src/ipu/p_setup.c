@@ -1,8 +1,11 @@
 
 #include "d_mode.h"
-#include "r_defs.h"
 #include "doomstat.h"
+#include "r_defs.h"
+#include "p_local.h"
 
+#include "ipu_malloc.h"
+#include "ipu_transfer.h"
 #include "ipu_print.h"
 
 
@@ -74,12 +77,10 @@ mapthing_t playerstarts[MAXPLAYERS];
 //
 // P_SetupLevel
 //
-void P_SetupLevel(void) {
+void P_SetupLevel_pt0(void) {
   int i;
-  char lumpname[9];
-  int lumpnum;
 
-  /*
+  /* LATER
   totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
   wminfo.partime = 180;
   for (i = 0; i < MAXPLAYERS; i++) {
@@ -92,15 +93,17 @@ void P_SetupLevel(void) {
 
   // Make sure all sounds are stopped before Z_FreeTags.
   S_Start();
+  */
 
-  Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+  // JOSEF, replaced; Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+  IPU_level_free(); // LATER: free other tags, here not just level
 
+  /* LATER
   // UNUSED W_Profile ();
   P_InitThinkers();
 
   // if working with a devlopment map, reload it
-  W_Reload();
-  */
+  // W_Reload(); // JOSEF: disabled
 
   // find map name
   lumpname[0] = 'E';
@@ -109,12 +112,17 @@ void P_SetupLevel(void) {
   lumpname[3] = '0' + gamemap;
   lumpname[4] = '\0';
 
-  // lumpnum = W_GetNumForName(lumpname);
+  lumpnum = W_GetNumForName(lumpname);
 
+  */
   leveltime = 0;
 
   reset_ipuprint();
-  ipuprint(lumpname);
+  ipuprint("Map starts at lump "); ipuprintnum(gamelumpnum); ipuprint("\n");
+
+  // JOSEF: Lumpnum for P_LoadBlockMap
+  requestedlumpnum = gamelumpnum + ML_BLOCKMAP;
+  return;
 
   // note: most of this ordering is important
   /* LATER
@@ -159,6 +167,48 @@ void P_SetupLevel(void) {
   if (precache)
     R_PrecacheLevel();
 
-  // printf ("free memory: 0x%x\n", Z_FreeMemory());
   */
+}
+
+
+
+//
+// P_LoadBlockMap
+//
+void P_LoadBlockMap(const unsigned char *buf) {
+  int i;
+  int count;
+  int lumplen;
+
+  lumplen = ((int*)buf)[0];
+  blockmaplump = IPU_level_malloc(lumplen);
+  memcpy(blockmaplump, &buf[4], lumplen);
+  blockmap = blockmaplump + 4;
+
+  // Swap all short integers to native byte ordering.
+  // JOSEF: assumer endianness of SHORT is fine
+
+  // Read the header
+
+  bmaporgx = blockmaplump[0] << FRACBITS;
+  bmaporgy = blockmaplump[1] << FRACBITS;
+  bmapwidth = blockmaplump[2];
+  bmapheight = blockmaplump[3];
+
+
+  ipuprint("[IPU] bmaporgx ");
+  ipuprintnum(bmaporgx);
+  ipuprint(", bmaporgy ");
+  ipuprintnum(bmaporgy);
+  ipuprint(", bmapwidth ");
+  ipuprintnum(bmapwidth);
+  ipuprint(", bmapheight ");
+  ipuprintnum(bmapheight);
+  ipuprint("\n");
+
+  // Clear out mobj chains
+
+  count = sizeof(*blocklinks) * bmapwidth * bmapheight;
+  blocklinks = IPU_level_malloc(count);
+  memset(blocklinks, 0, count);
 }

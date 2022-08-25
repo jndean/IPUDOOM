@@ -13,6 +13,7 @@ extern "C" {
 typedef struct {
     int gameepisode;
     int gamemap;
+    int lumpnum;
 } G_LoadLevel_MiscValues_t;
 
 

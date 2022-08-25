@@ -7,6 +7,7 @@ extern "C" {
 
 void reset_ipuprint();
 void ipuprint(const char* str);
+void ipuprintnum(int x);
 void get_ipuprint_data(char* dst, int dst_size);
 
 
