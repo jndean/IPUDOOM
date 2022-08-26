@@ -27,15 +27,12 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   lumpname[4] = '\0';
   pack.lumpnum = W_GetNumForName(lumpname);
 
-  printf("[CPU]: %d\n", pack.lumpnum);
-
   memcpy(buf, &pack, sizeof(pack));
 }
 
 
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
     int size = W_LumpLength(lumpnum);
-    printf("[CPU] Sending lumlen %d\n", size);
     int required = size + sizeof(int); // Space for size field
     if (required > IPUMAXLUMPBYTES) {
         printf("\nNeed %d bytes to transfer lump %d to IPU, only have %d\n",

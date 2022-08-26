@@ -142,6 +142,12 @@ void IpuDoom::buildIpuGraph() {
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 100);
 
+  poplar::ComputeSet P_LoadVertexes_CS = m_ipuGraph.addComputeSet("P_LoadVertexes_CS");
+  vtx = m_ipuGraph.addVertex(P_LoadVertexes_CS, "P_LoadVertexes_Vertex", {
+    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 100);
+
 
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
@@ -150,6 +156,9 @@ void IpuDoom::buildIpuGraph() {
       poplar::program::Copy(m_lumpNum, lumpNumStream),
       poplar::program::Copy(lumpBufStream, m_lumpBuf),
       poplar::program::Execute(P_LoadBlockMap_CS),
+      poplar::program::Copy(m_lumpNum, lumpNumStream),
+      poplar::program::Copy(lumpBufStream, m_lumpBuf),
+      poplar::program::Execute(P_LoadVertexes_CS),
       GetPrintbuf_prog,
       // poplar::program::Copy(lumpStream, m_lumpBuf),
       // poplar::program::Execute(IPU_UnpackLineDefs_CS),

@@ -13,9 +13,8 @@
 // MAP related Lookup tables.
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
 //
-#define MAXVERTEXES (1024)
 int numvertexes;
-vertex_t vertexes[MAXVERTEXES];
+vertex_t *vertexes;
 
 int numsegs;
 seg_t *segs;
@@ -72,6 +71,50 @@ mapthing_t deathmatchstarts[MAX_DEATHMATCH_STARTS];
 mapthing_t *deathmatch_p;
 mapthing_t playerstarts[MAXPLAYERS];
 
+
+
+// P_LoadVertexes
+//
+void P_LoadVertexes(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapvertex_t *ml;
+  vertex_t *li;
+
+  // Determine number of lumps:
+  //  total lump length / vertex record length.
+  int lumplen = ((int*)buf)[0];
+  numvertexes = lumplen / sizeof(mapvertex_t);
+
+  // Allocate zone memory for buffer.
+  vertexes = IPU_level_malloc(numvertexes * sizeof(vertex_t));
+
+  // Load data into cache.
+  // JOSEF: data = W_CacheLumpNum(lump, PU_STATIC);
+
+  ml = (mapvertex_t *)(&buf[sizeof(int)]);
+  li = vertexes;
+
+  // Copy and convert vertex coordinates,
+  // internal representation as fixed.
+  for (i = 0; i < numvertexes; i++, li++, ml++) {
+    li->x = ml->x << FRACBITS;
+    li->y = ml->y << FRACBITS;
+  }
+
+  ipuprint("numvertexes: ");
+  ipuprintnum(numvertexes);
+  ipuprint(", 1x: ");
+  ipuprintnum(vertexes[0].x);
+  ipuprint(", -1y: ");
+  ipuprintnum(vertexes[numvertexes-1].y);
+  ipuprint("\n");
+
+  // Free buffer memory.
+  // JOSEF: W_ReleaseLumpNum(lump);
+
+  requestedlumpnum = gamelumpnum + ML_SECTORS;
+}
 
 
 //
@@ -186,7 +229,7 @@ void P_LoadBlockMap(const unsigned char *buf) {
   blockmap = blockmaplump + 4;
 
   // Swap all short integers to native byte ordering.
-  // JOSEF: assumer endianness of SHORT is fine
+  // JOSEF: assume endianness of SHORT is fine
 
   // Read the header
 
@@ -195,20 +238,12 @@ void P_LoadBlockMap(const unsigned char *buf) {
   bmapwidth = blockmaplump[2];
   bmapheight = blockmaplump[3];
 
-
-  ipuprint("[IPU] bmaporgx ");
-  ipuprintnum(bmaporgx);
-  ipuprint(", bmaporgy ");
-  ipuprintnum(bmaporgy);
-  ipuprint(", bmapwidth ");
-  ipuprintnum(bmapwidth);
-  ipuprint(", bmapheight ");
-  ipuprintnum(bmapheight);
-  ipuprint("\n");
-
   // Clear out mobj chains
 
   count = sizeof(*blocklinks) * bmapwidth * bmapheight;
   blocklinks = IPU_level_malloc(count);
   memset(blocklinks, 0, count);
+
+  // JOSEF: next lump to load
+  requestedlumpnum = gamelumpnum + ML_VERTEXES;
 }
