@@ -790,7 +790,7 @@ void TryRunTics (void)
 
             memcpy(local_playeringame, set->ingame, sizeof(local_playeringame));
 
-            // loop_interface->RunTic(set->cmds, set->ingame);
+            // JOSEF: loop_interface->RunTic(set->cmds, set->ingame);
             D_RunTic(set->cmds, set->ingame); // JOSEF
 	    gametic++;
 

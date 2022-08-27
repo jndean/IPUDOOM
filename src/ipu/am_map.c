@@ -1,8 +1,7 @@
 
 #include "m_fixed.h"
-
 #include "p_local.h"
-
+#include "r_state.h"
 #include "st_stuff.h"
 
 
@@ -205,6 +204,44 @@ cheatseq_t cheat_amap = CHEAT("iddt", 0);
 static boolean stopped = true;
 
 
+//
+// Determines bounding box of all vertices,
+// sets global variables controlling zoom range.
+//
+void AM_findMinMaxBoundaries(void) {
+  int i;
+  fixed_t a;
+  fixed_t b;
+
+  min_x = min_y = INT_MAX;
+  max_x = max_y = -INT_MAX;
+
+  for (i = 0; i < numvertexes; i++) {
+    if (vertexes[i].x < min_x)
+      min_x = vertexes[i].x;
+    else if (vertexes[i].x > max_x)
+      max_x = vertexes[i].x;
+
+    if (vertexes[i].y < min_y)
+      min_y = vertexes[i].y;
+    else if (vertexes[i].y > max_y)
+      max_y = vertexes[i].y;
+  }
+
+  max_w = max_x - min_x;
+  max_h = max_y - min_y;
+
+  min_w = 2 * PLAYERRADIUS; // const? never changed?
+  min_h = 2 * PLAYERRADIUS;
+
+  a = FixedDiv(f_w << FRACBITS, max_w);
+  b = FixedDiv(f_h << FRACBITS, max_h);
+
+  min_scale_mtof = a < b ? a : b;
+  max_scale_mtof = FixedDiv(f_h << FRACBITS, 2 * PLAYERRADIUS);
+}
+
+
 void AM_clearMarks(void) {
   int i;
 
@@ -226,7 +263,7 @@ void AM_LevelInit(void) {
 
   AM_clearMarks();
 
-  //AM_findMinMaxBoundaries(); // LATER
+  AM_findMinMaxBoundaries();
   scale_mtof = FixedDiv(min_scale_mtof, (int)(0.7 * FRACUNIT));
   if (scale_mtof > max_scale_mtof)
     scale_mtof = min_scale_mtof;

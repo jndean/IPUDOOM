@@ -137,9 +137,6 @@ void P_LoadVertexes(int lump) {
     li->y = SHORT(ml->y) << FRACBITS;
   }
 
-  printf("[CPU] numvertexes: %d, 1x: %d, -1y:%d\n",
-        numvertexes, vertexes[0].x, vertexes[numvertexes-1].y);
-
   // Free buffer memory.
   W_ReleaseLumpNum(lump);
 }

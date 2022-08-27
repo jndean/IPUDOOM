@@ -762,17 +762,30 @@ void I_FinishUpdate (void)
 
     if (display_fps_dots)
     {
-	i = I_GetTime();
-	tics = i - lasttic;
-	lasttic = i;
-	if (tics > 20) tics = 20;
+        i = I_GetTime();
+        tics = i - lasttic;
+        lasttic = i;
+        if (tics > 20) tics = 20;
 
-	for (i=0 ; i<tics*4 ; i+=4)
-	    I_VideoBuffer[ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0xff;
-	for ( ; i<20*4 ; i+=4)
-	    I_VideoBuffer[ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0x0;
+        for (i=0 ; i<tics*4 ; i+=4)
+            I_VideoBuffer[ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0xff;
+        for ( ; i<20*4 ; i+=4)
+            I_VideoBuffer[ (SCREENHEIGHT-1)*SCREENWIDTH + i] = 0x0;
+        
+        { // JOSEF: debug fps
+            static int updatecounter = 0;
+            static int lasttime = -1;
+            const int period = 50;
+            if ((++updatecounter) == period) {
+                int currenttime = I_GetTimeMS();
+                if (lasttime != -1) {
+                    printf("FPS: %d\n", 1000 * period / (currenttime - lasttime));
+                }
+                lasttime = currenttime; 
+                updatecounter = 0;
+            }
+        }
     }
-
 
     if (palette_to_set)
     {
