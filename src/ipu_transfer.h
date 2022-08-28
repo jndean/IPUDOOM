@@ -9,7 +9,9 @@ extern "C" {
 
 
 void IPU_G_LoadLevel_PackMiscValues(void* buf);
+void IPU_G_Ticker_PackMiscValues(void* buf);
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf);
+
 
 
 #ifdef __cplusplus

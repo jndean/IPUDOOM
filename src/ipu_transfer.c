@@ -31,6 +31,16 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
 }
 
 
+void IPU_G_Ticker_PackMiscValues(void* buf) {
+  assert(sizeof(G_Ticker_MiscValues_t) <= IPUMISCVALUESSIZE);
+
+  G_Ticker_MiscValues_t* pack = (G_Ticker_MiscValues_t*) buf;
+  pack->gamestate = gamestate;
+  
+  // memcpy(buf, &pack, sizeof(pack));
+}
+
+
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
     int size = W_LumpLength(lumpnum);
     int required = size + sizeof(int); // Space for size field

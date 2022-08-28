@@ -40,6 +40,7 @@ class IpuDoom {
   void run_AM_LevelInit();
   void run_AM_Drawer();
   void run_G_DoLoadLevel();
+  void run_G_Ticker();
 
   poplar::Device m_ipuDevice;
   poplar::Graph m_ipuGraph;
@@ -50,6 +51,7 @@ class IpuDoom {
   poplar::Tensor m_lumpNum;
   int m_lumpNum_h;
   poplar::Tensor m_miscValuesBuf;
+  unsigned char m_miscValuesBuf_h[IPUMISCVALUESSIZE];
 };
 
 IpuDoom::IpuDoom()
@@ -164,6 +166,22 @@ void IpuDoom::buildIpuGraph() {
       // poplar::program::Execute(IPU_UnpackLineDefs_CS),
   });
 
+  // ---------------- G_Ticker --------------//
+
+
+  poplar::ComputeSet G_Ticker_CS = m_ipuGraph.addComputeSet("G_Ticker_CS");
+  vtx = m_ipuGraph.addVertex(G_Ticker_CS, "G_Ticker_Vertex");
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 100);
+  
+  poplar::program::Sequence G_Ticker_prog({
+      poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
+      poplar::program::Execute(G_Ticker_CS),
+      GetPrintbuf_prog,
+  });
+
+
+
   // ---------------- Final prog --------------//
 
   printf("Creating engine...\n");
@@ -172,6 +190,7 @@ void IpuDoom::buildIpuGraph() {
       AM_LevelInit_prog,
       AM_Drawer_prog,
       G_DoLoadLevel_prog,
+      G_Ticker_prog,
   })));
 
   // m_ipuEngine->connectStream("frame-instream", I_VideoBuffer); // Can do this is IPU_Init run afer video
@@ -181,10 +200,8 @@ void IpuDoom::buildIpuGraph() {
     printf("[IPU] %.*s\n", IPUPRINTBUFSIZE, (char*)p);
   });
 
-  m_ipuEngine->connectStreamToCallback("miscValues-stream", [](void* p) {
-    IPU_G_LoadLevel_PackMiscValues(p);
-  });
-  
+  m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
+
   m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
     printf("Fulfilling request for lump %d\n", m_lumpNum_h);
@@ -204,7 +221,8 @@ void IpuDoom::run_AM_Drawer() {
   }
   m_ipuEngine->run(1);
 }
-void IpuDoom::run_G_DoLoadLevel() { m_ipuEngine->run(2); }
+void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
+void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(3); }
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 extern "C" {
@@ -212,4 +230,5 @@ void IPU_Init(void) { ipuDoomInstance = std::make_unique<IpuDoom>(); }
 void IPU_AM_LevelInit() { ipuDoomInstance->run_AM_LevelInit(); }
 void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
+void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
 }

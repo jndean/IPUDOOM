@@ -86,6 +86,7 @@ extern skill_t gameskill;
 extern int gameepisode;
 extern int gamemap;
 
+
 // If non-zero, exit the level after this number of minutes
 extern int timelimit;
 

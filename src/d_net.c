@@ -35,6 +35,8 @@
 #include "w_checksum.h"
 #include "w_wad.h"
 
+#include "ipu_host.h"
+
 ticcmd_t *netcmds;
 
 // Called when a player leaves the game
@@ -83,6 +85,7 @@ void D_RunTic(ticcmd_t *cmds, boolean *ingame) {
     D_DoAdvanceDemo();
 
   G_Ticker();
+  IPU_G_Ticker();
 }
 
 // static loop_interface_t doom_loop_interface = {D_ProcessEvents, G_BuildTiccmd,

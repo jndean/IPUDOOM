@@ -4,6 +4,8 @@
 #include "r_state.h"
 #include "st_stuff.h"
 
+#include "ipu_print.h"
+
 
 // For use if I do walls with outsides/insides
 #define REDS (256 - 5 * 16)
@@ -274,11 +276,12 @@ void AM_LevelInit(void) {
 // Updates on Game Tick
 //
 void AM_Ticker(void) {
+  ipuprint("TICK!\n");
   if (!automapactive) 
     return;
-/* LATER
 
   amclock++;
+/* LATER
 
   if (followplayer)
     AM_doFollowPlayer();
