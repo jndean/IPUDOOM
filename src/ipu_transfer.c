@@ -37,7 +37,6 @@ void IPU_G_Ticker_PackMiscValues(void* buf) {
   G_Ticker_MiscValues_t* pack = (G_Ticker_MiscValues_t*) buf;
   pack->gamestate = gamestate;
   
-  // memcpy(buf, &pack, sizeof(pack));
 }
 
 

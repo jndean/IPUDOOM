@@ -4,12 +4,15 @@
 extern "C" {
 #endif
 
+#include "d_event.h"
 #include "doomdef.h"
+#include "doomtype.h"
 
 
 #define IPUMAXLUMPBYTES 32000
-#define IPUMISCVALUESSIZE 16
+#define IPUMISCVALUESSIZE 96
 #define IPUPRINTBUFSIZE 2048
+#define IPUMAXEVENTSPERTIC 4
 
 
 typedef struct {
@@ -23,6 +26,11 @@ typedef struct {
 } G_Ticker_MiscValues_t;
 
 
+typedef struct {
+    event_t events[IPUMAXEVENTSPERTIC];
+    unsigned char num_ev;
+    // Other things for responder here
+} G_Responder_MiscValues_t;
 
 
 

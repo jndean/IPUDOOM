@@ -10,6 +10,7 @@ extern "C" {
 extern int gamelumpnum;
 extern int requestedlumpnum;
 void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack);
+void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack);
 
 
 

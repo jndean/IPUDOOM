@@ -272,11 +272,152 @@ void AM_LevelInit(void) {
   scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
+
+//
+// Handle events (user inputs) in automap mode
+//
+boolean AM_Responder(event_t *ev) {
+
+  int rc;
+  static int bigstate = 0;
+  static char buffer[20];
+  int key;
+  ipuprint("AM_Responder responding\n");
+  /* LATER
+  rc = false;
+
+  if (ev->type == ev_joystick && joybautomap >= 0 &&
+      (ev->data1 & (1 << joybautomap)) != 0) {
+    joywait = I_GetTime() + 5;
+
+    if (!automapactive) {
+      AM_Start();
+      viewactive = false;
+    } else {
+      bigstate = 0;
+      viewactive = true;
+      AM_Stop();
+    }
+
+    return true;
+  }
+
+  if (!automapactive) {
+    if (ev->type == ev_keydown && ev->data1 == key_map_toggle) {
+      AM_Start();
+      viewactive = false;
+      rc = true;
+    }
+  } else if (ev->type == ev_keydown) {
+    rc = true;
+    key = ev->data1;
+
+    if (key == key_map_east) // pan right
+    {
+      if (!followplayer)
+        m_paninc.x = FTOM(F_PANINC);
+      else
+        rc = false;
+    } else if (key == key_map_west) // pan left
+    {
+      if (!followplayer)
+        m_paninc.x = -FTOM(F_PANINC);
+      else
+        rc = false;
+    } else if (key == key_map_north) // pan up
+    {
+      if (!followplayer)
+        m_paninc.y = FTOM(F_PANINC);
+      else
+        rc = false;
+    } else if (key == key_map_south) // pan down
+    {
+      if (!followplayer)
+        m_paninc.y = -FTOM(F_PANINC);
+      else
+        rc = false;
+    } else if (key == key_map_zoomout) // zoom out
+    {
+      mtof_zoommul = M_ZOOMOUT;
+      ftom_zoommul = M_ZOOMIN;
+    } else if (key == key_map_zoomin) // zoom in
+    {
+      mtof_zoommul = M_ZOOMIN;
+      ftom_zoommul = M_ZOOMOUT;
+    } else if (key == key_map_toggle) {
+      bigstate = 0;
+      viewactive = true;
+      AM_Stop();
+    } else if (key == key_map_maxzoom) {
+      bigstate = !bigstate;
+      if (bigstate) {
+        AM_saveScaleAndLoc();
+        AM_minOutWindowScale();
+      } else
+        AM_restoreScaleAndLoc();
+    } else if (key == key_map_follow) {
+      followplayer = !followplayer;
+      f_oldloc.x = INT_MAX;
+      if (followplayer)
+        plr->message = (AMSTR_FOLLOWON);
+      else
+        plr->message = (AMSTR_FOLLOWOFF);
+    } else if (key == key_map_grid) {
+      grid = !grid;
+      if (grid)
+        plr->message = (AMSTR_GRIDON);
+      else
+        plr->message = (AMSTR_GRIDOFF);
+    } else if (key == key_map_mark) {
+      M_snprintf(buffer, sizeof(buffer), "%s %d", (AMSTR_MARKEDSPOT),
+                 markpointnum);
+      plr->message = buffer;
+      AM_addMark();
+    } else if (key == key_map_clearmark) {
+      AM_clearMarks();
+      plr->message = (AMSTR_MARKSCLEARED);
+    } else {
+      rc = false;
+    }
+
+    if ((!deathmatch || gameversion <= exe_doom_1_8) &&
+        cht_CheckCheat(&cheat_amap, ev->data2)) {
+      rc = false;
+      cheating = (cheating + 1) % 3;
+    }
+  } else if (ev->type == ev_keyup) {
+    rc = false;
+    key = ev->data1;
+
+    if (key == key_map_east) {
+      if (!followplayer)
+        m_paninc.x = 0;
+    } else if (key == key_map_west) {
+      if (!followplayer)
+        m_paninc.x = 0;
+    } else if (key == key_map_north) {
+      if (!followplayer)
+        m_paninc.y = 0;
+    } else if (key == key_map_south) {
+      if (!followplayer)
+        m_paninc.y = 0;
+    } else if (key == key_map_zoomout || key == key_map_zoomin) {
+      mtof_zoommul = FRACUNIT;
+      ftom_zoommul = FRACUNIT;
+    }
+  }
+
+  return rc;
+  */
+ return false; // TMP LATER
+}
+
+
 //
 // Updates on Game Tick
 //
 void AM_Ticker(void) {
-  ipuprint("TICK!\n");
+  // ipuprint("TICK!\n");
   if (!automapactive) 
     return;
 

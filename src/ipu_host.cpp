@@ -41,6 +41,7 @@ class IpuDoom {
   void run_AM_Drawer();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
+  void run_G_Responder(G_Responder_MiscValues_t* buf);
 
   poplar::Device m_ipuDevice;
   poplar::Graph m_ipuGraph;
@@ -170,13 +171,28 @@ void IpuDoom::buildIpuGraph() {
 
 
   poplar::ComputeSet G_Ticker_CS = m_ipuGraph.addComputeSet("G_Ticker_CS");
-  vtx = m_ipuGraph.addVertex(G_Ticker_CS, "G_Ticker_Vertex");
+  vtx = m_ipuGraph.addVertex(G_Ticker_CS, "G_Ticker_Vertex", {{"miscValues", m_miscValuesBuf}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 100);
   
   poplar::program::Sequence G_Ticker_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_Ticker_CS),
+      GetPrintbuf_prog,
+  });
+
+
+  // ---------------- G_Responder --------------//
+
+
+  poplar::ComputeSet G_Responder_CS = m_ipuGraph.addComputeSet("G_Responder_CS");
+  vtx = m_ipuGraph.addVertex(G_Responder_CS, "G_Responder_Vertex", {{"miscValues", m_miscValuesBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 100);
+  
+  poplar::program::Sequence G_Responder_prog({
+      poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
+      poplar::program::Execute(G_Responder_CS),
       GetPrintbuf_prog,
   });
 
@@ -191,6 +207,7 @@ void IpuDoom::buildIpuGraph() {
       AM_Drawer_prog,
       G_DoLoadLevel_prog,
       G_Ticker_prog,
+      G_Responder_prog,
   })));
 
   // m_ipuEngine->connectStream("frame-instream", I_VideoBuffer); // Can do this is IPU_Init run afer video
@@ -223,6 +240,10 @@ void IpuDoom::run_AM_Drawer() {
 }
 void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
 void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(3); }
+void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* buf) { 
+  memcpy(m_miscValuesBuf_h, buf, sizeof(G_Responder_MiscValues_t));
+  m_ipuEngine->run(4); 
+}
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 extern "C" {
@@ -231,4 +252,5 @@ void IPU_AM_LevelInit() { ipuDoomInstance->run_AM_LevelInit(); }
 void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
 void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
+void IPU_G_Responder(G_Responder_MiscValues_t* buf) { ipuDoomInstance->run_G_Responder(buf); }
 }

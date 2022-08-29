@@ -69,6 +69,7 @@
 #include "z_zone.h"
 
 #include "ipu_host.h"
+#include "ipu/ipu_interface.h"
 
 //
 // D-DoomLoop()
@@ -131,11 +132,22 @@ void D_ProcessEvents(void) {
   if (storedemo)
     return;
 
+
+  // JOSEF: Buffer events to send to IPU
+  G_Responder_MiscValues_t ev_buf;
+  ev_buf.num_ev = 0;
+
   while ((ev = D_PopEvent()) != NULL) {
     if (M_Responder(ev))
       continue; // menu ate the event
     G_Responder(ev);
+   
+    if (ev_buf.num_ev < IPUMAXEVENTSPERTIC) {
+      ev_buf.events[ev_buf.num_ev++] = *ev;
+    }
   }
+
+  IPU_G_Responder(&ev_buf);
 }
 
 //

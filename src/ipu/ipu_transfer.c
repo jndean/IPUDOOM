@@ -12,9 +12,10 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   gamelumpnum = pack->lumpnum;
 }
 
-void IPU_getLump(int lumpnum) {
-
+void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
+  gamestate = pack->gamestate;
 }
+
 
 /*
 void IPU_UnpackVertexes(const unsigned char* buf) {

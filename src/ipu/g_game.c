@@ -250,3 +250,101 @@ void G_Ticker(void) {
 
 
 }
+
+
+//
+// G_Responder
+// Get info needed to make ticcmd_ts for the players.
+//
+boolean G_Responder(event_t *ev) {
+
+  /* LATER
+  // allow spy mode changes even during the demo
+  if (gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == key_spy &&
+      (singledemo || !deathmatch)) {
+    // spy mode
+    do {
+      displayplayer++;
+      if (displayplayer == MAXPLAYERS)
+        displayplayer = 0;
+    } while (!playeringame[displayplayer] && displayplayer != consoleplayer);
+    return true;
+  }
+
+  // any other key pops up menu if in demos
+  if (gameaction == ga_nothing && !singledemo &&
+      (demoplayback || gamestate == GS_DEMOSCREEN)) {
+    if (ev->type == ev_keydown || (ev->type == ev_mouse && ev->data1) ||
+        (ev->type == ev_joystick && ev->data1)) {
+      M_StartControlPanel();
+      return true;
+    }
+    return false;
+  }
+  */
+
+  if (gamestate == GS_LEVEL) {
+  /* LATER
+    if (HU_Responder(ev))
+      return true; // chat ate the event
+    if (ST_Responder(ev))
+      return true; // status window ate it
+  */
+    if (AM_Responder(ev))
+      return true; // automap ate it
+  }
+
+  /* LATER
+  if (testcontrols && ev->type == ev_mouse) {
+    // If we are invoked by setup to test the controls, save the
+    // mouse speed so that we can display it on-screen.
+    // Perform a low pass filter on this so that the thermometer
+    // appears to move smoothly.
+
+    testcontrols_mousespeed = abs(ev->data2);
+  }
+
+  // If the next/previous weapon keys are pressed, set the next_weapon
+  // variable to change weapons when the next ticcmd is generated.
+
+  if (ev->type == ev_keydown && ev->data1 == key_prevweapon) {
+    next_weapon = -1;
+  } else if (ev->type == ev_keydown && ev->data1 == key_nextweapon) {
+    next_weapon = 1;
+  }
+
+  switch (ev->type) {
+  case ev_keydown:
+    if (ev->data1 == key_pause) {
+      sendpause = true;
+    } else if (ev->data1 < NUMKEYS) {
+      gamekeydown[ev->data1] = true;
+    }
+
+    return true; // eat key down events
+
+  case ev_keyup:
+    if (ev->data1 < NUMKEYS)
+      gamekeydown[ev->data1] = false;
+    return false; // always let key up events filter down
+
+  case ev_mouse:
+    SetMouseButtons(ev->data1);
+    mousex = ev->data2 * (mouseSensitivity + 5) / 10;
+    mousey = ev->data3 * (mouseSensitivity + 5) / 10;
+    return true; // eat events
+
+  case ev_joystick:
+    SetJoyButtons(ev->data1);
+    joyxmove = ev->data2;
+    joyymove = ev->data3;
+    joystrafemove = ev->data4;
+    return true; // eat events
+
+  default:
+    break;
+  }
+
+  */
+  return false;
+}
