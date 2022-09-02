@@ -799,6 +799,7 @@ void TryRunTics (void)
             TicdupSquash(set);
 	}
 
+
 	NetUpdate ();	// check for new console commands
     }
 }

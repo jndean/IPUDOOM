@@ -10,6 +10,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	g_game_codelets.gp \
 	am_map.gp \
 	m_fixed.gp \
+	m_controls.gp \
 	p_setup.gp \
 	p_setup_codelets.gp \
 	p_tick.gp \

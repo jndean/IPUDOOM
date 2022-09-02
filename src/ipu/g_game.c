@@ -22,6 +22,49 @@ boolean respawnmonsters;
 int gameepisode;
 int gamemap;
 
+// If non-zero, exit the level after this number of minutes.
+
+int timelimit;
+
+boolean paused;
+boolean sendpause; // send a pause event next tic
+boolean sendsave;  // send a save event next tic
+boolean usergame;  // ok to save / end game
+
+boolean timingdemo; // if true, exit with report on completion
+boolean nodrawers;  // for comparative timing purposes
+int starttime;      // for comparative timing purposes
+
+boolean viewactive;
+
+int deathmatch;  // only if started as net death
+boolean netgame; // only true if packets are broadcast
+boolean playeringame[MAXPLAYERS];
+player_t players[MAXPLAYERS];
+
+boolean turbodetected[MAXPLAYERS];
+
+int consoleplayer;                       // player taking events and displaying
+int displayplayer;                       // view being displayed
+int levelstarttic;                       // gametic at level start
+int totalkills, totalitems, totalsecret; // for intermission
+
+char *demoname;
+boolean demorecording;
+boolean longtics;    // cph's doom 1.91 longtics hack
+boolean lowres_turn; // low resolution turning for longtics
+boolean demoplayback;
+boolean netdemo;
+byte *demobuffer;
+byte *demo_p;
+byte *demoend;
+boolean singledemo; // quit after playing a demo from cmdline
+
+boolean precache = true; // if true, load all graphics at start
+
+boolean testcontrols = false; // Invoked by setup to test controls
+int testcontrols_mousespeed;
+
 // from here... LATER
 
 

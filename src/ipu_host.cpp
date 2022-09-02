@@ -37,7 +37,6 @@ class IpuDoom {
   ~IpuDoom();
 
   void buildIpuGraph();
-  void run_AM_LevelInit();
   void run_AM_Drawer();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
@@ -228,7 +227,7 @@ void IpuDoom::buildIpuGraph() {
   m_ipuEngine->load(m_ipuDevice);
 }
 
-void IpuDoom::run_AM_LevelInit() { m_ipuEngine->run(0); }
+// void IpuDoom::run_AM_LevelInit() { m_ipuEngine->run(0); }
 void IpuDoom::run_AM_Drawer() {
   static bool setup = true;
   if (setup) {
@@ -248,7 +247,6 @@ void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* buf) {
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 extern "C" {
 void IPU_Init(void) { ipuDoomInstance = std::make_unique<IpuDoom>(); }
-void IPU_AM_LevelInit() { ipuDoomInstance->run_AM_LevelInit(); }
 void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
 void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }

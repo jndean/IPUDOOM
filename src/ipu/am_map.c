@@ -1,4 +1,7 @@
 
+// State.
+#include "doomstat.h"
+#include "m_controls.h"
 #include "m_fixed.h"
 #include "p_local.h"
 #include "r_state.h"
@@ -243,6 +246,61 @@ void AM_findMinMaxBoundaries(void) {
   max_scale_mtof = FixedDiv(f_h << FRACBITS, 2 * PLAYERRADIUS);
 }
 
+//
+//
+//
+void AM_initVariables(void) {
+  int pnum;
+  // static event_t st_notify = {ev_keyup, AM_MSGENTERED, 0, 0}; // LATER
+
+  automapactive = true;
+  // fb = I_VideoBuffer; // JOSEF, done in AM_Drawer
+
+  f_oldloc.x = INT_MAX;
+  amclock = 0;
+  lightlev = 0;
+
+  m_paninc.x = m_paninc.y = 0;
+  ftom_zoommul = FRACUNIT;
+  mtof_zoommul = FRACUNIT;
+
+  m_w = FTOM(f_w);
+  m_h = FTOM(f_h);
+
+  // find player to center on initially
+  /* JOSEF: Don't support multiplayer
+  if (playeringame[consoleplayer]) {
+    plr = &players[consoleplayer];
+  } else {
+    plr = &players[0];
+
+    for (pnum = 0; pnum < MAXPLAYERS; pnum++) {
+      if (playeringame[pnum]) {
+        plr = &players[pnum];
+        break;
+      }
+    }
+  }
+  */
+
+  /* LATER: 
+  plr = ... copy from CPU
+
+  m_x = plr->mo->x - m_w / 2;
+  m_y = plr->mo->y - m_h / 2;
+  AM_changeWindowLoc();
+
+  // for saving & restoring
+  old_m_x = m_x;
+  old_m_y = m_y;
+  old_m_w = m_w;
+  old_m_h = m_h;
+  */
+
+  // inform the status bar of the change
+  // ST_Responder(&st_notify); // JOSEF
+}
+
 
 void AM_clearMarks(void) {
   int i;
@@ -274,6 +332,38 @@ void AM_LevelInit(void) {
 
 
 //
+//
+//
+void AM_Stop(void) {
+  // static event_t st_notify = {0, ev_keyup, AM_MSGEXITED, 0}; // LATER
+
+  ipuprint("Stopping automap");
+  // AM_unloadPics();  // JOSEF
+  automapactive = false;
+  // ST_Responder(&st_notify);  // LATER
+  stopped = true;
+}
+
+//
+//
+//
+void AM_Start(void) {
+  static int lastlevel = -1, lastepisode = -1;
+
+  if (!stopped)
+    AM_Stop();
+  stopped = false;
+  if (lastlevel != gamemap || lastepisode != gameepisode) {
+    AM_LevelInit();
+    lastlevel = gamemap;
+    lastepisode = gameepisode;
+  }
+  AM_initVariables(); /// JOSEF Not Finished
+  // AM_loadPics(); // LATER
+  ipuprint("Starting automap");
+}
+
+//
 // Handle events (user inputs) in automap mode
 //
 boolean AM_Responder(event_t *ev) {
@@ -282,10 +372,9 @@ boolean AM_Responder(event_t *ev) {
   static int bigstate = 0;
   static char buffer[20];
   int key;
-  ipuprint("AM_Responder responding\n");
-  /* LATER
   rc = false;
 
+  /* LATER
   if (ev->type == ev_joystick && joybautomap >= 0 &&
       (ev->data1 & (1 << joybautomap)) != 0) {
     joywait = I_GetTime() + 5;
@@ -301,6 +390,7 @@ boolean AM_Responder(event_t *ev) {
 
     return true;
   }
+  */
 
   if (!automapactive) {
     if (ev->type == ev_keydown && ev->data1 == key_map_toggle) {
@@ -308,12 +398,15 @@ boolean AM_Responder(event_t *ev) {
       viewactive = false;
       rc = true;
     }
-  } else if (ev->type == ev_keydown) {
+  }
+   else if (ev->type == ev_keydown) {
     rc = true;
     key = ev->data1;
 
+
     if (key == key_map_east) // pan right
     {
+      /* LATER
       if (!followplayer)
         m_paninc.x = FTOM(F_PANINC);
       else
@@ -344,11 +437,14 @@ boolean AM_Responder(event_t *ev) {
     {
       mtof_zoommul = M_ZOOMIN;
       ftom_zoommul = M_ZOOMOUT;
+      */
     } else if (key == key_map_toggle) {
       bigstate = 0;
       viewactive = true;
       AM_Stop();
-    } else if (key == key_map_maxzoom) {
+    } 
+    /* LATER 
+    else if (key == key_map_maxzoom) {
       bigstate = !bigstate;
       if (bigstate) {
         AM_saveScaleAndLoc();
@@ -405,11 +501,12 @@ boolean AM_Responder(event_t *ev) {
       mtof_zoommul = FRACUNIT;
       ftom_zoommul = FRACUNIT;
     }
+  */
   }
 
+  if (bigstate) {} // DELETEME JOSEF prevent no unused var
+
   return rc;
-  */
- return false; // TMP LATER
 }
 
 

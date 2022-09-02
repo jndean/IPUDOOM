@@ -507,7 +507,6 @@ void AM_Start(void) {
   stopped = false;
   if (lastlevel != gamemap || lastepisode != gameepisode) {
     AM_LevelInit();
-    IPU_AM_LevelInit();
     lastlevel = gamemap;
     lastepisode = gameepisode;
   }

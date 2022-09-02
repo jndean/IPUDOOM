@@ -40,6 +40,7 @@ class IPU_GetPrintBuf_Vertex : public poplar::Vertex {
 
   bool compute() {
     get_ipuprint_data(&printbuf[0], printbuf.size());
+    reset_ipuprint();
     return true;
   }
 };

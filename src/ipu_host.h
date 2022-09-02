@@ -10,7 +10,6 @@ extern "C" {
 
 void IPU_Init(void);
 
-void IPU_AM_LevelInit(void);
 void IPU_AM_Drawer(void);
 
 void IPU_G_DoLoadLevel(void);
