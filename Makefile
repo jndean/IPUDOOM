@@ -25,7 +25,7 @@ CPU_FLAGS = -I src -I /usr/local/include/SDL2 -I/usr/include/libpng16 -I/opt/pop
 
 IPU_FLAGS = -I src/ipu \
 			-Wall -Werror -Wno-unused-variable \
-			-O2 
+			-O2
 
 
 all: build build/doom build/ipu_rt.gp

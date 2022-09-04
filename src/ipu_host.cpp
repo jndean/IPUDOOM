@@ -104,17 +104,6 @@ void IpuDoom::buildIpuGraph() {
       poplar::program::Copy(ipuFrame, frameOutStream),
   });
 
-  // -------- AM_LevelInit_CS ------ //
-
-  poplar::ComputeSet AM_LevelInit_CS = m_ipuGraph.addComputeSet("AM_LevelInit_CS");
-  vtx = m_ipuGraph.addVertex(AM_LevelInit_CS, "AM_LevelInit_Vertex", {});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 10000000);
-
-  poplar::program::Sequence AM_LevelInit_prog({
-      poplar::program::Execute(AM_LevelInit_CS),
-  });
-
   // -------- IPU_G_DoLoadLevel ------ //
 
   m_miscValuesBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUMISCVALUESSIZE}, "miscValues");
@@ -202,7 +191,6 @@ void IpuDoom::buildIpuGraph() {
   printf("Creating engine...\n");
   m_ipuEngine = std::make_unique<poplar::Engine>(std::move(poplar::Engine(
     m_ipuGraph, {
-      AM_LevelInit_prog,
       AM_Drawer_prog,
       G_DoLoadLevel_prog,
       G_Ticker_prog,
@@ -227,7 +215,6 @@ void IpuDoom::buildIpuGraph() {
   m_ipuEngine->load(m_ipuDevice);
 }
 
-// void IpuDoom::run_AM_LevelInit() { m_ipuEngine->run(0); }
 void IpuDoom::run_AM_Drawer() {
   static bool setup = true;
   if (setup) {
@@ -235,13 +222,13 @@ void IpuDoom::run_AM_Drawer() {
     m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
     m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
   }
-  m_ipuEngine->run(1);
+  m_ipuEngine->run(0);
 }
-void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
-void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(3); }
-void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* buf) { 
-  memcpy(m_miscValuesBuf_h, buf, sizeof(G_Responder_MiscValues_t));
-  m_ipuEngine->run(4); 
+void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(1); }
+void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
+void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* src_buf) { 
+  IPU_G_Responder_PackMiscValues(src_buf, m_miscValuesBuf_h);
+  m_ipuEngine->run(3); 
 }
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;

@@ -10,6 +10,7 @@ extern "C" {
 
 void IPU_G_LoadLevel_PackMiscValues(void* buf);
 void IPU_G_Ticker_PackMiscValues(void* buf);
+void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf);
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf);
 
 

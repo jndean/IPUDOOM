@@ -7,6 +7,8 @@ extern "C" {
 #include "d_event.h"
 #include "doomdef.h"
 #include "doomtype.h"
+#include "m_fixed.h"
+#include "tables.h"
 
 
 #define IPUMAXLUMPBYTES 32000
@@ -22,7 +24,13 @@ typedef struct {
 } G_LoadLevel_MiscValues_t;
 
 typedef struct {
+    fixed_t x, y, z;
+    angle_t angle;
+} IPUPlayerPos_t;
+
+typedef struct {
     gamestate_t gamestate;
+    IPUPlayerPos_t player_mobj;
 } G_Ticker_MiscValues_t;
 
 

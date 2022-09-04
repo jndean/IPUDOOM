@@ -8,6 +8,7 @@
 #include "st_stuff.h"
 
 #include "ipu_print.h"
+#include "ipu_interface.h"
 
 
 // For use if I do walls with outsides/insides
@@ -196,7 +197,11 @@ static fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
 // used by FTOM to scale from frame-buffer-to-map coords (=1/scale_mtof)
 static fixed_t scale_ftom;
 
-static player_t *plr; // the player represented by an arrow
+// JOSEF: Map only uses player position, so don't need reference to full 
+// player object (which will be on a different IPU tile).
+// May need mechanism for sending plr->message to rendering tile... LATER
+// static player_t *plr; // the player represented by an arrow
+IPUPlayerPos_t am_playerpos;
 
 static patch_t *marknums[10]; // numbers used for marking by the automap
 static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
@@ -249,6 +254,32 @@ void AM_findMinMaxBoundaries(void) {
 //
 //
 //
+void AM_changeWindowLoc(void) {
+  if (m_paninc.x || m_paninc.y) {
+    followplayer = 0;
+    f_oldloc.x = INT_MAX;
+  }
+
+  m_x += m_paninc.x;
+  m_y += m_paninc.y;
+
+  if (m_x + m_w / 2 > max_x)
+    m_x = max_x - m_w / 2;
+  else if (m_x + m_w / 2 < min_x)
+    m_x = min_x - m_w / 2;
+
+  if (m_y + m_h / 2 > max_y)
+    m_y = max_y - m_h / 2;
+  else if (m_y + m_h / 2 < min_y)
+    m_y = min_y - m_h / 2;
+
+  m_x2 = m_x + m_w;
+  m_y2 = m_y + m_h;
+}
+
+//
+//
+//
 void AM_initVariables(void) {
   int pnum;
   // static event_t st_notify = {ev_keyup, AM_MSGENTERED, 0, 0}; // LATER
@@ -283,11 +314,9 @@ void AM_initVariables(void) {
   }
   */
 
-  /* LATER: 
-  plr = ... copy from CPU
 
-  m_x = plr->mo->x - m_w / 2;
-  m_y = plr->mo->y - m_h / 2;
+  m_x = am_playerpos.x - m_w / 2;
+  m_y = am_playerpos.y - m_h / 2;
   AM_changeWindowLoc();
 
   // for saving & restoring
@@ -295,7 +324,6 @@ void AM_initVariables(void) {
   old_m_y = m_y;
   old_m_w = m_w;
   old_m_h = m_h;
-  */
 
   // inform the status bar of the change
   // ST_Responder(&st_notify); // JOSEF
@@ -358,7 +386,7 @@ void AM_Start(void) {
     lastlevel = gamemap;
     lastepisode = gameepisode;
   }
-  AM_initVariables(); /// JOSEF Not Finished
+  AM_initVariables();
   // AM_loadPics(); // LATER
   ipuprint("Starting automap");
 }

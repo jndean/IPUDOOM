@@ -30,15 +30,23 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   memcpy(buf, &pack, sizeof(pack));
 }
 
-
 void IPU_G_Ticker_PackMiscValues(void* buf) {
   assert(sizeof(G_Ticker_MiscValues_t) <= IPUMISCVALUESSIZE);
 
   G_Ticker_MiscValues_t* pack = (G_Ticker_MiscValues_t*) buf;
   pack->gamestate = gamestate;
-  
+  if (gamestate == GS_LEVEL) {
+    pack->player_mobj.x = players[consoleplayer].mo->x;
+    pack->player_mobj.y = players[consoleplayer].mo->y;
+    pack->player_mobj.z = players[consoleplayer].mo->z;
+    pack->player_mobj.angle = players[consoleplayer].mo->angle;
+  }
 }
 
+void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf) {
+  assert(sizeof(G_Responder_MiscValues_t) <= IPUMISCVALUESSIZE);
+  memcpy(dst_buf, src_buf, sizeof(G_Responder_MiscValues_t));
+}
 
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
     int size = W_LumpLength(lumpnum);

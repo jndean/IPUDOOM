@@ -2,6 +2,7 @@
 // #include "w_wad.h"
 
 #include "ipu_interface.h"
+#include "ipu_transfer.h"
 
 int gamelumpnum;
 int requestedlumpnum;
@@ -14,6 +15,12 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
 
 void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
   gamestate = pack->gamestate;
+  if (gamestate == GS_LEVEL) {
+    am_playerpos.x = pack->player_mobj.x;
+    am_playerpos.y = pack->player_mobj.y;
+    am_playerpos.z = pack->player_mobj.z;
+    am_playerpos.angle = pack->player_mobj.angle;
+  }
 }
 
 

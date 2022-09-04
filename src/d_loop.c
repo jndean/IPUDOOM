@@ -706,6 +706,7 @@ void TryRunTics (void)
     }
     else
     {
+        // G_Responder is called in here
         NetUpdate ();
     }
 
@@ -790,6 +791,7 @@ void TryRunTics (void)
 
             memcpy(local_playeringame, set->ingame, sizeof(local_playeringame));
 
+            // G_Ticker is called in here
             // JOSEF: loop_interface->RunTic(set->cmds, set->ingame);
             D_RunTic(set->cmds, set->ingame); // JOSEF
 	    gametic++;
