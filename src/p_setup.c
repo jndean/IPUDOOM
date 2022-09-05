@@ -273,9 +273,6 @@ void P_LoadSectors(int lump) {
     ss->thinglist = NULL;
   }
 
-  printf("[CPU] numsectors: %d, floor0: %d, ceil0: %d, floor-1: %d, ceil-1: %d\n",
-  numsectors, sectors[0].floorheight, sectors[0].ceilingheight, sectors[numsectors-1].floorheight, sectors[numsectors-1].ceilingheight);
-
   W_ReleaseLumpNum(lump);
 }
 
@@ -431,6 +428,9 @@ void P_LoadLineDefs(int lump) {
     else
       ld->backsector = 0;
   }
+
+  printf("[CPU] numlines: %d, sidenum0: %d, sidenum-1: %d, dx-1: %d\n",
+      numlines, lines[0].sidenum[1], lines[numlines-1].sidenum[1], lines[numlines-1].dx);
 
   W_ReleaseLumpNum(lump);
 }

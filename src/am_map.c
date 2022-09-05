@@ -1168,7 +1168,7 @@ void AM_Drawer(void) {
   // AM_clearFB(BACKGROUND); 
   // if (grid)
   //   AM_drawGrid(GRIDCOLORS);
-  AM_drawWalls();
+  // AM_drawWalls();
   AM_drawPlayers();
   if (cheating == 2)
     AM_drawThings(THINGCOLORS, THINGRANGE);

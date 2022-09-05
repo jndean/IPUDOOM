@@ -4,7 +4,7 @@
 #include "ipu_print.h"
 
 
-#define IPUMALLOC_MAXMAPSIZE 100000
+#define IPUMALLOC_MAXMAPSIZE 150000
 
 #define ALIGN32(x) (((x) + 3) & (~3))
 
@@ -17,8 +17,12 @@ void* IPU_level_malloc(int size) {
     PU_LEVEL_size = ALIGN32(PU_LEVEL_size + size);
 
     if (PU_LEVEL_size > IPUMALLOC_MAXMAPSIZE) {
-        ipuprint("ERROR: IPUMALLOC_MAXMAPSIZE too small\n");
-        exit(1701);
+        ipuprint("ERROR: IPUMALLOC_MAXMAPSIZE is ");
+        ipuprintnum(IPUMALLOC_MAXMAPSIZE);
+        ipuprint(", but IPU_level_malloc wants ");
+        ipuprintnum(PU_LEVEL_size);
+        ipuprint("\n");
+        // exit(1701);
     }
     return ret;
 }

@@ -2,6 +2,7 @@
 #include "d_mode.h"
 #include "doomstat.h"
 #include "i_swap.h"
+#include "m_bbox.h"
 #include "r_defs.h"
 #include "p_local.h"
 
@@ -136,21 +137,146 @@ void P_LoadSectors(const unsigned char *buf) {
     ss->thinglist = NULL;
   }
 
-  ipuprint("numsectors: ");
-  ipuprintnum(numsectors);
-  ipuprint(", floor0: ");
-  ipuprintnum(sectors[0].floorheight);
-  ipuprint(", ceil0: ");
-  ipuprintnum(sectors[0].ceilingheight);
-  ipuprint(", floor-1: ");
-  ipuprintnum(sectors[numsectors-1].floorheight);
-  ipuprint(", ceil-1: ");
-  ipuprintnum(sectors[numsectors-1].ceilingheight);
-  ipuprint("\n");
-
   requestedlumpnum = gamelumpnum + ML_SIDEDEFS;
 }
 
+//
+// P_LoadSideDefs
+//
+void P_LoadSideDefs(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapsidedef_t *msd;
+  side_t *sd;
+
+  int lumplen = ((int*)buf)[0];
+  numsides = lumplen / sizeof(mapsidedef_t);
+  sides = IPU_level_malloc(numsides * sizeof(side_t));
+  memset(sides, 0, numsides * sizeof(side_t));
+
+  msd = (mapsidedef_t *)(&buf[sizeof(int)]);
+  sd = sides;
+  for (i = 0; i < numsides; i++, msd++, sd++) {
+    sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
+    sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
+    /* LATER (or, not needed on tile 0)
+    sd->toptexture = R_TextureNumForName(msd->toptexture);
+    sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
+    sd->midtexture = R_TextureNumForName(msd->midtexture);
+    */
+    sd->sector = &sectors[SHORT(msd->sector)];
+  }
+
+  requestedlumpnum = gamelumpnum + ML_LINEDEFS;
+}
+
+//
+// P_LoadLineDefs
+// Also counts secret lines for intermissions.
+//
+void P_LoadLineDefs(const unsigned char *buf) {
+  byte *data;
+  int i;
+  maplinedef_t *mld;
+  line_t *ld;
+  vertex_t *v1;
+  vertex_t *v2;
+
+  int lumplen = ((int*)buf)[0];
+  numlines = lumplen / sizeof(maplinedef_t);
+  lines = IPU_level_malloc(numlines * sizeof(line_t));
+  memset(lines, 0, numlines * sizeof(line_t));
+
+  mld = (maplinedef_t *)(&buf[sizeof(int)]);
+  ld = lines;
+  for (i = 0; i < numlines; i++, mld++, ld++) {
+    ld->flags = (mld->flags);
+    ld->special = (mld->special);
+    ld->tag = (mld->tag);
+    v1 = ld->v1 = &vertexes[(mld->v1)];
+    v2 = ld->v2 = &vertexes[(mld->v2)];
+    ld->dx = v2->x - v1->x;
+    ld->dy = v2->y - v1->y;
+
+    if (!ld->dx)
+      ld->slopetype = ST_VERTICAL;
+    else if (!ld->dy)
+      ld->slopetype = ST_HORIZONTAL;
+    else {
+      if (FixedDiv(ld->dy, ld->dx) > 0)
+        ld->slopetype = ST_POSITIVE;
+      else
+        ld->slopetype = ST_NEGATIVE;
+    }
+
+    if (v1->x < v2->x) {
+      ld->bbox[BOXLEFT] = v1->x;
+      ld->bbox[BOXRIGHT] = v2->x;
+    } else {
+      ld->bbox[BOXLEFT] = v2->x;
+      ld->bbox[BOXRIGHT] = v1->x;
+    }
+
+    if (v1->y < v2->y) {
+      ld->bbox[BOXBOTTOM] = v1->y;
+      ld->bbox[BOXTOP] = v2->y;
+    } else {
+      ld->bbox[BOXBOTTOM] = v2->y;
+      ld->bbox[BOXTOP] = v1->y;
+    }
+
+    ld->sidenum[0] = SHORT(mld->sidenum[0]);
+    ld->sidenum[1] = SHORT(mld->sidenum[1]);
+
+    if (ld->sidenum[0] != -1)
+      ld->frontsector = sides[ld->sidenum[0]].sector;
+    else
+      ld->frontsector = 0;
+
+    if (ld->sidenum[1] != -1)
+      ld->backsector = sides[ld->sidenum[1]].sector;
+    else
+      ld->backsector = 0;
+  }
+
+  // msd = (mapsidedef_t *)(&buf[sizeof(int)]);
+  ipuprint("numlines: ");
+  ipuprintnum(numlines);
+  ipuprint(", sidenum0: ");
+  ipuprintnum(lines[0].sidenum[1]);
+  ipuprint(", sidenum-1: ");
+  ipuprintnum(lines[numlines-1].sidenum[1]);
+  ipuprint(", dx-1: ");
+  ipuprintnum(lines[numlines-1].dx);
+  ipuprint("\n");
+
+  requestedlumpnum = gamelumpnum + ML_SSECTORS;
+}
+
+//
+// P_LoadSubsectors
+//
+void P_LoadSubsectors(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapsubsector_t *ms;
+  subsector_t *ss;
+
+  int lumplen = ((int*)buf)[0];
+  numsubsectors = lumplen / sizeof(mapsubsector_t);
+  subsectors = IPU_level_malloc(numsubsectors * sizeof(subsector_t));
+
+  ms = (mapsubsector_t *)(&buf[sizeof(int)]);
+  memset(subsectors, 0, numsubsectors * sizeof(subsector_t));
+  ss = subsectors;
+
+  for (i = 0; i < numsubsectors; i++, ss++, ms++) {
+    ss->numlines = SHORT(ms->numsegs);
+    ss->firstline = SHORT(ms->firstseg);
+  }
+
+  requestedlumpnum = gamelumpnum + ML_NODES;
+}
 
 //
 // P_SetupLevel

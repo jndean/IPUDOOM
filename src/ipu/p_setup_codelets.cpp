@@ -8,6 +8,9 @@ extern "C" {
     void P_LoadBlockMap(const unsigned char *buf);
     void P_LoadVertexes(const unsigned char *buf);
     void P_LoadSectors(const unsigned char *buf);
+    void P_LoadSideDefs(const unsigned char *buf);
+    void P_LoadLineDefs(const unsigned char *buf);
+    void P_LoadSubsectors(const unsigned char *buf);
 };
 
 
@@ -44,13 +47,46 @@ class P_LoadVertexes_Vertex : public poplar::Vertex {
   }
 };
 
-
 class P_LoadSectors_Vertex : public poplar::Vertex {
   poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
   poplar::Output<int> lumpNum;
  public:
   bool compute() {
     P_LoadSectors(&lumpBuf[0]); 
+    *lumpNum = requestedlumpnum;
+    return true;
+  }
+};
+
+class P_LoadSideDefs_Vertex : public poplar::Vertex {
+  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
+  poplar::Output<int> lumpNum;
+ public:
+  bool compute() {
+    P_LoadSideDefs(&lumpBuf[0]); 
+    *lumpNum = requestedlumpnum;
+    return true;
+  }
+};
+
+class P_LoadLineDefs_Vertex : public poplar::Vertex {
+  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
+  poplar::Output<int> lumpNum;
+ public:
+  bool compute() {
+    P_LoadLineDefs(&lumpBuf[0]); 
+    *lumpNum = requestedlumpnum;
+    return true;
+  }
+};
+
+
+class P_LoadSubsectors_Vertex : public poplar::Vertex {
+  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
+  poplar::Output<int> lumpNum;
+ public:
+  bool compute() {
+    P_LoadSubsectors(&lumpBuf[0]); 
     *lumpNum = requestedlumpnum;
     return true;
   }
