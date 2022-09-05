@@ -14,6 +14,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	p_setup.gp \
 	p_setup_codelets.gp \
 	p_tick.gp \
+	tables.gp \
 )
 
 

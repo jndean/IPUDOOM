@@ -1169,7 +1169,7 @@ void AM_Drawer(void) {
   // if (grid)
   //   AM_drawGrid(GRIDCOLORS);
   // AM_drawWalls();
-  AM_drawPlayers();
+  // AM_drawPlayers();
   if (cheating == 2)
     AM_drawThings(THINGCOLORS, THINGRANGE);
   AM_drawCrosshair(XHAIRCOLORS);

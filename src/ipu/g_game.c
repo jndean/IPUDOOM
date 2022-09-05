@@ -38,7 +38,7 @@ int starttime;      // for comparative timing purposes
 boolean viewactive;
 
 int deathmatch;  // only if started as net death
-boolean netgame; // only true if packets are broadcast
+boolean netgame = 0; // only true if packets are broadcast // JOSEF: singleplayer only
 boolean playeringame[MAXPLAYERS];
 player_t players[MAXPLAYERS];
 

@@ -6,6 +6,7 @@
 #include "p_local.h"
 #include "r_state.h"
 #include "st_stuff.h"
+#include "tables.h"
 
 #include "ipu_print.h"
 #include "ipu_interface.h"
@@ -947,6 +948,97 @@ void AM_drawWalls(void) {
 }
 
 
+//
+// Rotation in 2D.
+// Used to rotate player arrow line character.
+//
+void AM_rotate(fixed_t *x, fixed_t *y, angle_t a) {
+  fixed_t tmpx;
+
+  tmpx = FixedMul(*x, finecosine[a >> ANGLETOFINESHIFT]) -
+         FixedMul(*y, finesine[a >> ANGLETOFINESHIFT]);
+
+  *y = FixedMul(*x, finesine[a >> ANGLETOFINESHIFT]) +
+       FixedMul(*y, finecosine[a >> ANGLETOFINESHIFT]);
+
+  *x = tmpx;
+}
+
+void AM_drawLineCharacter(mline_t *lineguy, int lineguylines, fixed_t scale,
+                          angle_t angle, int color, fixed_t x, fixed_t y) {
+  int i;
+  mline_t l;
+
+  for (i = 0; i < lineguylines; i++) {
+    l.a.x = lineguy[i].a.x;
+    l.a.y = lineguy[i].a.y;
+
+    if (scale) {
+      l.a.x = FixedMul(scale, l.a.x);
+      l.a.y = FixedMul(scale, l.a.y);
+    }
+
+    if (angle)
+      AM_rotate(&l.a.x, &l.a.y, angle);
+
+    l.a.x += x;
+    l.a.y += y;
+
+    l.b.x = lineguy[i].b.x;
+    l.b.y = lineguy[i].b.y;
+
+    if (scale) {
+      l.b.x = FixedMul(scale, l.b.x);
+      l.b.y = FixedMul(scale, l.b.y);
+    }
+
+    if (angle)
+      AM_rotate(&l.b.x, &l.b.y, angle);
+
+    l.b.x += x;
+    l.b.y += y;
+
+    AM_drawMline(&l, color);
+  }
+}
+
+void AM_drawPlayers(void) {
+  int i;
+  player_t *p;
+  static int their_colors[] = {GREENS, GRAYS, BROWNS, REDS};
+  int their_color = -1;
+  int color;
+
+  if (!netgame) {
+    if (cheating)
+      AM_drawLineCharacter(cheat_player_arrow, arrlen(cheat_player_arrow), 0,
+                           am_playerpos.angle, WHITE, am_playerpos.x, am_playerpos.y);
+    else
+      AM_drawLineCharacter(player_arrow, arrlen(player_arrow), 0,
+                           am_playerpos.angle, WHITE, am_playerpos.x, am_playerpos.y);
+    return;
+  }
+  /* JOSEF: multiplayer not supported
+  for (i = 0; i < MAXPLAYERS; i++) {
+    their_color++;
+    p = &players[i];
+
+    if ((deathmatch && !singledemo) && p != plr)
+      continue;
+
+    if (!playeringame[i])
+      continue;
+
+    if (p->powers[pw_invisibility])
+      color = 246; // *close* to black
+    else
+      color = their_colors[their_color];
+
+    AM_drawLineCharacter(player_arrow, arrlen(player_arrow), 0, p->mo->angle,
+                         color, p->mo->x, p->mo->y);
+  }
+  */
+}
 
 void AM_Drawer(pixel_t* fb_tensor) {
     fb = fb_tensor; // JOSEF
@@ -958,6 +1050,7 @@ void AM_Drawer(pixel_t* fb_tensor) {
     if (grid)
         AM_drawGrid(GRIDCOLORS);
     AM_drawWalls();
+    AM_drawPlayers();
 
     
     // mline_t ln = {{0, 0}, {10<< FRACBITS, 20<< FRACBITS}};
