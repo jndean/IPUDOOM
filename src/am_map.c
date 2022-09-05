@@ -1164,9 +1164,10 @@ void AM_Drawer(void) {
 
   IPU_AM_Drawer() ;
 
-  // AM_clearFB(BACKGROUND); // ON IPU
-  if (grid)
-    AM_drawGrid(GRIDCOLORS);
+  // Commented out lines are done on IPU instead
+  // AM_clearFB(BACKGROUND); 
+  // if (grid)
+  //   AM_drawGrid(GRIDCOLORS);
   AM_drawWalls();
   AM_drawPlayers();
   if (cheating == 2)

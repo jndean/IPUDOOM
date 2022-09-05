@@ -213,6 +213,51 @@ cheatseq_t cheat_amap = CHEAT("iddt", 0);
 
 static boolean stopped = true;
 
+//
+//
+//
+void AM_activateNewScale(void) {
+  m_x += m_w / 2;
+  m_y += m_h / 2;
+  m_w = FTOM(f_w);
+  m_h = FTOM(f_h);
+  m_x -= m_w / 2;
+  m_y -= m_h / 2;
+  m_x2 = m_x + m_w;
+  m_y2 = m_y + m_h;
+}
+
+//
+//
+//
+void AM_saveScaleAndLoc(void) {
+  old_m_x = m_x;
+  old_m_y = m_y;
+  old_m_w = m_w;
+  old_m_h = m_h;
+}
+
+//
+//
+//
+void AM_restoreScaleAndLoc(void) {
+
+  m_w = old_m_w;
+  m_h = old_m_h;
+  if (!followplayer) {
+    m_x = old_m_x;
+    m_y = old_m_y;
+  } else {
+    m_x = am_playerpos.x - m_w / 2;
+    m_y = am_playerpos.y - m_h / 2;
+  }
+  m_x2 = m_x + m_w;
+  m_y2 = m_y + m_h;
+
+  // Change the scaling multipliers
+  scale_mtof = FixedDiv(f_w << FRACBITS, m_w);
+  scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+}
 
 //
 // Determines bounding box of all vertices,
@@ -365,7 +410,6 @@ void AM_LevelInit(void) {
 void AM_Stop(void) {
   // static event_t st_notify = {0, ev_keyup, AM_MSGEXITED, 0}; // LATER
 
-  ipuprint("Stopping automap");
   // AM_unloadPics();  // JOSEF
   automapactive = false;
   // ST_Responder(&st_notify);  // LATER
@@ -392,6 +436,24 @@ void AM_Start(void) {
 }
 
 //
+// set the window scale to the maximum size
+//
+void AM_minOutWindowScale(void) {
+  scale_mtof = min_scale_mtof;
+  scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+  AM_activateNewScale();
+}
+
+//
+// set the window scale to the minimum size
+//
+void AM_maxOutWindowScale(void) {
+  scale_mtof = max_scale_mtof;
+  scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+  AM_activateNewScale();
+}
+
+//
 // Handle events (user inputs) in automap mode
 //
 boolean AM_Responder(event_t *ev) {
@@ -402,7 +464,7 @@ boolean AM_Responder(event_t *ev) {
   int key;
   rc = false;
 
-  /* LATER
+  /* JOSEF: No Joystick support
   if (ev->type == ev_joystick && joybautomap >= 0 &&
       (ev->data1 & (1 << joybautomap)) != 0) {
     joywait = I_GetTime() + 5;
@@ -434,7 +496,6 @@ boolean AM_Responder(event_t *ev) {
 
     if (key == key_map_east) // pan right
     {
-      /* LATER
       if (!followplayer)
         m_paninc.x = FTOM(F_PANINC);
       else
@@ -465,14 +526,11 @@ boolean AM_Responder(event_t *ev) {
     {
       mtof_zoommul = M_ZOOMIN;
       ftom_zoommul = M_ZOOMOUT;
-      */
     } else if (key == key_map_toggle) {
       bigstate = 0;
       viewactive = true;
       AM_Stop();
-    } 
-    /* LATER 
-    else if (key == key_map_maxzoom) {
+    } else if (key == key_map_maxzoom) {
       bigstate = !bigstate;
       if (bigstate) {
         AM_saveScaleAndLoc();
@@ -482,17 +540,23 @@ boolean AM_Responder(event_t *ev) {
     } else if (key == key_map_follow) {
       followplayer = !followplayer;
       f_oldloc.x = INT_MAX;
+      /* LATER
       if (followplayer)
         plr->message = (AMSTR_FOLLOWON);
       else
         plr->message = (AMSTR_FOLLOWOFF);
+      */
     } else if (key == key_map_grid) {
       grid = !grid;
+      /* LATER
       if (grid)
         plr->message = (AMSTR_GRIDON);
       else
         plr->message = (AMSTR_GRIDOFF);
-    } else if (key == key_map_mark) {
+      */
+    } 
+    /* LATER
+    else if (key == key_map_mark) {
       M_snprintf(buffer, sizeof(buffer), "%s %d", (AMSTR_MARKEDSPOT),
                  markpointnum);
       plr->message = buffer;
@@ -509,6 +573,7 @@ boolean AM_Responder(event_t *ev) {
       rc = false;
       cheating = (cheating + 1) % 3;
     }
+    */
   } else if (ev->type == ev_keyup) {
     rc = false;
     key = ev->data1;
@@ -529,25 +594,56 @@ boolean AM_Responder(event_t *ev) {
       mtof_zoommul = FRACUNIT;
       ftom_zoommul = FRACUNIT;
     }
-  */
   }
-
-  if (bigstate) {} // DELETEME JOSEF prevent no unused var
 
   return rc;
 }
 
+//
+// Zooming
+//
+void AM_changeWindowScale(void) {
+
+  // Change the scaling multipliers
+  scale_mtof = FixedMul(scale_mtof, mtof_zoommul);
+  scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+
+  if (scale_mtof < min_scale_mtof)
+    AM_minOutWindowScale();
+  else if (scale_mtof > max_scale_mtof)
+    AM_maxOutWindowScale();
+  else
+    AM_activateNewScale();
+}
+
+//
+//
+//
+void AM_doFollowPlayer(void) {
+
+  if (f_oldloc.x != am_playerpos.x || f_oldloc.y != am_playerpos.y) {
+    m_x = FTOM(MTOF(am_playerpos.x)) - m_w / 2;
+    m_y = FTOM(MTOF(am_playerpos.y)) - m_h / 2;
+    m_x2 = m_x + m_w;
+    m_y2 = m_y + m_h;
+    f_oldloc.x = am_playerpos.x;
+    f_oldloc.y = am_playerpos.y;
+
+    //  m_x = FTOM(MTOF(plr->mo->x - m_w/2));
+    //  m_y = FTOM(MTOF(plr->mo->y - m_h/2));
+    //  m_x = plr->mo->x - m_w/2;
+    //  m_y = plr->mo->y - m_h/2;
+  }
+}
 
 //
 // Updates on Game Tick
 //
 void AM_Ticker(void) {
-  // ipuprint("TICK!\n");
   if (!automapactive) 
     return;
 
   amclock++;
-/* LATER
 
   if (followplayer)
     AM_doFollowPlayer();
@@ -559,8 +655,6 @@ void AM_Ticker(void) {
   // Change x,y location
   if (m_paninc.x || m_paninc.y)
     AM_changeWindowLoc();
-
-*/
 
   // Update light level
   // AM_updateLightLev(); // NOT JOSEF
@@ -764,18 +858,57 @@ void AM_drawMline(mline_t *ml, int color) {
     AM_drawFline(&fl, color); // draws it on frame buffer using fb coords
 }
 
+//
+// Draws flat (floor/ceiling tile) aligned grid lines.
+//
+void AM_drawGrid(int color) {
+  fixed_t x, y;
+  fixed_t start, end;
+  mline_t ml;
+
+  // Figure out start of vertical gridlines
+  start = m_x;
+  if ((start - bmaporgx) % (MAPBLOCKUNITS << FRACBITS))
+    start += (MAPBLOCKUNITS << FRACBITS) -
+             ((start - bmaporgx) % (MAPBLOCKUNITS << FRACBITS));
+  end = m_x + m_w;
+
+  // draw vertical gridlines
+  ml.a.y = m_y;
+  ml.b.y = m_y + m_h;
+  for (x = start; x < end; x += (MAPBLOCKUNITS << FRACBITS)) {
+    ml.a.x = x;
+    ml.b.x = x;
+    AM_drawMline(&ml, color);
+  }
+
+  // Figure out start of horizontal gridlines
+  start = m_y;
+  if ((start - bmaporgy) % (MAPBLOCKUNITS << FRACBITS))
+    start += (MAPBLOCKUNITS << FRACBITS) -
+             ((start - bmaporgy) % (MAPBLOCKUNITS << FRACBITS));
+  end = m_y + m_h;
+
+  // draw horizontal gridlines
+  ml.a.x = m_x;
+  ml.b.x = m_x + m_w;
+  for (y = start; y < end; y += (MAPBLOCKUNITS << FRACBITS)) {
+    ml.a.y = y;
+    ml.b.y = y;
+    AM_drawMline(&ml, color);
+  }
+}
 
 
 void AM_Drawer(pixel_t* fb_tensor) {
     fb = fb_tensor; // JOSEF
 
-    // if (!automapactive)  // LATER
-    //     return;
+    if (!automapactive)
+        return;
 
-    
     AM_clearFB(BACKGROUND); 
-    // if (grid) // LATER
-        // AM_drawGrid(GRIDCOLORS);
+    if (grid)
+        AM_drawGrid(GRIDCOLORS);
 
     
     // mline_t ln = {{0, 0}, {10<< FRACBITS, 20<< FRACBITS}};

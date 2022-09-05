@@ -1,6 +1,7 @@
 
 #include "d_mode.h"
 #include "doomstat.h"
+#include "i_swap.h"
 #include "r_defs.h"
 #include "p_local.h"
 
@@ -72,7 +73,7 @@ mapthing_t *deathmatch_p;
 mapthing_t playerstarts[MAXPLAYERS];
 
 
-
+//
 // P_LoadVertexes
 //
 void P_LoadVertexes(const unsigned char *buf) {
@@ -102,18 +103,52 @@ void P_LoadVertexes(const unsigned char *buf) {
     li->y = ml->y << FRACBITS;
   }
 
-  ipuprint("numvertexes: ");
-  ipuprintnum(numvertexes);
-  ipuprint(", 1x: ");
-  ipuprintnum(vertexes[0].x);
-  ipuprint(", -1y: ");
-  ipuprintnum(vertexes[numvertexes-1].y);
-  ipuprint("\n");
-
   // Free buffer memory.
   // JOSEF: W_ReleaseLumpNum(lump);
 
   requestedlumpnum = gamelumpnum + ML_SECTORS;
+}
+
+//
+// P_LoadSectors
+//
+void P_LoadSectors(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapsector_t *ms;
+  sector_t *ss;
+
+  int lumplen = ((int*)buf)[0];
+  numsectors = lumplen / sizeof(mapsector_t);
+  sectors = IPU_level_malloc(numsectors * sizeof(sector_t));
+  memset(sectors, 0, numsectors * sizeof(sector_t));
+
+  ms = (mapsector_t *)(&buf[sizeof(int)]);
+  ss = sectors;
+  for (i = 0; i < numsectors; i++, ss++, ms++) {
+    ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
+    ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
+    // ss->floorpic = R_FlatNumForName(ms->floorpic); // LATER
+    // ss->ceilingpic = R_FlatNumForName(ms->ceilingpic); // LATER
+    ss->lightlevel = SHORT(ms->lightlevel);
+    ss->special = SHORT(ms->special);
+    ss->tag = SHORT(ms->tag);
+    ss->thinglist = NULL;
+  }
+
+  ipuprint("numsectors: ");
+  ipuprintnum(numsectors);
+  ipuprint(", floor0: ");
+  ipuprintnum(sectors[0].floorheight);
+  ipuprint(", ceil0: ");
+  ipuprintnum(sectors[0].ceilingheight);
+  ipuprint(", floor-1: ");
+  ipuprintnum(sectors[numsectors-1].floorheight);
+  ipuprint(", ceil-1: ");
+  ipuprintnum(sectors[numsectors-1].ceilingheight);
+  ipuprint("\n");
+
+  requestedlumpnum = gamelumpnum + ML_SIDEDEFS;
 }
 
 

@@ -137,9 +137,6 @@ void P_LoadVertexes(int lump) {
     li->y = SHORT(ml->y) << FRACBITS;
   }
 
-  printf("[CPU] numvertexes: %d, 1x: %d, -1y:%d\n",
-        numvertexes, vertexes[0].x, vertexes[numvertexes-1].y);
-
   // Free buffer memory.
   W_ReleaseLumpNum(lump);
 }
@@ -275,6 +272,9 @@ void P_LoadSectors(int lump) {
     ss->tag = SHORT(ms->tag);
     ss->thinglist = NULL;
   }
+
+  printf("[CPU] numsectors: %d, floor0: %d, ceil0: %d, floor-1: %d, ceil-1: %d\n",
+  numsectors, sectors[0].floorheight, sectors[0].ceilingheight, sectors[numsectors-1].floorheight, sectors[numsectors-1].ceilingheight);
 
   W_ReleaseLumpNum(lump);
 }
