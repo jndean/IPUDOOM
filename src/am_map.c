@@ -1162,7 +1162,7 @@ void AM_Drawer(void) {
   if (!automapactive)
     return;
 
-  IPU_AM_Drawer() ;
+  IPU_AM_Drawer();
 
   // Commented out lines are done on IPU instead
   // AM_clearFB(BACKGROUND); 
@@ -1172,7 +1172,7 @@ void AM_Drawer(void) {
   // AM_drawPlayers();
   if (cheating == 2)
     AM_drawThings(THINGCOLORS, THINGRANGE);
-  AM_drawCrosshair(XHAIRCOLORS);
+  // AM_drawCrosshair(XHAIRCOLORS);
 
   AM_drawMarks();
 

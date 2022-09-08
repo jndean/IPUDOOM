@@ -119,6 +119,29 @@ mline_t cheat_player_arrow[] = {
     {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
 #undef R
 
+static const fline_t ipu_watermark_lines[] = {
+  {{0, 0}, {0, 5}}, // I
+  {{3, 0}, {3, 5}}, // P
+  {{6, 0}, {6, 3}},
+  {{3, 0}, {6, 0}},
+  {{3, 3}, {6, 3}},
+  {{9, 0}, {9, 5}}, // U
+  {{12, 0}, {12, 5}}, 
+  {{9, 5}, {12, 5}},
+  {{17, 5}, {17, 0}}, // M
+  {{17, 0}, {19, 3}}, 
+  {{21, 0}, {19, 3}},
+  {{21, 0}, {21, 5}},
+  {{24, 0}, {24, 5}}, // A
+  {{27, 0}, {27, 5}}, 
+  {{24, 0}, {27, 0}}, 
+  {{24, 3}, {27, 3}}, 
+  {{30, 0}, {30, 5}}, // P
+  {{33, 0}, {33, 3}},
+  {{30, 0}, {33, 0}},
+  {{30, 3}, {33, 3}},
+};
+
 #define R (FRACUNIT)
 mline_t triangle_guy[] = {
     {{(fixed_t)(-.867 * R), (fixed_t)(-.5 * R)},
@@ -1040,24 +1063,34 @@ void AM_drawPlayers(void) {
   */
 }
 
+void AM_drawCrosshair(int color) {
+  fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
+}
+
+void AM_drawIPUWatermark(int color) {
+  const int wmx = 283, wmy = 160;
+  for (int i = 0; i < arrlen(ipu_watermark_lines); ++i) {
+    fline_t ln = ipu_watermark_lines[i];
+    ln.a.x += wmx; ln.b.x += wmx;
+    ln.a.y += wmy; ln.b.y += wmy;
+    AM_drawFline(&ln, color);
+  }
+}
+
 void AM_Drawer(pixel_t* fb_tensor) {
-    fb = fb_tensor; // JOSEF
+  fb = fb_tensor; // JOSEF
 
-    if (!automapactive)
-        return;
+  if (!automapactive)
+      return;
 
-    AM_clearFB(BACKGROUND); 
-    if (grid)
-        AM_drawGrid(GRIDCOLORS);
-    AM_drawWalls();
-    AM_drawPlayers();
+  AM_clearFB(BACKGROUND); 
+  if (grid)
+      AM_drawGrid(GRIDCOLORS);
+  AM_drawWalls();
+  AM_drawPlayers();
+  // if (cheating == 2) // JOSEF, unsupported
+  //   AM_drawThings(THINGCOLORS, THINGRANGE);
+  AM_drawCrosshair(XHAIRCOLORS);
 
-    
-    // mline_t ln = {{0, 0}, {10<< FRACBITS, 20<< FRACBITS}};
-    fline_t fln = {{0, 0}, {10, 20}};
-    // AM_drawMline(&ln, 56);
-    AM_drawFline(&fln, 56);
-    // for (int i = 0; i < 100; ++i) {
-    //     fb[i * 321] = 56;
-    // }
+  AM_drawIPUWatermark(REDS + 2);
 }
