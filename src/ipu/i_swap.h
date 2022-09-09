@@ -33,6 +33,7 @@
 // #define SHORT(x)  ((signed short) SDL_SwapLE16(x)) // JOSEF
 // #define LONG(x)   ((signed int) SDL_SwapLE32(x))  // JOSEF
 #define SHORT(x) ((signed short) x)
+#define LONG(x) ((signed int) x)
 
 // Defines for checking the endianness of the system.
 

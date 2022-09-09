@@ -1170,11 +1170,11 @@ void AM_Drawer(void) {
   //   AM_drawGrid(GRIDCOLORS);
   // AM_drawWalls();
   // AM_drawPlayers();
-  if (cheating == 2)
-    AM_drawThings(THINGCOLORS, THINGRANGE);
+  // if (cheating == 2)
+  //   AM_drawThings(THINGCOLORS, THINGRANGE);
   // AM_drawCrosshair(XHAIRCOLORS);
 
-  AM_drawMarks();
+  // AM_drawMarks();
 
   V_MarkRect(f_x, f_y, f_w, f_h);
 }

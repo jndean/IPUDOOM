@@ -396,6 +396,7 @@ void D_DoomLoop(void) {
   I_GraphicsCheckCommandLine();
   I_SetGrabMouseCallback(D_GrabMouseCallback);
   I_InitGraphics();
+  IPU_Init();
 
   TryRunTics();
 
@@ -816,9 +817,6 @@ void D_DoomMain(void) {
   // int numiwadlumps;
 
   // print banner
-
-  printf("IPU_Init: Initialise IPU device and compute graph \n");
-  IPU_Init();
 
   printf("Z_Init: Init zone memory allocation daemon. \n");
   Z_Init();
@@ -1265,6 +1263,7 @@ void D_DoomMain(void) {
 
   printf("ST_Init: Init status bar.\n");
   ST_Init();
+  
 
   // If Doom II without a MAP01 lump, this is a store demo.
   // Moved this here so that MAP01 isn't constantly looked up

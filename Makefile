@@ -6,6 +6,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	ipu_print.gp \
 	ipu_transfer.gp \
 	ipu_malloc.gp \
+	i_video.gp \
 	g_game.gp \
 	g_game_codelets.gp \
 	am_map.gp \
@@ -15,6 +16,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	p_setup_codelets.gp \
 	p_tick.gp \
 	tables.gp \
+	v_video.gp \
 )
 
 

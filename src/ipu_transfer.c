@@ -6,9 +6,11 @@
 // #include "r_state.h"
 #include "doomdata.h"
 #include "doomstat.h"
+#include "i_system.h"
 #include "m_misc.h"
-#include "z_zone.h"
+#include "v_patch.h"
 #include "w_wad.h"
+#include "z_zone.h"
 
 #include "ipu/ipu_interface.h"
 
@@ -48,13 +50,33 @@ void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf) {
   memcpy(dst_buf, src_buf, sizeof(G_Responder_MiscValues_t));
 }
 
+void IPU_Setup_PackMarkNums(void* buf) {
+  int bufpos = 10 * sizeof(short);
+  char namebuf[9] = "AMMNUM0\0";
+
+  for (int i = 0; i < 10; ++i, ++namebuf[6]) {
+    lumpindex_t lumpnum = W_GetNumForName(namebuf);
+    int size = W_LumpLength(lumpnum);
+    if (bufpos + size > IPUAMMARKBUFSIZE) {
+      I_Error("\nERROR: not enough space for AM mark patches\n");
+    }
+    patch_t* lump = W_CacheLumpNum(lumpnum, PU_STATIC);
+    memcpy(((char*) buf) + bufpos, lump, size);
+    W_ReleaseLumpNum(lumpnum);
+    ((short*)buf)[i] = bufpos;
+    bufpos += size;
+  }
+  if (bufpos != IPUAMMARKBUFSIZE) {
+    I_Error("\nERROR: marknum patches don't fill buffer...?\n");
+  }
+}
+
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
     int size = W_LumpLength(lumpnum);
     int required = size + sizeof(int); // Space for size field
     if (required > IPUMAXLUMPBYTES) {
-        printf("\nNeed %d bytes to transfer lump %d to IPU, only have %d\n",
+        I_Error("\nERROR: Need %d bytes to transfer lump %d to IPU, only have %d\n",
         required, lumpnum, IPUMAXLUMPBYTES);
-        exit(1);
     }
     ((int*)buf)[0] = size;
     byte* data = W_CacheLumpNum(lumpnum, PU_STATIC);

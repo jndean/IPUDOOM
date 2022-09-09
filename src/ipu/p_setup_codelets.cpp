@@ -11,8 +11,11 @@ extern "C" {
     void P_LoadSideDefs(const unsigned char *buf);
     void P_LoadLineDefs(const unsigned char *buf);
     void P_LoadSubsectors(const unsigned char *buf);
+    void IPU_Setup_UnpackMarkNums(const unsigned char* buf);
 };
 
+
+// --------------- P_Setup ----------------- //
 
 class P_SetupLevel_pt0_Vertex : public poplar::Vertex {
   poplar::Output<int> lumpNum;
@@ -88,6 +91,17 @@ class P_LoadSubsectors_Vertex : public poplar::Vertex {
   bool compute() {
     P_LoadSubsectors(&lumpBuf[0]); 
     *lumpNum = requestedlumpnum;
+    return true;
+  }
+};
+
+// ------------ IPU_Setup ------------ //
+
+class IPU_Setup_UnpackMarknumSprites_Vertex : public poplar::Vertex {
+  poplar::Input<poplar::Vector<unsigned char>> buf;
+ public:
+  bool compute() {
+    IPU_Setup_UnpackMarkNums(&buf[0]);     
     return true;
   }
 };

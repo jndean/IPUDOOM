@@ -39,7 +39,7 @@
 #define PACKEDATTR __attribute__((packed))
 
 #else
-#define PACKEDATTR
+#define PACKEDATTR __attribute__((packed))
 #endif
 
 #define PACKEDPREFIX

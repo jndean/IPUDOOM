@@ -38,6 +38,7 @@ class IpuDoom {
 
   void buildIpuGraph();
   void run_AM_Drawer();
+  void run_IPU_Setup();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
   void run_G_Responder(G_Responder_MiscValues_t* buf);
@@ -219,20 +220,41 @@ void IpuDoom::buildIpuGraph() {
   });
 
 
+  // -------------- IPU state setup ------------//
+
+  poplar::Tensor marknumSpriteBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUAMMARKBUFSIZE}, "marknumSpriteBuf");
+  m_ipuGraph.setTileMapping(marknumSpriteBuf, 0);
+  auto marknumSpriteBufStream =
+      m_ipuGraph.addHostToDeviceFIFO("marknumSpriteBuf-stream", poplar::UNSIGNED_CHAR, IPUAMMARKBUFSIZE);
+
+  poplar::ComputeSet IPU_Setup_UnpackMarknumSprites_CS = m_ipuGraph.addComputeSet("IPU_Setup_UnpackMarknumSprites_CS");
+  vtx = m_ipuGraph.addVertex(IPU_Setup_UnpackMarknumSprites_CS, "IPU_Setup_UnpackMarknumSprites_Vertex", 
+  {{"buf", marknumSpriteBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, IPUAMMARKBUFSIZE * 100);
+  
+  poplar::program::Sequence IPU_Setup_prog({
+      poplar::program::Copy(marknumSpriteBufStream, marknumSpriteBuf),
+      poplar::program::Execute(IPU_Setup_UnpackMarknumSprites_CS),
+      GetPrintbuf_prog,
+  });
+
 
   // ---------------- Final prog --------------//
 
   printf("Creating engine...\n");
   m_ipuEngine = std::make_unique<poplar::Engine>(std::move(poplar::Engine(
     m_ipuGraph, {
-      AM_Drawer_prog,
+      IPU_Setup_prog,
       G_DoLoadLevel_prog,
       G_Ticker_prog,
       G_Responder_prog,
+      AM_Drawer_prog,
   })));
 
-  // m_ipuEngine->connectStream("frame-instream", I_VideoBuffer); // Can do this is IPU_Init run afer video
-  // init m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
+  m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
+  m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
+
   m_ipuEngine->connectStreamToCallback("printbuf-stream", [](void* p) {
     if (((char*)p)[0] == '\0') return;
     printf("[IPU] %.*s\n", IPUPRINTBUFSIZE, (char*)p);
@@ -242,32 +264,33 @@ void IpuDoom::buildIpuGraph() {
 
   m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
-    printf("Fulfilling request for lump %d\n", m_lumpNum_h);
     IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
   });
 
+  m_ipuEngine->connectStreamToCallback("marknumSpriteBuf-stream", [this](void* p) {
+    IPU_Setup_PackMarkNums(p);
+  });
+
   m_ipuEngine->load(m_ipuDevice);
+
 }
 
-void IpuDoom::run_AM_Drawer() {
-  static bool setup = true;
-  if (setup) {
-    setup = false;
-    m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
-    m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
-  }
-  m_ipuEngine->run(0);
-}
+
+void IpuDoom::run_IPU_Setup() { m_ipuEngine->run(0); }
 void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(1); }
 void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
 void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* src_buf) { 
   IPU_G_Responder_PackMiscValues(src_buf, m_miscValuesBuf_h);
   m_ipuEngine->run(3); 
 }
+void IpuDoom::run_AM_Drawer() { m_ipuEngine->run(4); }
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 extern "C" {
-void IPU_Init(void) { ipuDoomInstance = std::make_unique<IpuDoom>(); }
+void IPU_Init() { 
+  ipuDoomInstance = std::make_unique<IpuDoom>(); 
+  ipuDoomInstance->run_IPU_Setup(); 
+}
 void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
 void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }

@@ -3,6 +3,7 @@
 
 #include "ipu_interface.h"
 #include "ipu_transfer.h"
+#include "ipu_print.h"
 
 int gamelumpnum;
 int requestedlumpnum;
@@ -23,6 +24,14 @@ void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
   }
 }
 
+void IPU_Setup_UnpackMarkNums(const unsigned char* buf) {
+  short* offsets = (short*) buf;
+  const int offsetssize = 10 * sizeof(short);
+  memcpy(markbuf, &offsets[10], IPUAMMARKBUFSIZE - offsetssize);
+  for(int i = 0; i < 10; ++i) {
+    marknums[i] = (patch_t*) &markbuf[offsets[i] - offsetssize];
+  }
+}
 
 /*
 void IPU_UnpackVertexes(const unsigned char* buf) {

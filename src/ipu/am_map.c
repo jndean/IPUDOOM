@@ -7,6 +7,7 @@
 #include "r_state.h"
 #include "st_stuff.h"
 #include "tables.h"
+#include "v_video.h"
 
 #include "ipu_print.h"
 #include "ipu_interface.h"
@@ -227,7 +228,8 @@ static fixed_t scale_ftom;
 // static player_t *plr; // the player represented by an arrow
 IPUPlayerPos_t am_playerpos;
 
-static patch_t *marknums[10]; // numbers used for marking by the automap
+patch_t *marknums[10]; // numbers used for marking by the automap
+unsigned char markbuf[IPUAMMARKBUFSIZE]; // JOSEF: static mark patch storage, avoiding disk
 static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 static int markpointnum = 0;                  // next point to be assigned
 
@@ -281,6 +283,15 @@ void AM_restoreScaleAndLoc(void) {
   // Change the scaling multipliers
   scale_mtof = FixedDiv(f_w << FRACBITS, m_w);
   scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+}
+
+//
+// adds a marker at the current location
+//
+void AM_addMark(void) {
+  markpoints[markpointnum].x = m_x + m_w / 2;
+  markpoints[markpointnum].y = m_y + m_h / 2;
+  markpointnum = (markpointnum + 1) % AM_NUMMARKPOINTS;
 }
 
 //
@@ -434,7 +445,7 @@ void AM_LevelInit(void) {
 void AM_Stop(void) {
   // static event_t st_notify = {0, ev_keyup, AM_MSGEXITED, 0}; // LATER
 
-  // AM_unloadPics();  // JOSEF
+  // AM_unloadPics();  // JOSEF: pics loaded once on startup
   automapactive = false;
   // ST_Responder(&st_notify);  // LATER
   stopped = true;
@@ -455,7 +466,7 @@ void AM_Start(void) {
     lastepisode = gameepisode;
   }
   AM_initVariables();
-  // AM_loadPics(); // LATER
+  // AM_loadPics(); // JOSEF: pics loaded once on startup
   ipuprint("Starting automap");
 }
 
@@ -579,19 +590,21 @@ boolean AM_Responder(event_t *ev) {
         plr->message = (AMSTR_GRIDOFF);
       */
     } 
-    /* LATER
     else if (key == key_map_mark) {
+      /* LATER
       M_snprintf(buffer, sizeof(buffer), "%s %d", (AMSTR_MARKEDSPOT),
                  markpointnum);
       plr->message = buffer;
+      */
       AM_addMark();
     } else if (key == key_map_clearmark) {
       AM_clearMarks();
-      plr->message = (AMSTR_MARKSCLEARED);
+      // plr->message = (AMSTR_MARKSCLEARED); // LATER
     } else {
       rc = false;
     }
 
+    /* JOSEF: cheating unsupported
     if ((!deathmatch || gameversion <= exe_doom_1_8) &&
         cht_CheckCheat(&cheat_amap, ev->data2)) {
       rc = false;
@@ -1063,6 +1076,24 @@ void AM_drawPlayers(void) {
   */
 }
 
+void AM_drawMarks(void) {
+  int i, fx, fy, w, h;
+
+  for (i = 0; i < AM_NUMMARKPOINTS; i++) {
+    if (markpoints[i].x != -1) {
+      //      w = SHORT(marknums[i]->width);
+      //      h = SHORT(marknums[i]->height);
+      w = 5; // because something's wrong with the wad, i guess
+      h = 6; // because something's wrong with the wad, i guess
+      fx = CXMTOF(markpoints[i].x);
+      fy = CYMTOF(markpoints[i].y);
+      if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h) {
+        V_DrawPatch(fx, fy, marknums[i]);
+      }
+    }
+  }
+}
+
 void AM_drawCrosshair(int color) {
   fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
 }
@@ -1079,6 +1110,7 @@ void AM_drawIPUWatermark(int color) {
 
 void AM_Drawer(pixel_t* fb_tensor) {
   fb = fb_tensor; // JOSEF
+  V_UseBuffer(fb);
 
   if (!automapactive)
       return;
@@ -1091,6 +1123,7 @@ void AM_Drawer(pixel_t* fb_tensor) {
   // if (cheating == 2) // JOSEF, unsupported
   //   AM_drawThings(THINGCOLORS, THINGRANGE);
   AM_drawCrosshair(XHAIRCOLORS);
+  AM_drawMarks();
 
   AM_drawIPUWatermark(REDS + 2);
 }

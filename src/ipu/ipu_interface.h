@@ -15,6 +15,7 @@ extern "C" {
 #define IPUMISCVALUESSIZE 116
 #define IPUPRINTBUFSIZE 2048
 #define IPUMAXEVENTSPERTIC 5
+#define IPUAMMARKBUFSIZE 544
 
 
 typedef struct {
