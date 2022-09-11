@@ -949,7 +949,7 @@ void AM_drawWalls(void) {
     l.a.y = lines[i].v1->y;
     l.b.x = lines[i].v2->x;
     l.b.y = lines[i].v2->y;
-    // if (cheating || (lines[i].flags & ML_MAPPED)) { // LATER
+    if (/*cheating JOSEF ||*/ lines[i].flags & ML_MAPPED) {
       if ((lines[i].flags & LINE_NEVERSEE) && !cheating)
         continue;
       if (!lines[i].backsector) {
@@ -973,7 +973,7 @@ void AM_drawWalls(void) {
           AM_drawMline(&l, TSWALLCOLORS + lightlev);
         }
       }
-    // } // LATER
+    } 
     /* LATER
     else if (plr->powers[pw_allmap]) {
       if (!(lines[i].flags & LINE_NEVERSEE))

@@ -1,4 +1,6 @@
 #include "doomstat.h"
+#include "r_defs.h"
+#include "r_state.h"
 // #include "w_wad.h"
 
 #include "ipu_interface.h"
@@ -16,11 +18,16 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
 
 void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
   gamestate = pack->gamestate;
-  if (gamestate == GS_LEVEL) {
-    am_playerpos.x = pack->player_mobj.x;
-    am_playerpos.y = pack->player_mobj.y;
-    am_playerpos.z = pack->player_mobj.z;
-    am_playerpos.angle = pack->player_mobj.angle;
+  if (gamestate != GS_LEVEL)
+    return;
+  am_playerpos.x = pack->player_mobj.x;
+  am_playerpos.y = pack->player_mobj.y;
+  am_playerpos.z = pack->player_mobj.z;
+  am_playerpos.angle = pack->player_mobj.angle;
+  for (int i = 0; i < IPUMAPPEDLINEUPDATES; ++i) {
+    int update = pack->mappedline_updates[i];
+    if (update == -1) break;
+    lines[update].flags |= ML_MAPPED;
   }
 }
 

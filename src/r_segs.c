@@ -37,6 +37,8 @@
 #include "tables.h"
 #include "v_patch.h"
 
+#include "ipu_transfer.h"
+
 // OPTIMIZE: closed two sided lines as single sided
 
 // True if any of the segs textures might be visible.
@@ -345,8 +347,11 @@ void R_StoreWallRange(int start, int stop) {
   sidedef = curline->sidedef;
   linedef = curline->linedef;
 
-  // mark the segment as visible for auto map
-  linedef->flags |= ML_MAPPED;
+  if (!(linedef->flags & ML_MAPPED)) { // JOSEF: send new visible lines to IPU
+    // mark the segment as visible for auto map
+    linedef->flags |= ML_MAPPED;
+    IPU_NotifyLineMapped(linedef);
+  }
 
   // calculate rw_distance for scale calculation
   rw_normalangle = curline->angle + ANG90;

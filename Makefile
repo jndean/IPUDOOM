@@ -20,7 +20,6 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 )
 
 
-
 CPU_FLAGS = -I src -I /usr/local/include/SDL2 -I/usr/include/libpng16 -I/opt/poplar/include \
       		-D_REENTRANT -lSDL2 -lSDL2_mixer -lSDL2_net -lpng16 -lz -lpoplar \
      		-Wall -Werror \

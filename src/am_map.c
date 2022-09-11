@@ -1162,19 +1162,16 @@ void AM_Drawer(void) {
   if (!automapactive)
     return;
 
-  IPU_AM_Drawer();
+  AM_clearFB(BACKGROUND); 
+  if (grid)
+    AM_drawGrid(GRIDCOLORS);
+  AM_drawWalls();
+  AM_drawPlayers();
+  if (cheating == 2)
+    AM_drawThings(THINGCOLORS, THINGRANGE);
+  AM_drawCrosshair(XHAIRCOLORS);
 
-  // Commented out lines are done on IPU instead
-  // AM_clearFB(BACKGROUND); 
-  // if (grid)
-  //   AM_drawGrid(GRIDCOLORS);
-  // AM_drawWalls();
-  // AM_drawPlayers();
-  // if (cheating == 2)
-  //   AM_drawThings(THINGCOLORS, THINGRANGE);
-  // AM_drawCrosshair(XHAIRCOLORS);
-
-  // AM_drawMarks();
+  AM_drawMarks();
 
   V_MarkRect(f_x, f_y, f_w, f_h);
 }

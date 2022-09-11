@@ -205,8 +205,12 @@ void D_Display(void) {
   case GS_LEVEL:
     if (!gametic)
       break;
+
+    /* JOSEF: IPU draws automap now
     if (automapactive)
       AM_Drawer();
+    */
+    
     if (wipe || (viewheight != SCREENHEIGHT && fullscreen))
       redrawsbar = true;
     if (inhelpscreensstate && !inhelpscreens)
@@ -228,8 +232,10 @@ void D_Display(void) {
   I_UpdateNoBlit();
 
   // draw the view directly
-  if (gamestate == GS_LEVEL && !automapactive && gametic)
+  if (gamestate == GS_LEVEL && /* JOSEF !automapactive && */ gametic)
     R_RenderPlayerView(&players[displayplayer]);
+
+  IPU_AM_Drawer(); // JOSEF: After RenderplayerView for wall updates
 
   if (gamestate == GS_LEVEL && gametic)
     HU_Drawer();

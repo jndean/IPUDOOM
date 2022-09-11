@@ -16,6 +16,7 @@ extern "C" {
 #define IPUPRINTBUFSIZE 2048
 #define IPUMAXEVENTSPERTIC 5
 #define IPUAMMARKBUFSIZE 544
+#define IPUMAPPEDLINEUPDATES 2
 
 
 typedef struct {
@@ -32,6 +33,7 @@ typedef struct {
 typedef struct {
     gamestate_t gamestate;
     IPUPlayerPos_t player_mobj;
+    int mappedline_updates[IPUMAPPEDLINEUPDATES];
 } G_Ticker_MiscValues_t;
 
 
