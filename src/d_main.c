@@ -115,6 +115,9 @@ boolean storedemo;
 // If true, the main game loop has started.
 boolean main_loop_started = false;
 
+// Josef: CPU traces walls while IPU does automap
+boolean livewallupdates = false;
+
 char wadfile[1024]; // primary wad file
 char mapdir[1024];  // directory of development maps
 
@@ -232,7 +235,8 @@ void D_Display(void) {
   I_UpdateNoBlit();
 
   // draw the view directly
-  if (gamestate == GS_LEVEL && /* JOSEF !automapactive && */ gametic)
+  int busy_with_automap = automapactive && !livewallupdates;  // JOSEF
+  if (gamestate == GS_LEVEL && !busy_with_automap && gametic)
     R_RenderPlayerView(&players[displayplayer]);
 
   IPU_AM_Drawer(); // JOSEF: After RenderplayerView for wall updates
@@ -826,6 +830,10 @@ void D_DoomMain(void) {
 
   printf("Z_Init: Init zone memory allocation daemon. \n");
   Z_Init();
+
+  // JOSEF: flag to enable CPU wall mapping while in automap
+  if (M_CheckParm("-livewallupdates"))
+    livewallupdates = true;
 
   //!
   // @category net

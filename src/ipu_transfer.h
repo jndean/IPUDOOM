@@ -15,6 +15,7 @@ void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf);
 void IPU_LoadLumpForTransfer(int lumpnum, byte* buf);
 void IPU_Setup_PackMarkNums(void* buf);
 void IPU_NotifyLineMapped(line_t *line);
+void IPU_CheckAlreadyMappedLines(void);
 
 
 

@@ -63,6 +63,7 @@
 #include "z_zone.h"
 
 #include "ipu_host.h"
+#include "ipu_transfer.h"
 
 
 #define SAVEGAMESIZE 0x2c000
@@ -1356,6 +1357,8 @@ void G_DoLoadGame(void) {
   P_UnArchiveWorld();
   P_UnArchiveThinkers();
   P_UnArchiveSpecials();
+
+  IPU_CheckAlreadyMappedLines();
 
   if (!P_ReadSaveGameEOF())
     I_Error("Bad savegame");

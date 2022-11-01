@@ -16,6 +16,7 @@
 
 #include "ipu/ipu_interface.h"
 
+
 void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   assert(sizeof(G_LoadLevel_MiscValues_t) <= IPUMISCVALUESSIZE);
 
@@ -35,7 +36,7 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
 }
 
 
-#define MAX_BUFFERED_MAPPED_LINES 50
+#define MAX_BUFFERED_MAPPED_LINES 1000
 static int mapped_line_buf[MAX_BUFFERED_MAPPED_LINES];
 static int mapped_line_count = 0;
 
@@ -44,6 +45,14 @@ void IPU_NotifyLineMapped(line_t *line) {
   mapped_line_buf[mapped_line_count++] = index;
   if (mapped_line_count == MAX_BUFFERED_MAPPED_LINES) {
     I_Error("\nERROR: mapped_line_buf circular buffer is overflowing\n");
+  }
+}
+
+void IPU_CheckAlreadyMappedLines(void) {
+  for (int i = 0; i < numlines; ++i) {
+    if (lines[i].flags & ML_MAPPED) {
+      IPU_NotifyLineMapped(&lines[i]);
+   }
   }
 }
 
