@@ -16,7 +16,7 @@
 //	DOOM graphics stuff for SDL.
 //
 
-
+/* LATER
 #include <stdint.h>
 #include <limits.h>
 #include <stdio.h>
@@ -43,7 +43,6 @@
 #include "SDL2/SDL_video.h"
 #include "d_event.h"
 #include "d_loop.h"
-#include "doomtype.h"
 #include "i_input.h"
 #include "i_joystick.h"
 #include "i_system.h"
@@ -56,9 +55,11 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+*/
 
-#include "streaming.h"
+#include "doomtype.h"
 
+/* LATER
 // These are (1) the window (or the full screen) that our game is rendered to
 // and (2) the renderer that scales the texture (see below) into this window.
 
@@ -165,10 +166,12 @@ static int startup_delay = 10;
 static int grabmouse = true;
 static boolean nograbmouse_override = false;
 
-// The screen buffer; this is modified to draw things to the screen
+*/
 
+// The screen buffer; this is modified to draw things to the screen
 pixel_t *I_VideoBuffer = NULL;
 
+/* LATER
 // If true, game is running as a screensaver
 
 boolean screensaver_mode = false;
@@ -787,11 +790,6 @@ void I_FinishUpdate (void)
                 updatecounter = 0;
             }
         }
-    }
-
-    // JOSEF: Streaming
-    for (int i = 0; i < SCREENHEIGHT; i += STREAMLINESPERMESSAGE) {
-        send_scanline(I_VideoBuffer, i);
     }
 
     if (palette_to_set)
@@ -1469,3 +1467,5 @@ void I_BindVideoVariables(void)
     M_BindIntVariable("usegamma",                  &usegamma);
     M_BindIntVariable("png_screenshots",           &png_screenshots);
 }
+
+*/

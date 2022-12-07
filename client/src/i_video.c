@@ -789,10 +789,8 @@ void I_FinishUpdate (void)
         }
     }
 
-    // JOSEF: Streaming
-    for (int i = 0; i < SCREENHEIGHT; i += STREAMLINESPERMESSAGE) {
-        send_scanline(I_VideoBuffer, i);
-    }
+    // JOSEF: streaming
+    // recv_msgs();
 
     if (palette_to_set)
     {

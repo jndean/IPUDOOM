@@ -182,6 +182,9 @@ void D_Display(void) {
   boolean wipe;
   boolean redrawsbar;
 
+  // JOSEF: streaming
+  recv_loop();
+
   if (nodrawers)
     return; // for comparative timing / profiling
 
@@ -828,10 +831,12 @@ void D_DoomMain(void) {
   // int numiwadlumps;
 
   // JOSEF
-  wait_for_client_connect();
+  connect_to_server();
+
 
   printf("Z_Init: Init zone memory allocation daemon. \n");
   Z_Init();
+
 
   // JOSEF: flag to enable CPU wall mapping while in automap
   if (M_CheckParm("-livewallupdates"))
