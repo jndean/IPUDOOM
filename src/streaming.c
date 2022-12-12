@@ -18,7 +18,7 @@ static unsigned int clientaddr_len;
 // Driver code
 void wait_for_client_connect() {
 
-	StreamMsg msg;
+	LargestMsgType rcv[1];
 	struct sockaddr_in servaddr;
 		
 	// Creating socket file descriptor
@@ -45,16 +45,17 @@ void wait_for_client_connect() {
 	clientaddr_len = sizeof(cliaddr);
 	recvfrom(
         sockfd,
-        (char *)(&msg), sizeof(msg),
+        (char *)(rcv), sizeof(rcv),
         MSG_WAITALL,
         (struct sockaddr *) &cliaddr, &clientaddr_len
     );
-    if (msg.type != MSGT_HELLO) {
+    if (rcv->type != MSGT_HELLO) {
 		perror("Client said something other than hello?");
 		exit(EXIT_FAILURE);
     }
 	printf("Client says hello\n");
 
+    HelloMsg msg;
     msg.type = MSGT_HELLO;
     sendto(
         sockfd,
@@ -68,7 +69,7 @@ void wait_for_client_connect() {
 
 
 void send_scanline(unsigned char *data, unsigned char linenum) {
-    StreamMsg msg;
+    ScanlineMsg msg;
     msg.type = MSGT_SCANLINE;
     msg.idx = linenum;
     memcpy(msg.data, &data[linenum * STREAMWIDTH], STREAMSCANSIZE);

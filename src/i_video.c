@@ -790,9 +790,15 @@ void I_FinishUpdate (void)
     }
 
     // JOSEF: Streaming
-    for (int i = 0; i < SCREENHEIGHT; i += STREAMLINESPERMESSAGE) {
+    const int stride = 1;
+    static int offset = 0;
+    for (int i = offset; i < SCREENHEIGHT; i += STREAMLINESPERMESSAGE * stride) {
+        if (i > 190) {
+            printf(">%d ", i);
+        }
         send_scanline(I_VideoBuffer, i);
     }
+    offset = (offset + 1) % stride;
 
     if (palette_to_set)
     {

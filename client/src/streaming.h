@@ -5,7 +5,6 @@
 
 
 void connect_to_server();
-void recv_msgs();
 void recv_loop();
 
 

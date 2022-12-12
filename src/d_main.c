@@ -146,6 +146,7 @@ void D_ProcessEvents(void) {
       continue; // menu ate the event
     G_Responder(ev);
    
+    // JOSEF
     if (ev_buf.num_ev < IPUMAXEVENTSPERTIC) {
       ev_buf.events[ev_buf.num_ev++] = *ev;
     } else {

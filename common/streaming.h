@@ -2,21 +2,34 @@
 #define __COMMON_STREAMING__
 
 
-#define STREAMPORT            (6666)
-#define STREAMWIDTH           (320)
-#define STREAMLINESPERMESSAGE (2)
+#define STREAMPORT             (6666)
+#define STREAMWIDTH            (320)
+#define STREAMLINESPERMESSAGE  (1)
+#define STREAMEVENTSPERMESSAGE (5)
 
-#define STREAMSCANSIZE (STREAMLINESPERMESSAGE*STREAMWIDTH)
+#define STREAMSCANSIZE (STREAMLINESPERMESSAGE * STREAMWIDTH)
 
-typedef struct msg_ {
+typedef struct {
+	unsigned char type;
+} HelloMsg;
+
+typedef struct {
 	unsigned char type;
     unsigned char idx;
 	unsigned char data[STREAMSCANSIZE];
-} StreamMsg;
+} ScanlineMsg;
 
+typedef struct {
+	unsigned char type;
+    unsigned char count;
+	unsigned char events[20 * STREAMEVENTSPERMESSAGE];
+} EventMsg;
+
+typedef ScanlineMsg LargestMsgType;
 
 #define MSGT_HELLO (0)
 #define MSGT_SCANLINE (1)
+#define MSGT_EVENT (2)
 
 
 #endif  // __COMMON_STREAMING__

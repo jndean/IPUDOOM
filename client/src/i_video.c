@@ -789,9 +789,6 @@ void I_FinishUpdate (void)
         }
     }
 
-    // JOSEF: streaming
-    // recv_msgs();
-
     if (palette_to_set)
     {
         SDL_SetPaletteColors(screenbuffer->format->palette, palette, 0, 256);
