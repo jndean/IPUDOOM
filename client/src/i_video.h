@@ -100,4 +100,7 @@ void I_GetWindowPosition(int *x, int *y, int w, int h);
 // Joystic/gamepad hysteresis
 extern unsigned int joywait;
 
+// JOSEF
+void I_GetEvent(void);
+
 #endif
