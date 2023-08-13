@@ -1,6 +1,7 @@
 #include "ipu_host.h"
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <poplar/DeviceManager.hpp>
 #include <poplar/Engine.hpp>
