@@ -4,6 +4,17 @@
 
 A WIP to put Doom 1993 on the IPU.
 
+```
+# Install dependencies
+sudo apt update; sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev g++-7
+# Build binary
+make
+# Download shareware resource pack
+wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
+# Run
+./build/doom -iwad doom1.wad -width 320 -nosound 
+```
+
 
 
 Activity Log:

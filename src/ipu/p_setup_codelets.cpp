@@ -1,99 +1,66 @@
 #include <Vertex.hpp>
 
+#include <print.h>
+
+#include "doomdata.h"
+
 #include "ipu_transfer.h"
 
 
 extern "C" {
-    void P_SetupLevel_pt0(void);
+    void P_SetupLevel_pt0(const unsigned char *buf);
     void P_LoadBlockMap(const unsigned char *buf);
     void P_LoadVertexes(const unsigned char *buf);
     void P_LoadSectors(const unsigned char *buf);
     void P_LoadSideDefs(const unsigned char *buf);
     void P_LoadLineDefs(const unsigned char *buf);
     void P_LoadSubsectors(const unsigned char *buf);
+    void P_LoadNodes(const unsigned char *buf);
+    void P_LoadThings(const unsigned char *buf);
     void IPU_Setup_UnpackMarkNums(const unsigned char* buf);
 };
 
 
 // --------------- P_Setup ----------------- //
 
-class P_SetupLevel_pt0_Vertex : public poplar::Vertex {
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_SetupLevel_pt0();
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
+struct P_SetupLevel_SubFunc {
+  void (*func)(const unsigned char*);
+  int lump_num;
+};
+static P_SetupLevel_SubFunc setupLevelSubfuncs[14] = {
+  {P_SetupLevel_pt0, 0},
+  {P_LoadBlockMap, ML_BLOCKMAP},
+  {P_LoadVertexes, ML_VERTEXES},
+  {P_LoadSectors, ML_SECTORS},
+  {P_LoadSideDefs, ML_SIDEDEFS},
+  {P_LoadLineDefs, ML_LINEDEFS},
+  {P_LoadSubsectors, ML_SSECTORS},
+  {P_LoadNodes, ML_NODES},
+  // {P_LoadSegs, ML_SEGS},
+  // {P_GroupLines, ML_SEGS},
+  // {P_LoadReject, ML_REJECT},
+  {P_LoadThings, ML_THINGS},
+  // {P_SpawnSpecials, 0}
+  {NULL, 0},  /* SENTINEL */
 };
 
-
-class P_LoadBlockMap_Vertex : public poplar::Vertex {
+// THIS IS CALLING VIA A POINTER. THAT'S PROBABLY BAD...
+class P_SetupLevel_Vertex : public poplar::Vertex {
   poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
   poplar::Output<int> lumpNum;
  public:
   bool compute() {
-    P_LoadBlockMap(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
+    static int step = 0;
+    setupLevelSubfuncs[step].func(&lumpBuf[0]);
+    step += 1;
+    *lumpNum = gamelumpnum + setupLevelSubfuncs[step].lump_num;
+    if (setupLevelSubfuncs[step].func == NULL) {
+      step = 0;
+    }
     return true;
   }
 };
 
-class P_LoadVertexes_Vertex : public poplar::Vertex {
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_LoadVertexes(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
-};
-
-class P_LoadSectors_Vertex : public poplar::Vertex {
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_LoadSectors(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
-};
-
-class P_LoadSideDefs_Vertex : public poplar::Vertex {
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_LoadSideDefs(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
-};
-
-class P_LoadLineDefs_Vertex : public poplar::Vertex {
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_LoadLineDefs(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
-};
-
-
-class P_LoadSubsectors_Vertex : public poplar::Vertex {
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
- public:
-  bool compute() {
-    P_LoadSubsectors(&lumpBuf[0]); 
-    *lumpNum = requestedlumpnum;
-    return true;
-  }
-};
 
 // ------------ IPU_Setup ------------ //
 

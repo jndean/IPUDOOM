@@ -1,3 +1,6 @@
+// Yes, I know this file is full of awful unnecessary boilerplate and interfaces, the
+// structure of the IPU<->Host interface is evolving __somewhat organically__ ...
+
 #include "ipu_host.h"
 
 #include <algorithm>
@@ -39,6 +42,7 @@ class IpuDoom {
 
   void buildIpuGraph();
   void run_AM_Drawer();
+  void run_R_RenderPlayerView();
   void run_IPU_Setup();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
@@ -57,7 +61,7 @@ class IpuDoom {
 };
 
 IpuDoom::IpuDoom()
-    : m_ipuDevice(getIpu(false, 1)),
+    : m_ipuDevice(getIpu(true, 1)),
       m_ipuGraph(/*poplar::Target::createIPUTarget(1, "ipu2")*/ m_ipuDevice.getTarget()),
       m_ipuEngine(nullptr) {
   buildIpuGraph();
@@ -67,7 +71,7 @@ IpuDoom::~IpuDoom(){};
 void IpuDoom::buildIpuGraph() {
   m_ipuGraph.addCodelets("build/ipu_rt.gp");
 
-  // -------- AM_Drawer_CS ------ //
+  // -------- GetPrintbuf_CS (helper) ------ //
 
   poplar::Tensor printbuf =
       m_ipuGraph.addVariable(poplar::CHAR, {(ulong)IPUPRINTBUFSIZE}, "ipuprint_buf");
@@ -80,7 +84,7 @@ void IpuDoom::buildIpuGraph() {
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, IPUPRINTBUFSIZE);
 
-  poplar::program::Sequence  GetPrintbuf_prog({
+  poplar::program::Sequence GetPrintbuf_prog({
       poplar::program::Execute(GetPrintbuf_CS),
       poplar::program::Copy(printbuf, printbufOutStream),
   });
@@ -125,69 +129,20 @@ void IpuDoom::buildIpuGraph() {
   auto lumpNumStream = m_ipuGraph.addDeviceToHostFIFO("lumpNum-stream", poplar::INT, 1);
   
   poplar::ComputeSet P_SetupLevel_CS = m_ipuGraph.addComputeSet("P_SetupLevel_CS");
-  vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_pt0_Vertex", {{"lumpNum", m_lumpNum}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadBlockMap_CS = m_ipuGraph.addComputeSet("P_LoadBlockMap_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadBlockMap_CS, "P_LoadBlockMap_Vertex", {
+  vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_Vertex", {
     {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadVertexes_CS = m_ipuGraph.addComputeSet("P_LoadVertexes_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadVertexes_CS, "P_LoadVertexes_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadSectors_CS = m_ipuGraph.addComputeSet("P_LoadSectors_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadSectors_CS, "P_LoadSectors_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadSideDefs_CS = m_ipuGraph.addComputeSet("P_LoadSideDefs_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadSideDefs_CS, "P_LoadSideDefs_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadLineDefs_CS = m_ipuGraph.addComputeSet("P_LoadLineDefs_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadLineDefs_CS, "P_LoadLineDefs_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
-  poplar::ComputeSet P_LoadSubsectors_CS = m_ipuGraph.addComputeSet("P_LoadSubsectors_CS");
-  vtx = m_ipuGraph.addVertex(P_LoadSubsectors_CS, "P_LoadSubsectors_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
-
 
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_DoLoadLevel_CS),
-      poplar::program::Execute(P_SetupLevel_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadBlockMap_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadVertexes_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadSectors_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadSideDefs_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadLineDefs_CS),
-      poplar::program::Copy(m_lumpNum, lumpNumStream),
-      poplar::program::Copy(lumpBufStream, m_lumpBuf),
-      poplar::program::Execute(P_LoadSubsectors_CS),
+      poplar::program::Repeat(9, poplar::program::Sequence({
+        poplar::program::Execute(P_SetupLevel_CS),
+        poplar::program::Copy(m_lumpNum, lumpNumStream),
+        poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded
+        poplar::program::Copy(lumpBufStream, m_lumpBuf),
+      })),
       GetPrintbuf_prog,
   });
 
@@ -241,6 +196,27 @@ void IpuDoom::buildIpuGraph() {
   });
 
 
+  // -------- R_RenderPlayerView_CS ------ //
+
+  
+  poplar::Tensor R_RenderPlayerView_MiscValsBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {sizeof(R_RenderPlayerView_MiscValues_t)}, "R_RenderPlayerView_MiscValsBuf");
+  m_ipuGraph.setTileMapping(R_RenderPlayerView_MiscValsBuf, 0);
+  auto R_RenderPlayerView_MiscValsBufStream =
+      m_ipuGraph.addHostToDeviceFIFO("R_RenderPlayerView_MiscValsBuf-stream", poplar::UNSIGNED_CHAR, sizeof(R_RenderPlayerView_MiscValues_t));
+
+  poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
+  vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", 
+  {{"frame", ipuFrame}, {"miscValues", R_RenderPlayerView_MiscValsBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 10000000);
+
+  poplar::program::Sequence R_RenderPlayerView_prog({
+      poplar::program::Copy(R_RenderPlayerView_MiscValsBufStream, R_RenderPlayerView_MiscValsBuf),
+      poplar::program::Copy(frameInStream, ipuFrame),
+      poplar::program::Execute(R_RenderPlayerView_CS),
+      poplar::program::Copy(ipuFrame, frameOutStream),
+  });
+
   // ---------------- Final prog --------------//
 
   printf("Creating engine...\n");
@@ -251,32 +227,32 @@ void IpuDoom::buildIpuGraph() {
       G_Ticker_prog,
       G_Responder_prog,
       AM_Drawer_prog,
+      R_RenderPlayerView_prog
   })));
 
   m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
   m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
+  m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
+  m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
 
   m_ipuEngine->connectStreamToCallback("printbuf-stream", [](void* p) {
     if (((char*)p)[0] == '\0') return;
     printf("[IPU] %.*s\n", IPUPRINTBUFSIZE, (char*)p);
   });
-
-  m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
-
-  m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
     IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
   });
-
   m_ipuEngine->connectStreamToCallback("marknumSpriteBuf-stream", [this](void* p) {
     IPU_Setup_PackMarkNums(p);
   });
+  m_ipuEngine->connectStreamToCallback("R_RenderPlayerView_MiscValsBuf-stream", [this](void* p) {
+    IPU_R_RenderPlayerView_PackMiscValues(p);
+  });
 
   m_ipuEngine->load(m_ipuDevice);
-
 }
 
-
+// --- Internal interface from class IpuDoom to m_ipuEngine --- //
 void IpuDoom::run_IPU_Setup() { m_ipuEngine->run(0); }
 void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(1); }
 void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
@@ -285,14 +261,19 @@ void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* src_buf) {
   m_ipuEngine->run(3); 
 }
 void IpuDoom::run_AM_Drawer() { m_ipuEngine->run(4); }
+void IpuDoom::run_R_RenderPlayerView() { m_ipuEngine->run(5); }
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
+
+
+// --- External interface from C to class IpuDoom --- //
 extern "C" {
 void IPU_Init() { 
   ipuDoomInstance = std::make_unique<IpuDoom>(); 
   ipuDoomInstance->run_IPU_Setup(); 
 }
 void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
+void IPU_R_RenderPlayerView() { ipuDoomInstance->run_R_RenderPlayerView(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
 void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
 void IPU_G_Responder(G_Responder_MiscValues_t* buf) { ipuDoomInstance->run_G_Responder(buf); }

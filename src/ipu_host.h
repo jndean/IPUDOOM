@@ -11,6 +11,7 @@ extern "C" {
 void IPU_Init(void);
 
 void IPU_AM_Drawer(void);
+void IPU_R_RenderPlayerView(void);
 
 void IPU_G_DoLoadLevel(void);
 void IPU_G_Ticker(void);

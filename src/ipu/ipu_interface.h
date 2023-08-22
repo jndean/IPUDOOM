@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include "d_event.h"
+#include "d_player.h"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "m_fixed.h"
@@ -42,6 +43,12 @@ typedef struct {
     unsigned char num_ev;
     // Other things for responder here
 } G_Responder_MiscValues_t;
+
+typedef struct {
+    int displayplayer;
+    player_t players_displayplayer;
+    mobj_t displayplayer_mo;
+} R_RenderPlayerView_MiscValues_t;
 
 
 

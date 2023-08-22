@@ -429,9 +429,6 @@ void P_LoadLineDefs(int lump) {
       ld->backsector = 0;
   }
 
-  printf("[CPU] numlines: %d, sidenum0: %d, sidenum-1: %d, dx-1: %d\n",
-      numlines, lines[0].sidenum[1], lines[numlines-1].sidenum[1], lines[numlines-1].dx);
-
   W_ReleaseLumpNum(lump);
 }
 

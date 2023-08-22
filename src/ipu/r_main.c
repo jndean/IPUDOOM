@@ -18,8 +18,10 @@
 //	See tables.c, too.
 //
 
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdio.h> // JOSEF
+// #include <stdlib.h>
+
+
 
 #include "d_loop.h"
 #include "d_player.h"
@@ -41,7 +43,10 @@
 #include "r_things.h"
 #include "tables.h"
 
-#include "ipu_host.h"
+// JOSEF: added
+inline int abs(int x) { 
+  return (x < 0) ? -x : x;
+}
 
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
@@ -98,9 +103,9 @@ int viewangletox[FINEANGLES / 2];
 // from clipangle to -clipangle.
 angle_t xtoviewangle[SCREENWIDTH + 1];
 
-lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
-lighttable_t *scalelightfixed[MAXLIGHTSCALE];
-lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
+// lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE]; // JOSEF: TODO
+// lighttable_t *scalelightfixed[MAXLIGHTSCALE]; // JOSEF: TODO
+// lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO
 
 // bumped light from gun blasts
 int extralight;
@@ -111,6 +116,7 @@ void (*fuzzcolfunc)(void);
 void (*transcolfunc)(void);
 void (*spanfunc)(void);
 
+/*
 //
 // R_AddPointToBox
 // Expand a given bbox
@@ -644,21 +650,21 @@ void R_ExecuteSetViewSize(void) {
 
 void R_Init(void) {
   R_InitData();
-  printf(".");
+  // printf("."); // JOSEF
   R_InitPointToAngle();
-  printf(".");
+  // printf("."); // JOSEF
   R_InitTables();
   // viewwidth / viewheight / detailLevel are set by the defaults
-  printf(".");
+  // printf("."); // JOSEF
 
   R_SetViewSize(screenblocks, detailLevel);
   R_InitPlanes();
-  printf(".");
+  // printf("."); // JOSEF
   R_InitLightTables();
-  printf(".");
+  // printf("."); // JOSEF
   R_InitSkyMap();
   R_InitTranslationTables();
-  printf(".");
+  // printf("."); // JOSEF
 
   framecount = 0;
 }
@@ -685,6 +691,7 @@ subsector_t *R_PointInSubsector(fixed_t x, fixed_t y) {
 
   return &subsectors[nodenum & ~NF_SUBSECTOR];
 }
+*/
 
 //
 // R_SetupFrame
@@ -719,6 +726,7 @@ void R_SetupFrame(player_t *player) {
   validcount++;
 }
 
+
 //
 // R_RenderView
 //
@@ -726,28 +734,27 @@ void R_RenderPlayerView(player_t *player) {
   R_SetupFrame(player);
 
   // Clear buffers.
-  R_ClearClipSegs();
-  R_ClearDrawSegs();
-  R_ClearPlanes();
-  R_ClearSprites();
+  // R_ClearClipSegs();  // TODO
+  // R_ClearDrawSegs();  // TODO
+  // R_ClearPlanes();  // TODO
+  // R_ClearSprites();  // TODO
 
   // check for new console commands.
-  NetUpdate();
+  // NetUpdate();  // TODO
 
   // The head node is the last node output.
-  R_RenderBSPNode(numnodes - 1);
+  // R_RenderBSPNode(numnodes - 1);  // TODO
 
   // Check for new console commands.
-  NetUpdate();
+  // NetUpdate();  // TODO
 
-  R_DrawPlanes();
-
-  // Check for new console commands.
-  NetUpdate();
-
-  R_DrawMasked();
-  IPU_R_RenderPlayerView();
+  // R_DrawPlanes();  // TODO
 
   // Check for new console commands.
-  NetUpdate();
+  // NetUpdate();  // TODO
+
+  // R_DrawMasked();  // TODO
+
+  // Check for new console commands.
+  // NetUpdate();  // TODO
 }

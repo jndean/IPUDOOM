@@ -9,6 +9,7 @@
 #include "ipu_malloc.h"
 #include "ipu_transfer.h"
 #include "ipu_print.h"
+#include "print.h"
 
 
 //
@@ -140,6 +141,91 @@ void P_LoadSectors(const unsigned char *buf) {
   requestedlumpnum = gamelumpnum + ML_SIDEDEFS;
 }
 
+
+//
+// P_LoadNodes
+//
+__attribute__((optnone))  // Workaround for https://graphcore.atlassian.net/browse/LLVM-330
+void P_LoadNodes(const unsigned char *buf) {
+  int i;
+  int j;
+  int k;
+  mapnode_t *mn;
+  node_t *no;
+
+  int lumplen = ((int*)buf)[0];
+  numnodes = lumplen / sizeof(mapnode_t);
+  nodes = IPU_level_malloc(numnodes * sizeof(node_t));
+  memset(nodes, 0, numnodes * sizeof(node_t));
+
+  mn = (mapnode_t *)(&buf[sizeof(int)]);
+  no = nodes;
+
+  for (i = 0; i < numnodes; i++, no++, mn++) {
+    no->x = SHORT(mn->x) << FRACBITS;
+    no->y = SHORT(mn->y) << FRACBITS;
+    no->dx = SHORT(mn->dx) << FRACBITS;
+    no->dy = SHORT(mn->dy) << FRACBITS;
+    for (j = 0; j < 2; j++) {
+      no->children[j] = SHORT(mn->children[j]);
+      for (k = 0; k < 4; k++) {
+        no->bbox[j][k] = SHORT(mn->bbox[j][k]) << FRACBITS;
+      }
+    }
+  }
+
+}
+
+//
+// P_LoadThings
+//
+void P_LoadThings(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapthing_t *mt;
+  mapthing_t spawnthing;
+  int numthings;
+  boolean spawn;
+
+  int lumplen = ((int*)buf)[0];
+  numthings = lumplen / sizeof(mapthing_t);
+
+  mt = (mapthing_t *)(&buf[sizeof(int)]);
+  for (i = 0; i < numthings; i++, mt++) {
+    spawn = true;
+
+    // Do not spawn cool, new monsters if !commercial
+    if (gamemode != commercial) {
+      switch (SHORT(mt->type)) {
+      case 68: // Arachnotron
+      case 64: // Archvile
+      case 88: // Boss Brain
+      case 89: // Boss Shooter
+      case 69: // Hell Knight
+      case 67: // Mancubus
+      case 71: // Pain Elemental
+      case 65: // Former Human Commando
+      case 66: // Revenant
+      case 84: // Wolf SS
+        spawn = false;
+        break;
+      }
+    }
+    if (spawn == false)
+      break;
+
+    // Do spawn all other stuff.
+    spawnthing.x = SHORT(mt->x);
+    spawnthing.y = SHORT(mt->y);
+    spawnthing.angle = SHORT(mt->angle);
+    spawnthing.type = SHORT(mt->type);
+    spawnthing.options = SHORT(mt->options);
+
+    // P_SpawnMapThing(&spawnthing); // TODO
+  }
+
+}
+
 //
 // P_LoadSideDefs
 //
@@ -167,7 +253,7 @@ void P_LoadSideDefs(const unsigned char *buf) {
     sd->sector = &sectors[SHORT(msd->sector)];
   }
 
-  requestedlumpnum = gamelumpnum + ML_LINEDEFS;
+  requestedlumpnum = gamelumpnum + ML_LINEDEFS; // JOSEF: Get rid of this
 }
 
 //
@@ -238,18 +324,6 @@ void P_LoadLineDefs(const unsigned char *buf) {
     else
       ld->backsector = 0;
   }
-
-  // msd = (mapsidedef_t *)(&buf[sizeof(int)]);
-  ipuprint("numlines: ");
-  ipuprintnum(numlines);
-  ipuprint(", sidenum0: ");
-  ipuprintnum(lines[0].sidenum[1]);
-  ipuprint(", sidenum-1: ");
-  ipuprintnum(lines[numlines-1].sidenum[1]);
-  ipuprint(", dx-1: ");
-  ipuprintnum(lines[numlines-1].dx);
-  ipuprint("\n");
-
   requestedlumpnum = gamelumpnum + ML_SSECTORS;
 }
 
@@ -281,7 +355,7 @@ void P_LoadSubsectors(const unsigned char *buf) {
 //
 // P_SetupLevel
 //
-void P_SetupLevel_pt0(void) {
+void P_SetupLevel_pt0(const unsigned char unused) {
   int i;
 
   /* LATER

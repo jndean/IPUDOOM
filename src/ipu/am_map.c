@@ -223,7 +223,7 @@ static fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
 static fixed_t scale_ftom;
 
 // JOSEF: Map only uses player position, so don't need reference to full 
-// player object (which will be on a different IPU tile).
+// player object 
 // May need mechanism for sending plr->message to rendering tile... LATER
 // static player_t *plr; // the player represented by an arrow
 IPUPlayerPos_t am_playerpos;

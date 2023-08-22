@@ -81,6 +81,13 @@ void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf) {
   memcpy(dst_buf, src_buf, sizeof(G_Responder_MiscValues_t));
 }
 
+void IPU_R_RenderPlayerView_PackMiscValues(void* buf) {
+  R_RenderPlayerView_MiscValues_t* pack = (R_RenderPlayerView_MiscValues_t*) buf;
+  pack->displayplayer = displayplayer;
+  pack->players_displayplayer = players[displayplayer];
+  pack->displayplayer_mo = *players[displayplayer].mo;
+}
+
 void IPU_Setup_PackMarkNums(void* buf) {
   int bufpos = 10 * sizeof(short);
   char namebuf[9] = "AMMNUM0\0";
