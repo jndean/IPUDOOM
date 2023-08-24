@@ -137,7 +137,7 @@ void IpuDoom::buildIpuGraph() {
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_DoLoadLevel_CS),
-      poplar::program::Repeat(10, poplar::program::Sequence({
+      poplar::program::Repeat(11, poplar::program::Sequence({
         poplar::program::Execute(P_SetupLevel_CS),
         poplar::program::Copy(m_lumpNum, lumpNumStream),
         poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded

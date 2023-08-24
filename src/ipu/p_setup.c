@@ -553,3 +553,113 @@ void P_LoadBlockMap(const unsigned char *buf) {
   blocklinks = IPU_level_malloc(count, "P_LoadBlockMap");
   memset(blocklinks, 0, count);
 }
+
+//
+// P_GroupLines
+// Builds sector line lists and subsector sector numbers.
+// Finds block bounding boxes for sectors.
+//
+void P_GroupLines(const unsigned char *buf) {
+  (void) buf;
+
+  line_t **linebuffer;
+  int i;
+  int j;
+  line_t *li;
+  sector_t *sector;
+  subsector_t *ss;
+  seg_t *seg;
+  fixed_t bbox[4];
+  int block;
+
+  // look up sector number for each subsector
+  ss = subsectors;
+  for (i = 0; i < numsubsectors; i++, ss++) {
+    seg = &segs[ss->firstline];
+    ss->sector = seg->sidedef->sector;
+  }
+
+  // count number of lines in each sector
+  li = lines;
+  totallines = 0;
+  for (i = 0; i < numlines; i++, li++) {
+    totallines++;
+    li->frontsector->linecount++;
+
+    if (li->backsector && li->backsector != li->frontsector) {
+      li->backsector->linecount++;
+      totallines++;
+    }
+  }
+
+  // build line tables for each sector
+  // linebuffer = Z_Malloc(totallines * sizeof(line_t *), PU_LEVEL, 0);
+  linebuffer = IPU_level_malloc(totallines * sizeof(line_t *), "P_GroupLines");
+
+  for (i = 0; i < numsectors; ++i) {
+    // Assign the line buffer for this sector
+
+    sectors[i].lines = linebuffer;
+    linebuffer += sectors[i].linecount;
+
+    // Reset linecount to zero so in the next stage we can count
+    // lines into the list.
+
+    sectors[i].linecount = 0;
+  }
+
+  // Assign lines to sectors
+
+  for (i = 0; i < numlines; ++i) {
+    li = &lines[i];
+
+    if (li->frontsector != NULL) {
+      sector = li->frontsector;
+
+      sector->lines[sector->linecount] = li;
+      ++sector->linecount;
+    }
+
+    if (li->backsector != NULL && li->frontsector != li->backsector) {
+      sector = li->backsector;
+
+      sector->lines[sector->linecount] = li;
+      ++sector->linecount;
+    }
+  }
+
+  // Generate bounding boxes for sectors
+
+  sector = sectors;
+  for (i = 0; i < numsectors; i++, sector++) {
+    M_ClearBox(bbox);
+
+    for (j = 0; j < sector->linecount; j++) {
+      li = sector->lines[j];
+
+      M_AddToBox(bbox, li->v1->x, li->v1->y);
+      M_AddToBox(bbox, li->v2->x, li->v2->y);
+    }
+
+    // set the degenmobj_t to the middle of the bounding box
+    sector->soundorg.x = (bbox[BOXRIGHT] + bbox[BOXLEFT]) / 2;
+    sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
+
+    // adjust bounding box to map blocks
+    block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
+    block = block >= bmapheight ? bmapheight - 1 : block;
+    sector->blockbox[BOXTOP] = block;
+
+    block = (bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
+    block = block < 0 ? 0 : block;
+    sector->blockbox[BOXBOTTOM] = block;
+
+    block = (bbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
+    block = block >= bmapwidth ? bmapwidth - 1 : block;
+    sector->blockbox[BOXRIGHT] = block;
+
+    block = (bbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
+    block = block < 0 ? 0 : block;
+    sector->blockbox[BOXLEFT] = block;
+  }
+}
