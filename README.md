@@ -4,9 +4,10 @@
 
 A WIP to put Doom 1993 on the IPU.
 
-```
+```bash
 # Install dependencies
-sudo apt update; sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev g++-7
+sudo apt update 
+sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev g++-7
 # Build binary
 make
 # Download shareware resource pack

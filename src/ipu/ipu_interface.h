@@ -6,6 +6,7 @@ extern "C" {
 
 #include "d_event.h"
 #include "d_player.h"
+#include "d_mode.h"
 #include "doomdef.h"
 #include "doomtype.h"
 #include "m_fixed.h"
@@ -24,16 +25,24 @@ typedef struct {
     int gameepisode;
     int gamemap;
     int lumpnum;
+    GameMode_t gamemode;
+    int deathmatch;
+    boolean playeringame[MAXPLAYERS];
 } G_LoadLevel_MiscValues_t;
 
 typedef struct {
     fixed_t x, y, z;
     angle_t angle;
-} IPUPlayerPos_t;
+    int extralight;
+    fixed_t viewz;
+    int fixedcolormap;
+} IPUTransfer_playerstate_t;
 
 typedef struct {
+    int consoleplayer;
     gamestate_t gamestate;
-    IPUPlayerPos_t player_mobj;
+    IPUTransfer_playerstate_t player;
+
     int mappedline_updates[IPUMAPPEDLINEUPDATES];
 } G_Ticker_MiscValues_t;
 
@@ -45,9 +54,8 @@ typedef struct {
 } G_Responder_MiscValues_t;
 
 typedef struct {
-    int displayplayer;
-    player_t players_displayplayer;
-    mobj_t displayplayer_mo;
+    // nothing
+    int dummy; // just so struct is not empty
 } R_RenderPlayerView_MiscValues_t;
 
 

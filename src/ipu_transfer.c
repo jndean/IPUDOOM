@@ -22,7 +22,11 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
 
   G_LoadLevel_MiscValues_t pack;
   pack.gameepisode = gameepisode;
-  pack.gamemap = gamemap;
+  pack.gamemap = gamemap; 
+  pack.gamemode = gamemode;
+  pack.deathmatch = deathmatch;
+  for (int i = 0; i < MAXPLAYERS; ++i)
+    pack.playeringame[i] = playeringame[i];
   
   char lumpname[9];
   lumpname[0] = 'E';
@@ -63,10 +67,17 @@ void IPU_G_Ticker_PackMiscValues(void* buf) {
   pack->gamestate = gamestate;
   if (gamestate != GS_LEVEL) 
     return;
-  pack->player_mobj.x = players[consoleplayer].mo->x;
-  pack->player_mobj.y = players[consoleplayer].mo->y;
-  pack->player_mobj.z = players[consoleplayer].mo->z;
-  pack->player_mobj.angle = players[consoleplayer].mo->angle;
+
+  assert(consoleplayer == displayplayer);
+  pack->consoleplayer = consoleplayer;
+  pack->player.x = players[consoleplayer].mo->x;
+  pack->player.y = players[consoleplayer].mo->y;
+  pack->player.z = players[consoleplayer].mo->z;
+  pack->player.angle = players[consoleplayer].mo->angle;
+  pack->player.extralight = players[consoleplayer].extralight;
+  pack->player.viewz = players[consoleplayer].viewz;
+  pack->player.fixedcolormap = players[consoleplayer].fixedcolormap;
+
   for (int i = 0; i < IPUMAPPEDLINEUPDATES; ++i) {
     if (!mapped_line_count) {
       pack->mappedline_updates[i] = -1;
@@ -82,10 +93,8 @@ void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf) {
 }
 
 void IPU_R_RenderPlayerView_PackMiscValues(void* buf) {
-  R_RenderPlayerView_MiscValues_t* pack = (R_RenderPlayerView_MiscValues_t*) buf;
-  pack->displayplayer = displayplayer;
-  pack->players_displayplayer = players[displayplayer];
-  pack->displayplayer_mo = *players[displayplayer].mo;
+  // R_RenderPlayerView_MiscValues_t* pack = (R_RenderPlayerView_MiscValues_t*) buf;
+  // Nothing to pack
 }
 
 void IPU_Setup_PackMarkNums(void* buf) {

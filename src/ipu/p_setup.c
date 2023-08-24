@@ -12,6 +12,8 @@
 #include "print.h"
 
 
+void P_SpawnMapThing(mapthing_t *mthing);
+
 //
 // MAP related Lookup tables.
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
@@ -104,11 +106,6 @@ void P_LoadVertexes(const unsigned char *buf) {
     li->x = ml->x << FRACBITS;
     li->y = ml->y << FRACBITS;
   }
-
-  // Free buffer memory.
-  // JOSEF: W_ReleaseLumpNum(lump);
-
-  requestedlumpnum = gamelumpnum + ML_SECTORS;
 }
 
 //
@@ -137,8 +134,6 @@ void P_LoadSectors(const unsigned char *buf) {
     ss->tag = SHORT(ms->tag);
     ss->thinglist = NULL;
   }
-
-  requestedlumpnum = gamelumpnum + ML_SIDEDEFS;
 }
 
 
@@ -221,7 +216,7 @@ void P_LoadThings(const unsigned char *buf) {
     spawnthing.type = SHORT(mt->type);
     spawnthing.options = SHORT(mt->options);
 
-    // P_SpawnMapThing(&spawnthing); // TODO
+    P_SpawnMapThing(&spawnthing); // TODO
   }
 
 }
@@ -252,8 +247,6 @@ void P_LoadSideDefs(const unsigned char *buf) {
     */
     sd->sector = &sectors[SHORT(msd->sector)];
   }
-
-  requestedlumpnum = gamelumpnum + ML_LINEDEFS; // JOSEF: Get rid of this
 }
 
 //
@@ -324,7 +317,6 @@ void P_LoadLineDefs(const unsigned char *buf) {
     else
       ld->backsector = 0;
   }
-  requestedlumpnum = gamelumpnum + ML_SSECTORS;
 }
 
 //
@@ -349,7 +341,6 @@ void P_LoadSubsectors(const unsigned char *buf) {
     ss->firstline = SHORT(ms->firstseg);
   }
 
-  requestedlumpnum = gamelumpnum + ML_NODES;
 }
 
 //
@@ -396,10 +387,8 @@ void P_SetupLevel_pt0(const unsigned char unused) {
   leveltime = 0;
 
   reset_ipuprint();
-  ipuprint("Map starts at lump "); ipuprintnum(gamelumpnum); ipuprint("\n");
+  // ipuprint("Map starts at lump "); ipuprintnum(gamelumpnum); ipuprint("\n");
 
-  // JOSEF: Lumpnum for P_LoadBlockMap
-  requestedlumpnum = gamelumpnum + ML_BLOCKMAP;
   return;
 
   // note: most of this ordering is important
@@ -478,7 +467,4 @@ void P_LoadBlockMap(const unsigned char *buf) {
   count = sizeof(*blocklinks) * bmapwidth * bmapheight;
   blocklinks = IPU_level_malloc(count);
   memset(blocklinks, 0, count);
-
-  // JOSEF: next lump to load
-  requestedlumpnum = gamelumpnum + ML_VERTEXES;
 }

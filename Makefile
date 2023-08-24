@@ -17,18 +17,20 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	p_setup.gp \
 	p_setup_codelets.gp \
 	p_tick.gp \
+	p_mobj.gp \
 	r_bsp.gp \
 	r_codelets.gp \
 	r_main.gp \
 	tables.gp \
 	v_video.gp \
+	doomstat.gp \
 )
 
 
 CPU_FLAGS = -I src -I /usr/local/include/SDL2 -I/usr/include/libpng16 -I/opt/poplar/include \
       		-D_REENTRANT -lSDL2 -lSDL2_mixer -lSDL2_net -lpng16 -lz -lpoplar \
      		-Wall -Werror \
-      		-O2
+      		-O2 # -m32
 
 IPU_FLAGS = -I src/ipu \
 			-Wall -Werror -Wno-unused-variable \

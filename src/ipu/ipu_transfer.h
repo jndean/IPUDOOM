@@ -9,8 +9,7 @@ extern "C" {
 
 
 extern int gamelumpnum;
-extern int requestedlumpnum;
-extern IPUPlayerPos_t am_playerpos;
+extern IPUTransfer_playerstate_t am_playerpos;
 extern patch_t* marknums[10];
 extern unsigned char markbuf[IPUAMMARKBUFSIZE];
 

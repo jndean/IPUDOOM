@@ -75,6 +75,8 @@ typedef struct {
 cliprange_t *newend;
 cliprange_t solidsegs[MAXSEGS];
 
+
+/*
 //
 // R_ClipSolidWallSegment
 // Does handle solid walls,
@@ -207,7 +209,9 @@ void R_ClearClipSegs(void) {
   solidsegs[1].last = 0x7fffffff;
   newend = solidsegs + 2;
 }
+*/
 
+/*
 //
 // R_AddLine
 // Clips the given segment
@@ -495,3 +499,4 @@ void R_RenderBSPNode(int bspnum) {
   if (R_CheckBBox(bsp->bbox[side ^ 1]))
     R_RenderBSPNode(bsp->children[side ^ 1]);
 }
+*/

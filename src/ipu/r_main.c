@@ -43,6 +43,8 @@
 #include "r_things.h"
 #include "tables.h"
 
+#include "print.h"
+
 // JOSEF: added
 inline int abs(int x) { 
   return (x < 0) ? -x : x;
@@ -51,7 +53,7 @@ inline int abs(int x) {
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
 
-int viewangleoffset;
+int viewangleoffset = 0;
 
 // increment every time a check is made
 int validcount = 1;
@@ -712,6 +714,7 @@ void R_SetupFrame(player_t *player) {
 
   sscount = 0;
 
+  /* Later
   if (player->fixedcolormap) {
     fixedcolormap = colormaps + player->fixedcolormap * 256;
 
@@ -721,6 +724,7 @@ void R_SetupFrame(player_t *player) {
       scalelightfixed[i] = fixedcolormap;
   } else
     fixedcolormap = 0;
+  */
 
   framecount++;
   validcount++;

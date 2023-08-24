@@ -226,7 +226,7 @@ static fixed_t scale_ftom;
 // player object 
 // May need mechanism for sending plr->message to rendering tile... LATER
 // static player_t *plr; // the player represented by an arrow
-IPUPlayerPos_t am_playerpos;
+IPUTransfer_playerstate_t am_playerpos;
 
 patch_t *marknums[10]; // numbers used for marking by the automap
 unsigned char markbuf[IPUAMMARKBUFSIZE]; // JOSEF: static mark patch storage, avoiding disk
