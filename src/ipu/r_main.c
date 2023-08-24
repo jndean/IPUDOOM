@@ -738,7 +738,7 @@ void R_RenderPlayerView(player_t *player) {
   R_SetupFrame(player);
 
   // Clear buffers.
-  // R_ClearClipSegs();  // TODO
+  // R_ClearClipSegs(); // TODO
   // R_ClearDrawSegs();  // TODO
   // R_ClearPlanes();  // TODO
   // R_ClearSprites();  // TODO
@@ -747,7 +747,7 @@ void R_RenderPlayerView(player_t *player) {
   // NetUpdate();  // TODO
 
   // The head node is the last node output.
-  // R_RenderBSPNode(numnodes - 1);  // TODO
+  R_RenderBSPNode(numnodes - 1);
 
   // Check for new console commands.
   // NetUpdate();  // TODO

@@ -453,7 +453,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type) {
   state_t *st;
   mobjinfo_t *info;
 
-  mobj = IPU_level_malloc(sizeof(*mobj));
+  mobj = IPU_level_malloc(sizeof(*mobj), "SpawnMobj");
   memset(mobj, 0, sizeof(*mobj));
 
   // JOSEF: Just allocate the mem for now

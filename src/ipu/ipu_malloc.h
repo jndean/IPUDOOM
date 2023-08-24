@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-void* IPU_level_malloc(int size);
+void* IPU_level_malloc(int size, const char* name);
 void IPU_level_free(void);
 
 

@@ -469,6 +469,7 @@ void R_Subsector(int num) {
     I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
+*/
 //
 // RenderBSPNode
 // Renders all subsectors below a given node,
@@ -477,7 +478,7 @@ void R_Subsector(int num) {
 void R_RenderBSPNode(int bspnum) {
   node_t *bsp;
   int side;
-
+/*
   // Found a subsector?
   if (bspnum & NF_SUBSECTOR) {
     if (bspnum == -1)
@@ -498,5 +499,5 @@ void R_RenderBSPNode(int bspnum) {
   // Possibly divide back space.
   if (R_CheckBBox(bsp->bbox[side ^ 1]))
     R_RenderBSPNode(bsp->children[side ^ 1]);
+    */
 }
-*/

@@ -1,5 +1,6 @@
 
 #include "d_mode.h"
+#include "doomdata.h"
 #include "doomstat.h"
 #include "i_swap.h"
 #include "m_bbox.h"
@@ -92,7 +93,7 @@ void P_LoadVertexes(const unsigned char *buf) {
   numvertexes = lumplen / sizeof(mapvertex_t);
 
   // Allocate zone memory for buffer.
-  vertexes = IPU_level_malloc(numvertexes * sizeof(vertex_t));
+  vertexes = IPU_level_malloc(numvertexes * sizeof(vertex_t), "P_LoadVertexes");
 
   // Load data into cache.
   // JOSEF: data = W_CacheLumpNum(lump, PU_STATIC);
@@ -108,6 +109,90 @@ void P_LoadVertexes(const unsigned char *buf) {
   }
 }
 
+/* JOSEF: Don't think we need this?
+//
+// GetSectorAtNullAddress
+//
+sector_t *GetSectorAtNullAddress(void) {
+  static boolean null_sector_is_initialized = false;
+  static sector_t null_sector;
+
+  if (!null_sector_is_initialized) {
+    memset(&null_sector, 0, sizeof(null_sector));
+    I_GetMemoryValue(0, &null_sector.floorheight, 4);
+    I_GetMemoryValue(4, &null_sector.ceilingheight, 4);
+    null_sector_is_initialized = true;
+  }
+
+  return &null_sector;
+}
+*/
+
+//
+// P_LoadSegs
+//
+void P_LoadSegs(const unsigned char *buf) {
+  byte *data;
+  int i;
+  mapseg_t *ml;
+  seg_t *li;
+  line_t *ldef;
+  int linedef;
+  int side;
+  int sidenum;
+
+  int lumplen = ((int*)buf)[0];
+  numsegs = lumplen / sizeof(mapseg_t);
+  segs = IPU_level_malloc(numsegs * sizeof(seg_t), "P_LoadSegs");
+  memset(segs, 0, numsegs * sizeof(seg_t));
+
+  ml = (mapseg_t *)(&buf[sizeof(int)]);
+  li = segs;
+  for (i = 0; i < numsegs; i++, li++, ml++) {
+    li->v1 = &vertexes[SHORT(ml->v1)];
+    li->v2 = &vertexes[SHORT(ml->v2)];
+
+    li->angle = (SHORT(ml->angle)) << FRACBITS;
+    li->offset = (SHORT(ml->offset)) << FRACBITS;
+    linedef = SHORT(ml->linedef);
+    ldef = &lines[linedef];
+    li->linedef = ldef;
+    side = SHORT(ml->side);
+
+    // e6y: check for wrong indexes
+    if ((unsigned)ldef->sidenum[side] >= (unsigned)numsides) {
+      // I_Error("P_LoadSegs: linedef %d for seg %d references a non-existent "
+      //         "sidedef %d",
+      //         linedef, i, (unsigned)ldef->sidenum[side]);
+      printf("ERROR: P_LoadSegs: linedef %d for seg %d references a non-existent "
+              "sidedef %d\n",
+              linedef, i, (unsigned)ldef->sidenum[side]);
+    }
+
+    li->sidedef = &sides[ldef->sidenum[side]];
+    li->frontsector = sides[ldef->sidenum[side]].sector;
+
+    if (ldef->flags & ML_TWOSIDED) {
+      sidenum = ldef->sidenum[side ^ 1];
+
+      // If the sidenum is out of range, this may be a "glass hack"
+      // impassible window.  Point at side #0 (this may not be
+      // the correct Vanilla behavior; however, it seems to work for
+      // OTTAWAU.WAD, which is the one place I've seen this trick
+      // used).
+
+      if (sidenum < 0 || sidenum >= numsides) {
+        // li->backsector = GetSectorAtNullAddress(); // JOSEF: Don't support this?
+        printf("ERROR: GLASS HACK UNSUPPORTED\n"); // JOSEF
+      } else {
+        li->backsector = sides[sidenum].sector;
+      }
+    } else {
+      li->backsector = 0;
+    }
+  }
+}
+
 //
 // P_LoadSectors
 //
@@ -119,7 +204,7 @@ void P_LoadSectors(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsectors = lumplen / sizeof(mapsector_t);
-  sectors = IPU_level_malloc(numsectors * sizeof(sector_t));
+  sectors = IPU_level_malloc(numsectors * sizeof(sector_t), "P_LoadSectors");
   memset(sectors, 0, numsectors * sizeof(sector_t));
 
   ms = (mapsector_t *)(&buf[sizeof(int)]);
@@ -150,7 +235,7 @@ void P_LoadNodes(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numnodes = lumplen / sizeof(mapnode_t);
-  nodes = IPU_level_malloc(numnodes * sizeof(node_t));
+  nodes = IPU_level_malloc(numnodes * sizeof(node_t), "P_LoadNodes");
   memset(nodes, 0, numnodes * sizeof(node_t));
 
   mn = (mapnode_t *)(&buf[sizeof(int)]);
@@ -232,7 +317,7 @@ void P_LoadSideDefs(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsides = lumplen / sizeof(mapsidedef_t);
-  sides = IPU_level_malloc(numsides * sizeof(side_t));
+  sides = IPU_level_malloc(numsides * sizeof(side_t), "P_LoadSideDefs");
   memset(sides, 0, numsides * sizeof(side_t));
 
   msd = (mapsidedef_t *)(&buf[sizeof(int)]);
@@ -263,7 +348,7 @@ void P_LoadLineDefs(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numlines = lumplen / sizeof(maplinedef_t);
-  lines = IPU_level_malloc(numlines * sizeof(line_t));
+  lines = IPU_level_malloc(numlines * sizeof(line_t), "P_LoadLineDefs");
   memset(lines, 0, numlines * sizeof(line_t));
 
   mld = (maplinedef_t *)(&buf[sizeof(int)]);
@@ -330,7 +415,7 @@ void P_LoadSubsectors(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsubsectors = lumplen / sizeof(mapsubsector_t);
-  subsectors = IPU_level_malloc(numsubsectors * sizeof(subsector_t));
+  subsectors = IPU_level_malloc(numsubsectors * sizeof(subsector_t), "P_LoadSubsectors");
 
   ms = (mapsubsector_t *)(&buf[sizeof(int)]);
   memset(subsectors, 0, numsubsectors * sizeof(subsector_t));
@@ -448,7 +533,7 @@ void P_LoadBlockMap(const unsigned char *buf) {
   int lumplen;
 
   lumplen = ((int*)buf)[0];
-  blockmaplump = IPU_level_malloc(lumplen);
+  blockmaplump = IPU_level_malloc(lumplen, "P_LoadBlockMap");
   memcpy(blockmaplump, &buf[4], lumplen);
   blockmap = blockmaplump + 4;
 
@@ -465,6 +550,6 @@ void P_LoadBlockMap(const unsigned char *buf) {
   // Clear out mobj chains
 
   count = sizeof(*blocklinks) * bmapwidth * bmapheight;
-  blocklinks = IPU_level_malloc(count);
+  blocklinks = IPU_level_malloc(count, "P_LoadBlockMap");
   memset(blocklinks, 0, count);
 }
