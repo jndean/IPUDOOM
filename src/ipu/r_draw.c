@@ -21,16 +21,17 @@
 // #include <string.h> // JOSEF
 
 #include "d_mode.h"
-// State.
 #include "doomstat.h"
 #include "doomtype.h"
-/*
-#include "i_system.h"
-#include "i_video.h"
 #include "m_fixed.h"
 #include "r_defs.h"
 #include "r_main.h"
 #include "r_state.h"
+
+/*
+// State.
+#include "i_system.h"
+#include "i_video.h"
 #include "v_patch.h"
 // Needs access to LFB (guess what).
 #include "v_video.h"
@@ -672,6 +673,7 @@ void R_DrawSpanLow(void) {
 
   } while (count--);
 }
+*/
 
 //
 // R_InitBuffer
@@ -703,6 +705,7 @@ void R_InitBuffer(int width, int height) {
     ylookup[i] = I_VideoBuffer + (i + viewwindowy) * SCREENWIDTH;
 }
 
+/*
 //
 // R_FillBackScreen
 // Fills the back screen with a pattern

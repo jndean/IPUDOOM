@@ -21,7 +21,9 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	p_mobj.gp \
 	r_bsp.gp \
 	r_codelets.gp \
+	r_draw.gp \
 	r_main.gp \
+	r_segs.gp \
 	tables.gp \
 	v_video.gp \
 	doomstat.gp \

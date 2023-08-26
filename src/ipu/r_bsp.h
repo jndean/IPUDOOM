@@ -52,5 +52,6 @@ void R_ClearClipSegs(void);
 void R_ClearDrawSegs(void);
 
 void R_RenderBSPNode(int bspnum);
+void R_RenderBSPNodeNonRecursive(void); // Nonrecursive verion for IPU
 
 #endif

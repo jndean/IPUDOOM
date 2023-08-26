@@ -558,6 +558,9 @@ void R_SetViewSize(int blocks, int detail) {
 // R_ExecuteSetViewSize
 //
 void R_ExecuteSetViewSize(void) {
+  
+  IPU_R_ExecuteSetViewSize();
+
   fixed_t cosadj;
   fixed_t dy;
   int i;

@@ -118,7 +118,6 @@ void (*fuzzcolfunc)(void);
 void (*transcolfunc)(void);
 void (*spanfunc)(void);
 
-/*
 //
 // R_AddPointToBox
 // Expand a given bbox
@@ -182,6 +181,7 @@ int R_PointOnSide(fixed_t x, fixed_t y, node_t *node) {
   // back side
   return 1;
 }
+/*
 
 int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line) {
   fixed_t lx;
@@ -234,6 +234,7 @@ int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line) {
   // back side
   return 1;
 }
+*/
 
 //
 // R_PointToAngle
@@ -313,6 +314,7 @@ angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) {
   return R_PointToAngle(x2, y2);
 }
 
+/*
 fixed_t R_PointToDist(fixed_t x, fixed_t y) {
   int angle;
   fixed_t dx;
@@ -452,6 +454,7 @@ void R_InitTables(void) {
     }
 #endif
 }
+*/
 
 //
 // R_InitTextureMapping
@@ -512,6 +515,7 @@ void R_InitTextureMapping(void) {
   clipangle = xtoviewangle[0];
 }
 
+/*
 //
 // R_InitLightTables
 // Only inits the zlight table,
@@ -545,6 +549,7 @@ void R_InitLightTables(void) {
     }
   }
 }
+*/
 
 //
 // R_SetViewSize
@@ -592,6 +597,7 @@ void R_ExecuteSetViewSize(void) {
   centeryfrac = centery << FRACBITS;
   projection = centerxfrac;
 
+  /* LATER
   if (!detailshift) {
     colfunc = basecolfunc = R_DrawColumn;
     fuzzcolfunc = R_DrawFuzzColumn;
@@ -603,10 +609,13 @@ void R_ExecuteSetViewSize(void) {
     transcolfunc = R_DrawTranslatedColumnLow;
     spanfunc = R_DrawSpanLow;
   }
+  */
 
   R_InitBuffer(scaledviewwidth, viewheight);
 
   R_InitTextureMapping();
+
+  /* LATER
 
   // psprite scales
   pspritescale = FRACUNIT * viewwidth / SCREENWIDTH;
@@ -644,8 +653,10 @@ void R_ExecuteSetViewSize(void) {
       scalelight[i][j] = colormaps + level * 256;
     }
   }
+  */
 }
 
+/*
 //
 // R_Init
 //
@@ -738,7 +749,7 @@ void R_RenderPlayerView(player_t *player) {
   R_SetupFrame(player);
 
   // Clear buffers.
-  // R_ClearClipSegs(); // TODO
+  R_ClearClipSegs();
   // R_ClearDrawSegs();  // TODO
   // R_ClearPlanes();  // TODO
   // R_ClearSprites();  // TODO
@@ -747,7 +758,8 @@ void R_RenderPlayerView(player_t *player) {
   // NetUpdate();  // TODO
 
   // The head node is the last node output.
-  R_RenderBSPNode(numnodes - 1);
+  // R_RenderBSPNode(numnodes - 1);
+  R_RenderBSPNodeNonRecursive(); // JOSEF: non-recursive version for IPU
 
   // Check for new console commands.
   // NetUpdate();  // TODO

@@ -16,6 +16,10 @@
 
 #include "ipu/ipu_interface.h"
 
+extern int setblocks; // r_main.c
+extern int setdetail; // r_main.c
+
+
 
 void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   assert(sizeof(G_LoadLevel_MiscValues_t) <= IPUMISCVALUESSIZE);
@@ -95,6 +99,13 @@ void IPU_G_Responder_PackMiscValues(void* src_buf, void* dst_buf) {
 void IPU_R_RenderPlayerView_PackMiscValues(void* buf) {
   // R_RenderPlayerView_MiscValues_t* pack = (R_RenderPlayerView_MiscValues_t*) buf;
   // Nothing to pack
+}
+
+void IPU_R_ExecuteSetViewSize_PackMiscValues(void* buf) {
+  assert(sizeof(R_ExecuteSetViewSize_MiscValues_t) <= IPUMISCVALUESSIZE);
+  R_ExecuteSetViewSize_MiscValues_t* pack = buf;
+  pack->setblocks = setblocks;
+  pack->setdetail = setdetail;
 }
 
 void IPU_Setup_PackMarkNums(void* buf) {

@@ -35,6 +35,8 @@
 
 //#include "r_local.h"
 
+#include <print.h>
+
 seg_t *curline;
 side_t *sidedef;
 line_t *linedef;
@@ -75,8 +77,13 @@ typedef struct {
 cliprange_t *newend;
 cliprange_t solidsegs[MAXSEGS];
 
+// JOSEF: !!!!!!!!!!!!!!!!!!!!!
+// JOSEF: TMP to see if BSP is working
+// JOSEF: !!!!!!!!!!!!!!!!!!!!!
+void R_StoreWallRange(int start, int stop) {
+  // ACTUAL func in r_segs.c
+}
 
-/*
 //
 // R_ClipSolidWallSegment
 // Does handle solid walls,
@@ -209,9 +216,7 @@ void R_ClearClipSegs(void) {
   solidsegs[1].last = 0x7fffffff;
   newend = solidsegs + 2;
 }
-*/
 
-/*
 //
 // R_AddLine
 // Clips the given segment
@@ -243,7 +248,7 @@ void R_AddLine(seg_t *line) {
   rw_angle1 = angle1;
   angle1 -= viewangle;
   angle2 -= viewangle;
-
+  
   tspan = angle1 + clipangle;
   if (tspan > 2 * clipangle) {
     tspan -= 2 * clipangle;
@@ -291,6 +296,7 @@ void R_AddLine(seg_t *line) {
       backsector->floorheight != frontsector->floorheight)
     goto clippass;
 
+  /* LATER
   // Reject empty lines used for triggers
   //  and special events.
   // Identical floor and ceiling on both sides,
@@ -302,6 +308,7 @@ void R_AddLine(seg_t *line) {
       curline->sidedef->midtexture == 0) {
     return;
   }
+  */
 
 clippass:
   R_ClipPassWallSegment(x1, x2 - 1);
@@ -434,8 +441,10 @@ void R_Subsector(int num) {
   seg_t *line;
   subsector_t *sub;
 
-  if (num >= numsubsectors)
-    I_Error("R_Subsector: ss %i with numss = %i", num, numsubsectors);
+  if (num >= numsubsectors) {
+    // I_Error("R_Subsector: ss %i with numss = %i", num, numsubsectors); // JOSEF
+    printf("ERROR: R_Subsector: ss %d with numss = %d", num, numsubsectors); // JOSEF
+  }
 
   sscount++;
   sub = &subsectors[num];
@@ -443,6 +452,7 @@ void R_Subsector(int num) {
   count = sub->numlines;
   line = &segs[sub->firstline];
 
+  /* LATER
   if (frontsector->floorheight < viewz) {
     floorplane = R_FindPlane(frontsector->floorheight, frontsector->floorpic,
                              frontsector->lightlevel);
@@ -458,6 +468,7 @@ void R_Subsector(int num) {
     ceilingplane = NULL;
 
   R_AddSprites(frontsector);
+  */
 
   while (count--) {
     R_AddLine(line);
@@ -465,11 +476,13 @@ void R_Subsector(int num) {
   }
 
   // check for solidsegs overflow - extremely unsatisfactory!
-  if (newend > &solidsegs[32])
-    I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
+  if (newend > &solidsegs[32]) {
+    // I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n"); // JOSEF
+    printf("ERROR: R_Subsector: solidsegs overflow (vanilla may crash here)\n");
+  }
 }
 
-*/
+/*
 //
 // RenderBSPNode
 // Renders all subsectors below a given node,
@@ -478,7 +491,7 @@ void R_Subsector(int num) {
 void R_RenderBSPNode(int bspnum) {
   node_t *bsp;
   int side;
-/*
+
   // Found a subsector?
   if (bspnum & NF_SUBSECTOR) {
     if (bspnum == -1)
@@ -499,5 +512,66 @@ void R_RenderBSPNode(int bspnum) {
   // Possibly divide back space.
   if (R_CheckBBox(bsp->bbox[side ^ 1]))
     R_RenderBSPNode(bsp->children[side ^ 1]);
-    */
+}
+*/
+
+//
+// RenderBSPNode
+// Renders all subsectors below a given node,
+//  traversing subtree recursively.
+// Just call with BSP root.
+void R_RenderBSPNodeNonRecursive() {
+  node_t *bsp;
+  int side;
+
+  const int maxRecursion = 30;
+  node_t* bspstack[maxRecursion];
+  int sidestack[maxRecursion];
+
+  int depth = 0;
+  int bspnum = numnodes - 1;
+
+  while (1) {
+    // Loop that descends tree, taking the front side of each node until it
+    // stops at a subsector to render
+    while (1) {
+      if (bspnum & NF_SUBSECTOR) {
+        if (bspnum == -1)
+          R_Subsector(0);
+        else
+          R_Subsector(bspnum & (~NF_SUBSECTOR));
+        break;
+      }
+      
+      // Decide which side the view point is on.
+      bsp = &nodes[bspnum];
+      side = R_PointOnSide(viewx, viewy, bsp);
+
+      // Recurse to divide the front space.
+      bspnum = bsp->children[side];
+      if (depth >= maxRecursion) {
+        printf("ERROR: R_RenderBSPNode exceeded max recursion\n");
+        break;
+      }
+      bspstack[depth] = bsp;
+      sidestack[depth] = side;
+      depth++;
+    }
+
+    // Loop that ascends up the tree until it finds a node where the 'other'
+    // branch is worth descending into.
+    while (1) {
+      depth--;
+      bsp = bspstack[depth];
+      side = sidestack[depth];
+      
+      bspnum = bsp->children[side ^ 1];
+      // Recurse with new bspnum
+      if (R_CheckBBox(bsp->bbox[side ^ 1])) 
+        break; 
+      
+      if (depth == 0)
+        return;
+    }
+  }
 }

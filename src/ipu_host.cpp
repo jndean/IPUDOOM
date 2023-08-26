@@ -43,6 +43,7 @@ class IpuDoom {
   void buildIpuGraph();
   void run_AM_Drawer();
   void run_R_RenderPlayerView();
+  void run_R_ExecuteSetViewSize();
   void run_IPU_Setup();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
@@ -185,7 +186,7 @@ void IpuDoom::buildIpuGraph() {
 
   poplar::ComputeSet IPU_Setup_UnpackMarknumSprites_CS = m_ipuGraph.addComputeSet("IPU_Setup_UnpackMarknumSprites_CS");
   vtx = m_ipuGraph.addVertex(IPU_Setup_UnpackMarknumSprites_CS, "IPU_Setup_UnpackMarknumSprites_Vertex", 
-  {{"buf", marknumSpriteBuf}});
+  {{"buf", marknumSpriteBuf}, {"frame", ipuFrame}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, IPUAMMARKBUFSIZE * 100);
   
@@ -198,23 +199,30 @@ void IpuDoom::buildIpuGraph() {
 
   // -------- R_RenderPlayerView_CS ------ //
 
-  
-  poplar::Tensor R_RenderPlayerView_MiscValsBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {sizeof(R_RenderPlayerView_MiscValues_t)}, "R_RenderPlayerView_MiscValsBuf");
-  m_ipuGraph.setTileMapping(R_RenderPlayerView_MiscValsBuf, 0);
-  auto R_RenderPlayerView_MiscValsBufStream =
-      m_ipuGraph.addHostToDeviceFIFO("R_RenderPlayerView_MiscValsBuf-stream", poplar::UNSIGNED_CHAR, sizeof(R_RenderPlayerView_MiscValues_t));
-
   poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
   vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", 
-  {{"frame", ipuFrame}, {"miscValues", R_RenderPlayerView_MiscValsBuf}});
+  {{"frame", ipuFrame}, {"miscValues", m_miscValuesBuf}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 10000000);
 
   poplar::program::Sequence R_RenderPlayerView_prog({
-      poplar::program::Copy(R_RenderPlayerView_MiscValsBufStream, R_RenderPlayerView_MiscValsBuf),
+      poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Copy(frameInStream, ipuFrame),
       poplar::program::Execute(R_RenderPlayerView_CS),
       poplar::program::Copy(ipuFrame, frameOutStream),
+  });
+
+  // -------- R_ExecuteSetViewSize_CS ------ //
+  
+  poplar::ComputeSet R_ExecuteSetViewSize_CS = m_ipuGraph.addComputeSet("R_ExecuteSetViewSize_CS");
+  vtx = m_ipuGraph.addVertex(R_ExecuteSetViewSize_CS, "R_ExecuteSetViewSize_Vertex", {{"miscValues", m_miscValuesBuf}});
+  m_ipuGraph.setTileMapping(vtx, 0);
+  m_ipuGraph.setPerfEstimate(vtx, 100);
+  
+  poplar::program::Sequence R_ExecuteSetViewSize_prog({
+      poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
+      poplar::program::Execute(R_ExecuteSetViewSize_CS),
+      GetPrintbuf_prog // Remove?
   });
 
   // ---------------- Final prog --------------//
@@ -227,7 +235,8 @@ void IpuDoom::buildIpuGraph() {
       G_Ticker_prog,
       G_Responder_prog,
       AM_Drawer_prog,
-      R_RenderPlayerView_prog
+      R_RenderPlayerView_prog,
+      R_ExecuteSetViewSize_prog,
   })));
 
   m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
@@ -245,23 +254,37 @@ void IpuDoom::buildIpuGraph() {
   m_ipuEngine->connectStreamToCallback("marknumSpriteBuf-stream", [this](void* p) {
     IPU_Setup_PackMarkNums(p);
   });
-  m_ipuEngine->connectStreamToCallback("R_RenderPlayerView_MiscValsBuf-stream", [this](void* p) {
-    IPU_R_RenderPlayerView_PackMiscValues(p);
-  });
 
   m_ipuEngine->load(m_ipuDevice);
 }
 
 // --- Internal interface from class IpuDoom to m_ipuEngine --- //
-void IpuDoom::run_IPU_Setup() { m_ipuEngine->run(0); }
-void IpuDoom::run_G_DoLoadLevel() { IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(1); }
-void IpuDoom::run_G_Ticker() { IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h); m_ipuEngine->run(2); }
+void IpuDoom::run_IPU_Setup() {
+  m_ipuEngine->run(0);
+}
+void IpuDoom::run_G_DoLoadLevel() {
+  IPU_G_LoadLevel_PackMiscValues(m_miscValuesBuf_h);
+  m_ipuEngine->run(1);
+}
+void IpuDoom::run_G_Ticker() {
+  IPU_G_Ticker_PackMiscValues(m_miscValuesBuf_h);
+  m_ipuEngine->run(2);
+}
 void IpuDoom::run_G_Responder(G_Responder_MiscValues_t* src_buf) { 
   IPU_G_Responder_PackMiscValues(src_buf, m_miscValuesBuf_h);
   m_ipuEngine->run(3); 
 }
-void IpuDoom::run_AM_Drawer() { m_ipuEngine->run(4); }
-void IpuDoom::run_R_RenderPlayerView() { m_ipuEngine->run(5); }
+void IpuDoom::run_AM_Drawer() {
+  m_ipuEngine->run(4);
+}
+void IpuDoom::run_R_RenderPlayerView() {
+  IPU_R_RenderPlayerView_PackMiscValues(m_miscValuesBuf_h);
+  m_ipuEngine->run(5);
+}
+void IpuDoom::run_R_ExecuteSetViewSize() {
+  IPU_R_ExecuteSetViewSize_PackMiscValues(m_miscValuesBuf_h);
+  m_ipuEngine->run(6);
+}
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 
@@ -277,4 +300,5 @@ void IPU_R_RenderPlayerView() { ipuDoomInstance->run_R_RenderPlayerView(); }
 void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
 void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
 void IPU_G_Responder(G_Responder_MiscValues_t* buf) { ipuDoomInstance->run_G_Responder(buf); }
+void IPU_R_ExecuteSetViewSize() { ipuDoomInstance->run_R_ExecuteSetViewSize(); }
 }

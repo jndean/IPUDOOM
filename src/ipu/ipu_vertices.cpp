@@ -1,7 +1,9 @@
 
 #include <Vertex.hpp>
+#include <cassert>
 
 #include "doomtype.h"
+#include "i_video.h"
 #include "ipu_print.h"
 
 
@@ -28,6 +30,7 @@ class AM_Drawer_Vertex : public poplar::Vertex {
   poplar::InOut<poplar::Vector<unsigned char>> frame;
 
   bool compute() {
+    assert(&frame[0] == I_VideoBuffer);
     AM_Drawer(&frame[0]);
     return true;
   }

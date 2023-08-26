@@ -59,6 +59,11 @@ typedef struct {
 } R_RenderPlayerView_MiscValues_t;
 
 
+typedef struct {
+    int setblocks;
+    int setdetail;
+} R_ExecuteSetViewSize_MiscValues_t;
+
 
 #ifdef __cplusplus
 }

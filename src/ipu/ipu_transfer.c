@@ -7,6 +7,11 @@
 #include "ipu_transfer.h"
 #include "print.h"
 
+extern int setblocks; // r_main.c
+extern int setdetail; // r_main.c
+
+
+
 int gamelumpnum;
 
 void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
@@ -59,4 +64,10 @@ void IPU_Setup_UnpackMarkNums(const unsigned char* buf) {
 
 void IPU_R_RenderPlayerView_UnpackMiscValues(R_RenderPlayerView_MiscValues_t* pack) {
   // Nothing to unpack
+}
+
+
+void IPU_R_ExecuteSetViewSize_UnpackMiscValues(R_ExecuteSetViewSize_MiscValues_t* pack) {
+  setblocks = pack->setblocks;
+  setdetail = pack->setdetail;
 }

@@ -296,6 +296,7 @@ void R_AddLine(seg_t *line) {
       backsector->floorpic == frontsector->floorpic &&
       backsector->lightlevel == frontsector->lightlevel &&
       curline->sidedef->midtexture == 0) {
+      printf(" NOTE: Reject empty lines used for triggers\n");
     return;
   }
 
