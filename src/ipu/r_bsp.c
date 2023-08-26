@@ -80,8 +80,20 @@ cliprange_t solidsegs[MAXSEGS];
 // JOSEF: !!!!!!!!!!!!!!!!!!!!!
 // JOSEF: TMP to see if BSP is working
 // JOSEF: !!!!!!!!!!!!!!!!!!!!!
+int bspnum;
 void R_StoreWallRange(int start, int stop) {
-  // ACTUAL func in r_segs.c
+  // ACTUAL R_StoreWallRange func is in r_segs.c
+
+  char colour = bspnum % 256;
+  int top = 90, bottom = 110;
+  for (int col = start; col < stop; ++col) {
+    for (int row = top; row < bottom; ++row) {
+      I_VideoBuffer[row * 320 + col] = colour;
+    }
+  }
+  for (int row = top; row < bottom; ++row) {
+    I_VideoBuffer[row * 320 + stop] = 0;
+  }
 }
 
 //
@@ -516,10 +528,8 @@ void R_RenderBSPNode(int bspnum) {
 */
 
 //
-// RenderBSPNode
-// Renders all subsectors below a given node,
-//  traversing subtree recursively.
-// Just call with BSP root.
+// R_RenderBSPNodeNonRecursive
+// Non-recursive version
 void R_RenderBSPNodeNonRecursive() {
   node_t *bsp;
   int side;
@@ -529,7 +539,8 @@ void R_RenderBSPNodeNonRecursive() {
   int sidestack[maxRecursion];
 
   int depth = 0;
-  int bspnum = numnodes - 1;
+  // int bspnum = numnodes - 1; // Temporarily make this global for visualising
+  bspnum = numnodes - 1;
 
   while (1) {
     // Loop that descends tree, taking the front side of each node until it
