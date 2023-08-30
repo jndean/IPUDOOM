@@ -45,10 +45,6 @@
 
 #include "print.h"
 
-// JOSEF: added
-inline int abs(int x) { 
-  return (x < 0) ? -x : x;
-}
 
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
@@ -112,7 +108,12 @@ angle_t xtoviewangle[SCREENWIDTH + 1];
 // bumped light from gun blasts
 int extralight;
 
-void (*colfunc)(void);
+// void (*colfunc)(void);
+
+void colfunc() {
+  if (!detailshift) R_DrawColumn();
+  // else              R_DrawColumnLow(); // LATER
+}
 void (*basecolfunc)(void);
 void (*fuzzcolfunc)(void);
 void (*transcolfunc)(void);
@@ -314,7 +315,6 @@ angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) {
   return R_PointToAngle(x2, y2);
 }
 
-/*
 fixed_t R_PointToDist(fixed_t x, fixed_t y) {
   int angle;
   fixed_t dx;
@@ -343,7 +343,7 @@ fixed_t R_PointToDist(fixed_t x, fixed_t y) {
   angle = (tantoangle[frac >> DBITS] + ANG90) >> ANGLETOFINESHIFT;
 
   // use as cosine
-  dist = FixedDiv(dx, finesine[angle]);
+  dist = FixedDiv(dx, IPU_finesine(angle));
 
   return dist;
 }
@@ -406,8 +406,9 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle) {
   angleb = ANG90 + (visangle - rw_normalangle);
 
   // both sines are allways positive
-  sinea = finesine[anglea >> ANGLETOFINESHIFT];
-  sineb = finesine[angleb >> ANGLETOFINESHIFT];
+  sinea = IPU_finesine(anglea >> ANGLETOFINESHIFT);
+  sineb = IPU_finesine(angleb >> ANGLETOFINESHIFT);
+
   num = FixedMul(projection, sineb) << detailshift;
   den = FixedMul(rw_distance, sinea);
 
@@ -424,6 +425,7 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle) {
   return scale;
 }
 
+/*
 //
 // R_InitTables
 //
@@ -597,7 +599,9 @@ void R_ExecuteSetViewSize(void) {
   centeryfrac = centery << FRACBITS;
   projection = centerxfrac;
 
-  /* LATER
+  /* 
+  // JOSEF: Removed. Avoid calls via pointer on IPU,
+  // instead check detailshift on every call
   if (!detailshift) {
     colfunc = basecolfunc = R_DrawColumn;
     fuzzcolfunc = R_DrawFuzzColumn;
@@ -720,8 +724,17 @@ void R_SetupFrame(player_t *player) {
 
   viewz = player->viewz;
 
-  viewsin = finesine[viewangle >> ANGLETOFINESHIFT];
+  viewsin = IPU_finesine(viewangle >> ANGLETOFINESHIFT);
   viewcos = finecosine[viewangle >> ANGLETOFINESHIFT];
+
+  // JOSEF TMP tests!
+  // angle_t sin_input = viewangle >> ANGLETOFINESHIFT;
+  // float sin_inscaled = (sin_input + 0.5f) * 3.14159265359f * 2 / FINEANGLES;
+  // float sin_sin = sinf(sin_inscaled);
+  // int sin_output = FRACUNIT * sin_sin;
+  // angle_t viewsin_est = *((angle_t*)(&sin_output));
+  // printf("Actual: %d, Calculated: %d,    ", viewsin, viewsin_est);
+  // printf("sin_input: %d, sin_inscaled: %f, sin_sin: %f, sin_output: %d\n", sin_input, (double)sin_inscaled, (double)sin_sin, sin_output);
 
   sscount = 0;
 
@@ -750,8 +763,8 @@ void R_RenderPlayerView(player_t *player) {
 
   // Clear buffers.
   R_ClearClipSegs();
-  // R_ClearDrawSegs();  // TODO
-  // R_ClearPlanes();  // TODO
+  R_ClearDrawSegs();
+  R_ClearPlanes();
   // R_ClearSprites();  // TODO
 
   // check for new console commands.

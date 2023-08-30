@@ -39,6 +39,8 @@
 #include "z_zone.h"
 */
 
+#include <print.h>
+
 // ?
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
@@ -92,7 +94,11 @@ byte *dc_source;
 // just for profiling
 int dccount;
 
-/*
+
+// !!!!!! JOSEF TMP FOR VISUALISATION  !!!!! //
+extern int bspnum;
+extern int lightnum;
+
 //
 // A column is a vertical slice/span from a wall texture that,
 //  given the DOOM style restrictions on the view orientation,
@@ -112,8 +118,11 @@ void R_DrawColumn(void) {
   if (count < 0)
     return;
 
-  if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
-    I_Error("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
+  if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT) {
+    // I_Error("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
+    printf("ERROR: R_DrawColumn: %u to %u at %u\n", dc_yl, dc_yh, dc_x);
+  }
+  char colour = (bspnum - (lightnum & 1)) % 256; // JOSEF: TMP!
 
   // Framebuffer destination address.
   // Use ylookup LUT to avoid multiply with ScreenWidth.
@@ -122,8 +131,8 @@ void R_DrawColumn(void) {
 
   // Determine scaling,
   //  which is the only mapping to be done.
-  fracstep = dc_iscale;
-  frac = dc_texturemid + (dc_yl - centery) * fracstep;
+  // fracstep = dc_iscale;                                // LATER
+  // frac = dc_texturemid + (dc_yl - centery) * fracstep; // LATER
 
   // Inner loop that does the actual texture mapping,
   //  e.g. a DDA-lile scaling.
@@ -131,14 +140,15 @@ void R_DrawColumn(void) {
   do {
     // Re-map color indices from wall texture column
     //  using a lighting/special effects LUT.
-    *dest = dc_colormap[dc_source[(frac >> FRACBITS) & 127]];
+    *dest = colour; // LATER: dc_colormap[dc_source[(frac >> FRACBITS) & 127]]; // LATER
 
     dest += SCREENWIDTH;
-    frac += fracstep;
+    // frac += fracstep; // LATER
 
   } while (count--);
 }
 
+/*
 // UNUSED.
 // Loop unrolled.
 #if 0

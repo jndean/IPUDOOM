@@ -54,7 +54,6 @@ class IpuDoom {
   std::unique_ptr<poplar::Engine> m_ipuEngine;
 
  private:
-  poplar::Tensor m_lumpBuf;
   poplar::Tensor m_lumpNum;
   int m_lumpNum_h;
   poplar::Tensor m_miscValuesBuf;
@@ -122,16 +121,17 @@ void IpuDoom::buildIpuGraph() {
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 10000000);
 
-  m_lumpBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUMAXLUMPBYTES}, "lumpBuf");
   m_lumpNum = m_ipuGraph.addVariable(poplar::INT, {}, "lumpNum");
-  m_ipuGraph.setTileMapping(m_lumpBuf, 0);
+  // Manually overlap lumbuf with framebuf, since they're not used at the same time
+  assert(IPUMAXLUMPBYTES <= ipuFrame.numElements());
+  poplar::Tensor lumpBuf = ipuFrame.slice(0, IPUMAXLUMPBYTES); 
   m_ipuGraph.setTileMapping(m_lumpNum, 0);
   auto lumpBufStream = m_ipuGraph.addHostToDeviceFIFO("lumpBuf-stream", poplar::UNSIGNED_CHAR, IPUMAXLUMPBYTES);
   auto lumpNumStream = m_ipuGraph.addDeviceToHostFIFO("lumpNum-stream", poplar::INT, 1);
   
   poplar::ComputeSet P_SetupLevel_CS = m_ipuGraph.addComputeSet("P_SetupLevel_CS");
   vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", m_lumpBuf}});
+    {"lumpNum", m_lumpNum}, {"lumpBuf", lumpBuf}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 100);
 
@@ -142,7 +142,7 @@ void IpuDoom::buildIpuGraph() {
         poplar::program::Execute(P_SetupLevel_CS),
         poplar::program::Copy(m_lumpNum, lumpNumStream),
         poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded
-        poplar::program::Copy(lumpBufStream, m_lumpBuf),
+        poplar::program::Copy(lumpBufStream, lumpBuf),
       })),
       GetPrintbuf_prog,
   });

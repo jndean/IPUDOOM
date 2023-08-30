@@ -81,20 +81,7 @@ cliprange_t solidsegs[MAXSEGS];
 // JOSEF: TMP to see if BSP is working
 // JOSEF: !!!!!!!!!!!!!!!!!!!!!
 int bspnum;
-void R_StoreWallRange(int start, int stop) {
-  // ACTUAL R_StoreWallRange func is in r_segs.c
 
-  char colour = bspnum % 256;
-  int top = 90, bottom = 110;
-  for (int col = start; col < stop; ++col) {
-    for (int row = top; row < bottom; ++row) {
-      I_VideoBuffer[row * 320 + col] = colour;
-    }
-  }
-  for (int row = top; row < bottom; ++row) {
-    I_VideoBuffer[row * 320 + stop] = 0;
-  }
-}
 
 //
 // R_ClipSolidWallSegment
@@ -529,7 +516,7 @@ void R_RenderBSPNode(int bspnum) {
 
 //
 // R_RenderBSPNodeNonRecursive
-// Non-recursive version
+// Non-recursive version is more suitable to IPU software stack
 void R_RenderBSPNodeNonRecursive() {
   node_t *bsp;
   int side;

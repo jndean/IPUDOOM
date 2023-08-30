@@ -47,6 +47,7 @@
 
 // Effective size is 10240.
 extern const fixed_t finesine[5*FINEANGLES/4];
+fixed_t IPU_finesine(int i); // Replace big lookup on IPU
 
 // Re-use data, is just PI/2 pahse shift.
 extern const fixed_t *finecosine;

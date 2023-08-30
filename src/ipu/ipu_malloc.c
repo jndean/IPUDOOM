@@ -3,7 +3,7 @@
 #include "ipu_malloc.h"
 #include "print.h"
 
-#define IPUMALLOC_MAXMAPSIZE 250000
+#define IPUMALLOC_MAXMAPSIZE 200000
 
 #define ALIGN32(x) (((x) + 3) & (~3))
 

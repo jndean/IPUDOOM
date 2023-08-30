@@ -81,7 +81,9 @@ extern int detailshift;
 // Function pointers to switch refresh/drawing functions.
 // Used to select shadow mode etc.
 //
-extern void (*colfunc)(void);
+
+// extern void (*colfunc)(void); 
+void colfunc(void); // Don't want to call via pointer on IPU
 extern void (*transcolfunc)(void);
 extern void (*basecolfunc)(void);
 extern void (*fuzzcolfunc)(void);

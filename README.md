@@ -1,6 +1,6 @@
 
 
-![IPUDOOM](IPUDOOM.png)
+![IPUDOOM](README_imgs/IPUDOOM.png)
 
 A WIP to put Doom 1993 on the IPU.
 
@@ -17,28 +17,27 @@ wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 ```
 
 
-
+Vanilla Doom runs on the CPU, have started offloading subsystems to IPU Tile 0.
 Activity Log:
 
-- [x] Run Doom on CPU
+- [x] Create IPU hooks for key methods like G_Ticker, G_Responder so IPU can step game time and respond to keypresses in real time. (Also setviewsize etc)
 
-- [x] POC IPU modifies frame buffer every frame
+- [x] Implement IPU memory allocator for level state, i.e., anything with lifetime PU_LEVEL
 
-- [x] Create IPU hooks for key methods like G_Ticker, G_Responder so IPU can step time and respond to keypresses
+- [x] IPU interacts with host to load and unpack all level geometry from disk whenever a level is loaded
 
-- [x] Move level geometry to IPU on level load
-
-- [x] Implement all methods used by the automap (vector rendering, sprite rendering, AM event responder)
-
-- [x] Automap disabled on CPU, runs and renders entirely on IPU! (enabling CPU to continue raycasting to update map)
-
+- [x] Implement all methods used by the automap (vector rendering, sprite rendering, AM event responder). Automap is now disabled on CPU, renders entirely on IPU.
   ![automap](https://static.wikia.nocookie.net/doom/images/9/9c/Automap.png)
 
-- [ ] ~~Either implement coroutines in x86 to allow further dev on IPUModel~~, or implement frame streaming to local machine to allow dev on remote IPU
+- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU.
+  ![gameplay gif](README_imgs/flats.gif)
 
-- [ ] Move core game loop to IPU as a coroutine, triggering CPU callbacks every tic to do unimplemented work
+- [ ] Port visplane system to get IPU rendering floors and ceilings?
 
-- [ ] Continue implementing main game systems on IPU...
+- [ ] Textures are too large to fit on a singe tile, so devise a mechanism for tiles to cooperate on texturing walls
+
+- [ ] Render things other things in the level
+
 
   ...
 

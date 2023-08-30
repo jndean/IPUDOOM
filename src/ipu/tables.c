@@ -31,6 +31,7 @@
 //    
 
 #include "tables.h"
+#include <math.h> // JOSEF
 
 // to get a global angle from cartesian coordinates, the coordinates are
 // flipped until they are in the first octant of the coordinate system, then
@@ -577,6 +578,14 @@ const fixed_t finetangent[4096] =
     11392683,13145455,15535599,18988036,24413316,34178904,56965752,170910304
 };
 
+// 40K lookup table is a bit dear for IPU, could calc live instead
+fixed_t IPU_finesine(int i) {
+    return finesine[i];
+
+    // float scaled_i = (i + 0.5f) * 3.14159265359f * 2 / FINEANGLES;
+    // int a = FRACUNIT * sinf(scaled_i);
+    // return *((angle_t*)(&a));
+}
 
 const fixed_t finesine[10240] =
 {
