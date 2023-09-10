@@ -90,17 +90,12 @@ class P_SetupLevel_Vertex : public poplar::Vertex {
 
 // ------------ IPU_Setup ------------ //
 
-class IPU_Setup_UnpackMarknumSprites_Vertex : public poplar::Vertex {
+struct IPU_Setup_UnpackMarknumSprites_Vertex : public poplar::Vertex {
   poplar::Input<poplar::Vector<unsigned char>> buf;
-  poplar::InOut<poplar::Vector<unsigned char>> frame;
 
- public:
-  bool compute() {
+  void compute() {
     IPU_Setup_UnpackMarkNums(&buf[0]);
 
-    // Initialise I_VideoBuffer here for now :)
-    I_VideoBuffer = &frame[0];
-
-    return true;
+    return;
   }
 };

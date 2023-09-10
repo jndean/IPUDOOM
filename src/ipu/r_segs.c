@@ -92,6 +92,8 @@ lighttable_t **walllights;
 
 short *maskedtexturecol;
 
+int abs(int); // JOSEF
+
 /*
 //
 // R_RenderMaskedSegRange

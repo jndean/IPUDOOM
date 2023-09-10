@@ -9,7 +9,6 @@
 #include "tables.h"
 #include "v_video.h"
 
-#include "ipu_print.h"
 #include "ipu_interface.h"
 
 
@@ -467,7 +466,6 @@ void AM_Start(void) {
   }
   AM_initVariables();
   // AM_loadPics(); // JOSEF: pics loaded once on startup
-  ipuprint("Starting automap");
 }
 
 //

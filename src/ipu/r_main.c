@@ -43,6 +43,7 @@
 #include "r_things.h"
 #include "tables.h"
 
+#include "ipu_interface.h"
 #include "print.h"
 
 
@@ -108,16 +109,24 @@ angle_t xtoviewangle[SCREENWIDTH + 1];
 // bumped light from gun blasts
 int extralight;
 
-// void (*colfunc)(void);
+// void (*colfunc)(void); // JOSEF
 
-void colfunc() {
+void colfunc() { // JOSEF: Don't call through pointer, explicit call
   if (!detailshift) R_DrawColumn();
-  // else              R_DrawColumnLow(); // LATER
+  // else           R_DrawColumnLow(); // LATER
 }
 void (*basecolfunc)(void);
 void (*fuzzcolfunc)(void);
 void (*transcolfunc)(void);
 void (*spanfunc)(void);
+
+
+// JOSEF
+int tileID;
+int tileLeftClip;
+int tileRightClip;
+
+int abs(int);
 
 //
 // R_AddPointToBox
@@ -601,7 +610,7 @@ void R_ExecuteSetViewSize(void) {
 
   /* 
   // JOSEF: Removed. Avoid calls via pointer on IPU,
-  // instead check detailshift on every call
+  // instead check detailshift on every call of R_DrawColumn etc
   if (!detailshift) {
     colfunc = basecolfunc = R_DrawColumn;
     fuzzcolfunc = R_DrawFuzzColumn;
@@ -615,9 +624,14 @@ void R_ExecuteSetViewSize(void) {
   }
   */
 
+  // JOSEF
+  tileLeftClip = tileID * IPUCOLSPERRENDERTILE;
+  tileRightClip = tileLeftClip + IPUCOLSPERRENDERTILE;
+
   R_InitBuffer(scaledviewwidth, viewheight);
 
   R_InitTextureMapping();
+
 
   /* LATER
 

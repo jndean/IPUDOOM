@@ -467,7 +467,7 @@ void R_InitTextures(void) {
       Z_Malloc(numtextures * sizeof(*texturecompositesize), PU_STATIC, 0);
   texturewidthmask =
       Z_Malloc(numtextures * sizeof(*texturewidthmask), PU_STATIC, 0);
-  textureheight = Z_Malloc(numtextures * sizeof(*textureheight), PU_STATIC, 0);
+  textureheight = Z_Malloc(numtextures * sizeof(*textureheight), PU_STATIC, 0);  
 
   totalwidth = 0;
 

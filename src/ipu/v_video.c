@@ -40,7 +40,7 @@
 #include "i_video.h"
 #include "v_video.h"
 
-#include "ipu_print.h"
+#include "print.h"
 
 // Blending table used for fuzzpatch, etc.
 // Only used in Heretic/Hexen
@@ -161,7 +161,7 @@ void V_DrawPatch(int x, int y, patch_t *patch)
      || y < 0
      || y + SHORT(patch->height) > SCREENHEIGHT)
     {
-        ipuprint("Bad V_DrawPatch!\n");
+        printf("Bad V_DrawPatch!\n");
     }
 
     /* LATER

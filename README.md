@@ -13,7 +13,7 @@ make
 # Download shareware resource pack
 wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 # Run
-./build/doom -iwad doom1.wad -width 320 -nosound 
+./build/doom -iwad doom1.wad -width 320 -nosound -nomouse
 ```
 
 

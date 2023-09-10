@@ -9,7 +9,6 @@
 
 #include "ipu_malloc.h"
 #include "ipu_transfer.h"
-#include "ipu_print.h"
 #include "print.h"
 
 
@@ -468,9 +467,6 @@ void P_SetupLevel_pt0(const unsigned char unused) {
 
   */
   leveltime = 0;
-
-  reset_ipuprint();
-  // ipuprint("Map starts at lump "); ipuprintnum(gamelumpnum); ipuprint("\n");
 
   return;
 

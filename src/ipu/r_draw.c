@@ -40,6 +40,7 @@
 */
 
 #include <print.h>
+#include "ipu_interface.h"
 
 // ?
 #define MAXWIDTH 1120
@@ -112,6 +113,10 @@ void R_DrawColumn(void) {
   fixed_t frac;
   fixed_t fracstep;
 
+  // JOSEF: Each tile only renders a portion of the frame
+  if ((dc_x < tileLeftClip) || (dc_x >= tileRightClip)) 
+    return;
+
   count = dc_yh - dc_yl;
 
   // Zero length, column does not exceed a pixel.
@@ -142,7 +147,7 @@ void R_DrawColumn(void) {
     //  using a lighting/special effects LUT.
     *dest = colour; // LATER: dc_colormap[dc_source[(frac >> FRACBITS) & 127]]; // LATER
 
-    dest += SCREENWIDTH;
+    dest += IPUCOLSPERRENDERTILE; // JOSEF: SCREENWIDTH;
     // frac += fracstep; // LATER
 
   } while (count--);
@@ -702,7 +707,7 @@ void R_InitBuffer(int width, int height) {
 
   // Column offset. For windows.
   for (i = 0; i < width; i++)
-    columnofs[i] = viewwindowx + i;
+    columnofs[i] = viewwindowx + i - tileLeftClip;
 
   // Samw with base row offset.
   if (width == SCREENWIDTH)
@@ -711,8 +716,11 @@ void R_InitBuffer(int width, int height) {
     viewwindowy = (SCREENHEIGHT - SBARHEIGHT - height) >> 1;
 
   // Preclaculate all row offsets.
-  for (i = 0; i < height; i++)
-    ylookup[i] = I_VideoBuffer + (i + viewwindowy) * SCREENWIDTH;
+  for (i = 0; i < height; i++) {
+    // ylookup[i] = I_VideoBuffer + (i + viewwindowy) * SCREENWIDTH;
+    // JOSEF
+    ylookup[i] = I_VideoBuffer + (i + viewwindowy) * IPUCOLSPERRENDERTILE;
+  }
 }
 
 /*

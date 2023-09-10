@@ -5,8 +5,6 @@
 #include "g_game.h"
 #include "doomstat.h"
 
-#include "ipu_print.h"
-
 
 #define SAVEGAMESIZE 0x2c000
 
@@ -142,8 +140,6 @@ void G_Ticker(void) {
   int i;
   int buf;
   ticcmd_t *cmd;
-
-  reset_ipuprint();
 
   /* LATER
   // do player reborns if needed

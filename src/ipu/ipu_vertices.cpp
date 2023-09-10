@@ -3,8 +3,8 @@
 #include <cassert>
 
 #include "doomtype.h"
+#include "r_main.h"
 #include "i_video.h"
-#include "ipu_print.h"
 
 
 typedef uint8_t pixel_t;
@@ -37,32 +37,26 @@ class AM_Drawer_Vertex : public poplar::Vertex {
 };
 
 
-class IPU_GetPrintBuf_Vertex : public poplar::Vertex {
- public:
-  poplar::Output<poplar::Vector<char>> printbuf;
+struct IPU_Init_Vertex : public poplar::SupervisorVertex {
+  poplar::InOut<poplar::Vector<unsigned char>> frame;
 
-  bool compute() {
-    get_ipuprint_data(&printbuf[0], printbuf.size());
-    reset_ipuprint();
-    return true;
+  __attribute__((target("supervisor")))
+  void compute() {
+
+    I_VideoBuffer = &frame[0];
+
+    // Deduce logical tile ID
+    int physical = __builtin_ipu_get_tile_id();
+    int row = physical / 64;
+    int subcolumn = physical % 64;
+    int column = subcolumn / 4;
+    int subtile = subcolumn % 4;
+    int logical = (92 * column) + (subtile / 2);
+    if (subtile & 1) {
+        row = 45 - row;
+    }
+    logical += 2 * row;
+    tileID = logical;
+
   }
 };
-
-
-// class G_Ticker_Vertex : public poplar::Vertex { Call G_ticker in D_ProcessEvents
-//  public:
-
-//   bool compute() {
-//     return true;
-//   }
-// };
-
-class D_ProcessEvents_Vertex : public poplar::Vertex {
- public:
-
-  bool compute() {
-    // Unpack and process events
-    return true;
-  }
-};
-

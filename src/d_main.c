@@ -206,9 +206,9 @@ void D_Display(void) {
     if (!gametic)
       break;
 
-    // if (automapactive)
-    //   AM_Drawer();
-    IPU_AM_Drawer(); // JOSEF
+    if (automapactive)
+      AM_Drawer();
+    // IPU_AM_Drawer(); // JOSEF. Disabled while I split render tiles
     
     
     if (wipe || (viewheight != SCREENHEIGHT && fullscreen))

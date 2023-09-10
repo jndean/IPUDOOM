@@ -71,36 +71,26 @@ IpuDoom::~IpuDoom(){};
 void IpuDoom::buildIpuGraph() {
   m_ipuGraph.addCodelets("build/ipu_rt.gp");
 
-  // -------- GetPrintbuf_CS (helper) ------ //
-
-  poplar::Tensor printbuf =
-      m_ipuGraph.addVariable(poplar::CHAR, {(ulong)IPUPRINTBUFSIZE}, "ipuprint_buf");
-  m_ipuGraph.setTileMapping(printbuf, 0);
-  auto printbufOutStream =
-      m_ipuGraph.addDeviceToHostFIFO("printbuf-stream", poplar::CHAR, IPUPRINTBUFSIZE);
-
-  poplar::ComputeSet GetPrintbuf_CS = m_ipuGraph.addComputeSet("GetPrintbuf_CS");
-  poplar::VertexRef vtx = m_ipuGraph.addVertex(GetPrintbuf_CS, "IPU_GetPrintBuf_Vertex", {{"printbuf", printbuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, IPUPRINTBUFSIZE);
-
-  poplar::program::Sequence GetPrintbuf_prog({
-      poplar::program::Execute(GetPrintbuf_CS),
-      poplar::program::Copy(printbuf, printbufOutStream),
-  });
-
-  // -------- AM_Drawer_CS ------ //
-
+  // ---- The main frame buffer ---- //
   poplar::Tensor ipuFrame =
-      m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)SCREENWIDTH * SCREENHEIGHT}, "frame");
-  m_ipuGraph.setTileMapping(ipuFrame, 0);
+      m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)SCREENHEIGHT, (ulong)SCREENWIDTH}, "frame");
+  assert(IPUCOLSPERRENDERTILE * IPUNUMRENDERTILES == SCREENWIDTH);
+  std::vector<poplar::Tensor> ipuFrameSlices;
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    ulong start = renderTile * IPUCOLSPERRENDERTILE;
+    ulong end = start + IPUCOLSPERRENDERTILE;
+    ipuFrameSlices.push_back(ipuFrame.slice({0, start}, {SCREENHEIGHT, end}).flatten());
+    m_ipuGraph.setTileMapping(ipuFrameSlices.back(), renderTile + IPUFIRSTRENDERTILE);
+  }
   auto frameInStream =
       m_ipuGraph.addHostToDeviceFIFO("frame-instream", poplar::UNSIGNED_CHAR, SCREENWIDTH * SCREENHEIGHT);
   auto frameOutStream =
       m_ipuGraph.addDeviceToHostFIFO("frame-outstream", poplar::UNSIGNED_CHAR, SCREENWIDTH * SCREENHEIGHT);
 
+  // -------- AM_Drawer_CS ------ //
+
   poplar::ComputeSet AM_Drawer_CS = m_ipuGraph.addComputeSet("AM_Drawer_CS");
-  vtx = m_ipuGraph.addVertex(AM_Drawer_CS, "AM_Drawer_Vertex", {{"frame", ipuFrame}});
+  auto vtx = m_ipuGraph.addVertex(AM_Drawer_CS, "AM_Drawer_Vertex", {{"frame", ipuFrameSlices[0]}});
   m_ipuGraph.setTileMapping(vtx, 0);
   m_ipuGraph.setPerfEstimate(vtx, 10000000);
 
@@ -113,52 +103,56 @@ void IpuDoom::buildIpuGraph() {
   // -------- IPU_G_DoLoadLevel ------ //
 
   m_miscValuesBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUMISCVALUESSIZE}, "miscValues");
-  m_ipuGraph.setTileMapping(m_miscValuesBuf, 0);
+  m_ipuGraph.setTileMapping(m_miscValuesBuf, IPUFIRSTRENDERTILE);
   auto miscValuesStream =
       m_ipuGraph.addHostToDeviceFIFO("miscValues-stream", poplar::UNSIGNED_CHAR, IPUMISCVALUESSIZE);
   poplar::ComputeSet G_DoLoadLevel_CS = m_ipuGraph.addComputeSet("G_DoLoadLevel_CS");
-  vtx = m_ipuGraph.addVertex(G_DoLoadLevel_CS, "G_DoLoadLevel_Vertex", {{"miscValues", m_miscValuesBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 10000000);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(G_DoLoadLevel_CS, "G_DoLoadLevel_Vertex", {{"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 10000000);
+  }
 
-  m_lumpNum = m_ipuGraph.addVariable(poplar::INT, {}, "lumpNum");
+  m_lumpNum = m_ipuGraph.addVariable(poplar::INT, {IPUNUMRENDERTILES}, "lumpNum");
   // Manually overlap lumbuf with framebuf, since they're not used at the same time
   assert(IPUMAXLUMPBYTES <= ipuFrame.numElements());
-  poplar::Tensor lumpBuf = ipuFrame.slice(0, IPUMAXLUMPBYTES); 
-  m_ipuGraph.setTileMapping(m_lumpNum, 0);
+  poplar::Tensor lumpBuf = ipuFrame.flatten().slice(0, IPUMAXLUMPBYTES); // TODO: Fix after frame split over multiple tiles
   auto lumpBufStream = m_ipuGraph.addHostToDeviceFIFO("lumpBuf-stream", poplar::UNSIGNED_CHAR, IPUMAXLUMPBYTES);
   auto lumpNumStream = m_ipuGraph.addDeviceToHostFIFO("lumpNum-stream", poplar::INT, 1);
   
   poplar::ComputeSet P_SetupLevel_CS = m_ipuGraph.addComputeSet("P_SetupLevel_CS");
-  vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_Vertex", {
-    {"lumpNum", m_lumpNum}, {"lumpBuf", lumpBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(P_SetupLevel_CS, "P_SetupLevel_Vertex", {
+      {"lumpNum", m_lumpNum[renderTile]}, {"lumpBuf", lumpBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 100);
+    m_ipuGraph.setTileMapping(m_lumpNum[renderTile], renderTile + IPUFIRSTRENDERTILE);
+  }
 
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_DoLoadLevel_CS),
-      poplar::program::Repeat(11, poplar::program::Sequence({
+      poplar::program::Repeat(11, poplar::program::Sequence({ // <- number of P_SetupLevel_CS steps
         poplar::program::Execute(P_SetupLevel_CS),
-        poplar::program::Copy(m_lumpNum, lumpNumStream),
+        poplar::program::Copy(m_lumpNum[0], lumpNumStream), // Only listen to first tile's requests
         poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded
         poplar::program::Copy(lumpBufStream, lumpBuf),
       })),
-      GetPrintbuf_prog,
   });
 
   // ---------------- G_Ticker --------------//
 
 
   poplar::ComputeSet G_Ticker_CS = m_ipuGraph.addComputeSet("G_Ticker_CS");
-  vtx = m_ipuGraph.addVertex(G_Ticker_CS, "G_Ticker_Vertex", {{"miscValues", m_miscValuesBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(G_Ticker_CS, "G_Ticker_Vertex", {{"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 100);
+  }
   
   poplar::program::Sequence G_Ticker_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_Ticker_CS),
-      GetPrintbuf_prog,
   });
 
 
@@ -166,18 +160,28 @@ void IpuDoom::buildIpuGraph() {
 
 
   poplar::ComputeSet G_Responder_CS = m_ipuGraph.addComputeSet("G_Responder_CS");
-  vtx = m_ipuGraph.addVertex(G_Responder_CS, "G_Responder_Vertex", {{"miscValues", m_miscValuesBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(G_Responder_CS, "G_Responder_Vertex", {{"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 100);
+  }
   
   poplar::program::Sequence G_Responder_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_Responder_CS),
-      GetPrintbuf_prog,
   });
 
 
   // -------------- IPU state setup ------------//
+
+
+  poplar::ComputeSet IPU_Init_CS = m_ipuGraph.addComputeSet("IPU_Init_CS");
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(IPU_Init_CS, "IPU_Init_Vertex", 
+      {{"frame", ipuFrameSlices[renderTile]}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 10000);
+  }
 
   poplar::Tensor marknumSpriteBuf = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {(ulong)IPUAMMARKBUFSIZE}, "marknumSpriteBuf");
   m_ipuGraph.setTileMapping(marknumSpriteBuf, 0);
@@ -185,25 +189,29 @@ void IpuDoom::buildIpuGraph() {
       m_ipuGraph.addHostToDeviceFIFO("marknumSpriteBuf-stream", poplar::UNSIGNED_CHAR, IPUAMMARKBUFSIZE);
 
   poplar::ComputeSet IPU_Setup_UnpackMarknumSprites_CS = m_ipuGraph.addComputeSet("IPU_Setup_UnpackMarknumSprites_CS");
-  vtx = m_ipuGraph.addVertex(IPU_Setup_UnpackMarknumSprites_CS, "IPU_Setup_UnpackMarknumSprites_Vertex", 
-  {{"buf", marknumSpriteBuf}, {"frame", ipuFrame}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, IPUAMMARKBUFSIZE * 100);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(IPU_Setup_UnpackMarknumSprites_CS, "IPU_Setup_UnpackMarknumSprites_Vertex", 
+    {{"buf", marknumSpriteBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, IPUAMMARKBUFSIZE * 100);
+  }
   
-  poplar::program::Sequence IPU_Setup_prog({
+  poplar::program::Sequence IPU_Init_Prog({
+      poplar::program::Execute(IPU_Init_CS),
       poplar::program::Copy(marknumSpriteBufStream, marknumSpriteBuf),
       poplar::program::Execute(IPU_Setup_UnpackMarknumSprites_CS),
-      GetPrintbuf_prog,
   });
 
 
   // -------- R_RenderPlayerView_CS ------ //
 
   poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
-  vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", 
-  {{"frame", ipuFrame}, {"miscValues", m_miscValuesBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 10000000);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", 
+    {{"frame", ipuFrameSlices[renderTile]}, {"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 10000000);
+  }
 
   poplar::program::Sequence R_RenderPlayerView_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
@@ -215,14 +223,15 @@ void IpuDoom::buildIpuGraph() {
   // -------- R_ExecuteSetViewSize_CS ------ //
   
   poplar::ComputeSet R_ExecuteSetViewSize_CS = m_ipuGraph.addComputeSet("R_ExecuteSetViewSize_CS");
-  vtx = m_ipuGraph.addVertex(R_ExecuteSetViewSize_CS, "R_ExecuteSetViewSize_Vertex", {{"miscValues", m_miscValuesBuf}});
-  m_ipuGraph.setTileMapping(vtx, 0);
-  m_ipuGraph.setPerfEstimate(vtx, 100);
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(R_ExecuteSetViewSize_CS, "R_ExecuteSetViewSize_Vertex", {{"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 100);
+  }
   
   poplar::program::Sequence R_ExecuteSetViewSize_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(R_ExecuteSetViewSize_CS),
-      GetPrintbuf_prog // Remove?
   });
 
   // ---------------- Final prog --------------//
@@ -230,7 +239,7 @@ void IpuDoom::buildIpuGraph() {
   printf("Creating engine...\n");
   m_ipuEngine = std::make_unique<poplar::Engine>(std::move(poplar::Engine(
     m_ipuGraph, {
-      IPU_Setup_prog,
+      IPU_Init_Prog,
       G_DoLoadLevel_prog,
       G_Ticker_prog,
       G_Responder_prog,
@@ -244,10 +253,6 @@ void IpuDoom::buildIpuGraph() {
   m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
   m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
 
-  m_ipuEngine->connectStreamToCallback("printbuf-stream", [](void* p) {
-    if (((char*)p)[0] == '\0') return;
-    printf("[IPU] %.*s\n", IPUPRINTBUFSIZE, (char*)p);
-  });
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
     IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
   });

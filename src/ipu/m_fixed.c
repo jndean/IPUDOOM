@@ -22,7 +22,6 @@
 #include <stdint.h>
 
 #include "m_fixed.h"
-#include <stdlib.h>
 
 
 
@@ -38,6 +37,12 @@ FixedMul
   fixed_t	b )
 {
     return ((int64_t) a * (int64_t) b) >> FRACBITS;
+    // JOSEF: What about this? fewer inst.
+    // return (((a >> FRACBITS) * (b >> FRACBITS)) << FRACBITS)
+    //      | (((a * b) >> FRACBITS) & 0xffff);
+    // OR:
+    // return (((a >> FRACBITS) * b) & 0xffff0000u)
+    //      | ((a * b) >> FRACBITS);
 }
 
 

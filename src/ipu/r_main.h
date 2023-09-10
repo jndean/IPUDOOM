@@ -90,6 +90,12 @@ extern void (*fuzzcolfunc)(void);
 // No shadow effects on floors.
 extern void (*spanfunc)(void);
 
+
+// JOSEF
+extern int tileID;
+extern int tileLeftClip;
+extern int tileRightClip;
+
 //
 // Utility functions.
 int R_PointOnSide(fixed_t x, fixed_t y, node_t *node);

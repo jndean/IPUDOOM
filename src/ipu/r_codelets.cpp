@@ -27,6 +27,7 @@ struct R_RenderPlayerView_Vertex : public poplar::Vertex {
     IPU_R_RenderPlayerView_UnpackMiscValues(
       (R_RenderPlayerView_MiscValues_t*) &miscValues[0]
     );
+
     R_RenderPlayerView(&players[displayplayer]);
     return ;
   }
