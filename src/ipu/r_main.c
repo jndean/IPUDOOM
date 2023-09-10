@@ -627,6 +627,8 @@ void R_ExecuteSetViewSize(void) {
   // JOSEF
   tileLeftClip = tileID * IPUCOLSPERRENDERTILE;
   tileRightClip = tileLeftClip + IPUCOLSPERRENDERTILE;
+  // tileLeftClip += 1;  // Helps visualise multitil rendering :)
+  // tileRightClip -= 1;
 
   R_InitBuffer(scaledviewwidth, viewheight);
 

@@ -211,8 +211,10 @@ void R_ClipPassWallSegment(int first, int last) {
 //
 void R_ClearClipSegs(void) {
   solidsegs[0].first = -0x7fffffff;
-  solidsegs[0].last = -1;
-  solidsegs[1].first = viewwidth;
+  // solidsegs[0].last = -1;            // JOSEF
+  // solidsegs[1].first = viewwidth;    // JOSEF
+  solidsegs[0].last = tileLeftClip - 1; // JOSEF
+  solidsegs[1].first = tileRightClip;   // JOSEF
   solidsegs[1].last = 0x7fffffff;
   newend = solidsegs + 2;
 }
@@ -275,6 +277,12 @@ void R_AddLine(seg_t *line) {
   angle2 = (angle2 + ANG90) >> ANGLETOFINESHIFT;
   x1 = viewangletox[angle1];
   x2 = viewangletox[angle2];
+
+  // JOSEF: extra clipping for multi-tile rendering
+  if (x1 < tileLeftClip) x1 = tileLeftClip;
+  if (x2 < tileLeftClip) x2 = tileLeftClip;
+  if (x1 > tileRightClip) x1 = tileRightClip;
+  if (x2 > tileRightClip) x2 = tileRightClip;
 
   // Does not cross a pixel?
   if (x1 == x2)
