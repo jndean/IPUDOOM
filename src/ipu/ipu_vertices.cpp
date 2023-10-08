@@ -13,6 +13,7 @@ typedef uint8_t pixel_t;
 extern "C" {
     void AM_LevelInit(void);
     void AM_Drawer(pixel_t*);
+    void IPU_Setup_UnpackMarkNums(const unsigned char* buf);
 };
 
 
@@ -37,13 +38,12 @@ class AM_Drawer_Vertex : public poplar::Vertex {
 };
 
 
+// ------  Happens before most CPU setup is done ------------- //
+
 struct IPU_Init_Vertex : public poplar::SupervisorVertex {
-  poplar::InOut<poplar::Vector<unsigned char>> frame;
 
   __attribute__((target("supervisor")))
   void compute() {
-
-    I_VideoBuffer = &frame[0];
 
     // Deduce logical tile ID
     int physical = __builtin_ipu_get_tile_id();
@@ -58,5 +58,28 @@ struct IPU_Init_Vertex : public poplar::SupervisorVertex {
     logical += 2 * row;
     tileID = logical;
 
+  }
+};
+
+
+// ------  Happens after most CPU setup is done ------------- //
+
+struct IPU_MiscSetup_Vertex : public poplar::SupervisorVertex {
+  poplar::InOut<poplar::Vector<unsigned char>> frame;
+
+  __attribute__((target("supervisor")))
+  void compute() {
+
+    I_VideoBuffer = &frame[0];
+
+  }
+};
+
+struct IPU_UnpackMarknumSprites_Vertex : public poplar::Vertex {
+  poplar::Input<poplar::Vector<unsigned char>> buf;
+
+  void compute() {
+    IPU_Setup_UnpackMarkNums(&buf[0]);
+    return;
   }
 };

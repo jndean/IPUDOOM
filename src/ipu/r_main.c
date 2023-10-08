@@ -676,31 +676,34 @@ void R_ExecuteSetViewSize(void) {
   */
 }
 
-/*
 //
 // R_Init
 //
 
 void R_Init(void) {
   R_InitData();
-  // printf("."); // JOSEF
+
+  /* LATER
+  // printf(".");
   R_InitPointToAngle();
-  // printf("."); // JOSEF
+  // printf(".");
   R_InitTables();
   // viewwidth / viewheight / detailLevel are set by the defaults
-  // printf("."); // JOSEF
+  // printf(".");
 
   R_SetViewSize(screenblocks, detailLevel);
   R_InitPlanes();
-  // printf("."); // JOSEF
+  // printf(".");
   R_InitLightTables();
-  // printf("."); // JOSEF
+  // printf(".");
   R_InitSkyMap();
   R_InitTranslationTables();
-  // printf("."); // JOSEF
+  // printf(".");
+  */
 
   framecount = 0;
 }
+/*
 
 //
 // R_PointInSubsector

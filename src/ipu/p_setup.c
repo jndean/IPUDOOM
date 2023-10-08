@@ -324,9 +324,9 @@ void P_LoadSideDefs(const unsigned char *buf) {
   for (i = 0; i < numsides; i++, msd++, sd++) {
     sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
     sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
-    sd->toptexture = msd->toptexture[0] != '-'; // LATER: R_TextureNumForName(msd->toptexture);
-    sd->bottomtexture = msd->bottomtexture[0] != '-'; // LATER: R_TextureNumForName(msd->bottomtexture);
-    sd->midtexture = msd->midtexture[0] != '-'; // LATER: R_TextureNumForName(msd->midtexture);
+    sd->toptexture = R_TextureNumForName(msd->toptexture);
+    sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
+    sd->midtexture = R_TextureNumForName(msd->midtexture);
     sd->sector = &sectors[SHORT(msd->sector)];
   }
 }

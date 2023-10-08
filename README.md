@@ -27,13 +27,14 @@ Activity Log:
 - [x] IPU interacts with host to load and unpack all level geometry from disk whenever a level is loaded
 
 - [x] Implement all methods used by the automap (vector rendering, sprite rendering, AM event responder). Automap is now disabled on CPU, renders entirely on IPU.
-  ![automap](https://static.wikia.nocookie.net/doom/images/9/9c/Automap.png)
+![automap](https://static.wikia.nocookie.net/doom/images/9/9c/Automap.png)
 
-- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU. CPU still renders everything else.![gameplay gif](README_imgs/flats.gif)
+- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU. CPU still renders everything else.
+![gameplay gif](README_imgs/flats.gif)
 
 Immediate next steps:
-- [ ] Port visplane system to get IPU rendering floors and ceilings?
-- [ ] Textures are too large to fit on a singe tile, so devise a mechanism for tiles to cooperate on texturing wall.
+- [ ] Textures are too large to fit on a singe tile, so devise a mechanism for tiles to cooperate on texturing wall, probably by JIT-fetching textures
+- [ ] Port visplane system to get IPU rendering floors and ceilings
 
 Longer term next steps:
 

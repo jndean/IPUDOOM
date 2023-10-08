@@ -401,7 +401,7 @@ void D_DoomLoop(void) {
   I_GraphicsCheckCommandLine();
   I_SetGrabMouseCallback(D_GrabMouseCallback);
   I_InitGraphics();
-  IPU_Init();
+  IPU_MiscSetup();
 
   TryRunTics();
 
@@ -1245,6 +1245,9 @@ void D_DoomMain(void) {
     // Not loading a game
     startloadgame = -1;
   }
+
+  printf("IPU_Init: Init hardware... ");
+  IPU_Init();
 
   printf("M_Init: Init miscellaneous info.\n");
   M_Init();

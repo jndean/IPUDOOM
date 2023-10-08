@@ -17,25 +17,33 @@
 //	generation of lookups, caching, retrieval by name.
 //
 
+#include "doomstat.h"
+#include "i_swap.h"
+#include "m_fixed.h"
+#include "r_data.h"
+#include "r_defs.h"
+#include "r_state.h"
+#include "w_wad.h"
+
+/*
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 
 #include "d_think.h"
-#include "doomstat.h"
-#include "i_swap.h"
 #include "i_system.h"
-#include "m_fixed.h"
 #include "m_misc.h"
 #include "p_local.h"
 #include "p_mobj.h"
-#include "r_data.h"
-#include "r_defs.h"
 #include "r_sky.h"
-#include "r_state.h"
 #include "v_patch.h"
-#include "w_wad.h"
 #include "z_zone.h"
+*/
+
+#include <print.h>
+#include "ipu_transfer.h"
+#include "ipu_malloc.h"
+
 
 struct texture_s;
 
@@ -116,6 +124,21 @@ struct texture_s {
   texpatch_t patches[1];
 };
 
+typedef struct IPUpatchlesstexture_s IPUpatchlesstexture_t;
+
+struct IPUpatchlesstexture_s {
+  // Keep name for switch changing, etc.
+  char name[8];
+  short width;
+  short height;
+
+  // Index in textures list
+  int index;
+
+  // Next in hash table chain
+  IPUpatchlesstexture_t *next;
+};
+
 int firstflat;
 int lastflat;
 int numflats;
@@ -129,8 +152,8 @@ int lastspritelump;
 int numspritelumps;
 
 int numtextures;
-texture_t **textures;
-texture_t **textures_hashtable;
+IPUpatchlesstexture_t *patchlesstextures; // JOSEF
+IPUpatchlesstexture_t **textures_hashtable; // JOSEF
 
 int *texturewidthmask;
 // needed for texture pegging
@@ -151,6 +174,7 @@ fixed_t *spritetopoffset;
 
 lighttable_t *colormaps;
 
+/*
 //
 // MAPTEXTURE_T CACHING
 // When a texture is first needed,
@@ -347,31 +371,33 @@ byte *R_GetColumn(int tex, int col) {
 
   return texturecomposite[tex] + ofs;
 }
+*/
 
 static void GenerateTextureHashTable(void) {
-  texture_t **rover;
+  IPUpatchlesstexture_t **rover;
   int i;
   int key;
 
-  textures_hashtable =
-      Z_Malloc(sizeof(texture_t *) * numtextures, PU_STATIC, 0);
+  textures_hashtable = IPU_static_malloc(
+    sizeof(IPUpatchlesstexture_t *) * numtextures,
+    "textures_hashtable"
+  );
 
-  memset(textures_hashtable, 0, sizeof(texture_t *) * numtextures);
+  memset(textures_hashtable, 0, sizeof(IPUpatchlesstexture_t *) * numtextures);
 
   // Add all textures to hash table
 
   for (i = 0; i < numtextures; ++i) {
     // Store index
 
-    textures[i]->index = i;
+    patchlesstextures[i].index = i;
 
     // Vanilla Doom does a linear search of the texures array
     // and stops at the first entry it finds.  If there are two
     // entries with the same name, the first one in the array
     // wins. The new entry must therefore be added at the end
     // of the hash chain, so that earlier entries win.
-
-    key = W_LumpNameHash(textures[i]->name) % numtextures;
+    key = W_LumpNameHash(patchlesstextures[i].name) % numtextures;
 
     rover = &textures_hashtable[key];
 
@@ -381,8 +407,8 @@ static void GenerateTextureHashTable(void) {
 
     // Hook into hash table
 
-    textures[i]->next = NULL;
-    *rover = textures[i];
+    patchlesstextures[i].next = NULL;
+    *rover = &patchlesstextures[i];
   }
 }
 
@@ -391,16 +417,16 @@ static void GenerateTextureHashTable(void) {
 // Initializes the texture list
 //  with the textures from the world map.
 //
-void R_InitTextures(void) {
+void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
   maptexture_t *mtexture;
-  texture_t *texture;
+  IPUpatchlesstexture_t *texture;
   mappatch_t *mpatch;
   texpatch_t *patch;
 
   int i;
   int j;
 
-  int *maptex;
+  // int *maptex; // JOSEF
   int *maptex2;
   int *maptex1;
 
@@ -426,74 +452,73 @@ void R_InitTextures(void) {
 
   // Load the patch names from pnames.lmp.
   name[8] = 0;
-  names = W_CacheLumpName(("PNAMES"), PU_STATIC);
-  nummappatches = LONG(*((int *)names));
-  name_p = names + 4;
-  patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
+  
+  // JOSEF : Don't need patch info on the render tiles? 
+  // names = W_CacheLumpName(("PNAMES"), PU_STATIC);
+  // nummappatches = LONG(*((int *)names));
+  // name_p = names + 4;
+  // patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
 
-  for (i = 0; i < nummappatches; i++) {
-    M_StringCopy(name, name_p + i * 8, sizeof(name));
-    patchlookup[i] = W_CheckNumForName(name);
-  }
-  W_ReleaseLumpName(("PNAMES"));
+  // for (i = 0; i < nummappatches; i++) {
+  //   M_StringCopy(name, name_p + i * 8, sizeof(name));
+  //   patchlookup[i] = W_CheckNumForName(name);
+  // }
+  // W_ReleaseLumpName(("PNAMES"));
+  // END JOSEF
+  
 
   // Load the map texture definitions from textures.lmp.
   // The data is contained in one or two lumps,
   //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
-  maptex = maptex1 = W_CacheLumpName(("TEXTURE1"), PU_STATIC);
-  numtextures1 = LONG(*maptex);
-  maxoff = W_LumpLength(W_GetNumForName(("TEXTURE1")));
-  directory = maptex + 1;
 
-  if (W_CheckNumForName(("TEXTURE2")) != -1) {
-    maptex2 = W_CacheLumpName(("TEXTURE2"), PU_STATIC);
-    numtextures2 = LONG(*maptex2);
-    maxoff2 = W_LumpLength(W_GetNumForName(("TEXTURE2")));
-  } else {
+  // maptex = maptex1 = W_CacheLumpName(("TEXTURE1"), PU_STATIC); // JOSEF
+  maxoff = *maptex++; // W_LumpLength(W_GetNumForName(("TEXTURE1"))); // JOSEF
+  numtextures1 = LONG(*maptex);
+  directory = maptex + 1; 
+
+  // JOSEF: Only support shareware version
+  // if (W_CheckNumForName(("TEXTURE2")) != -1) {
+  //   maptex2 = W_CacheLumpName(("TEXTURE2"), PU_STATIC);
+  //   numtextures2 = LONG(*maptex2);
+  //   maxoff2 = W_LumpLength(W_GetNumForName(("TEXTURE2")));
+  // } else {
     maptex2 = NULL;
     numtextures2 = 0;
     maxoff2 = 0;
-  }
+  // }
   numtextures = numtextures1 + numtextures2;
 
-  textures = Z_Malloc(numtextures * sizeof(*textures), PU_STATIC, 0);
-  texturecolumnlump =
-      Z_Malloc(numtextures * sizeof(*texturecolumnlump), PU_STATIC, 0);
-  texturecolumnofs =
-      Z_Malloc(numtextures * sizeof(*texturecolumnofs), PU_STATIC, 0);
-  texturecomposite =
-      Z_Malloc(numtextures * sizeof(*texturecomposite), PU_STATIC, 0);
-  texturecompositesize =
-      Z_Malloc(numtextures * sizeof(*texturecompositesize), PU_STATIC, 0);
-  texturewidthmask =
-      Z_Malloc(numtextures * sizeof(*texturewidthmask), PU_STATIC, 0);
-  textureheight = Z_Malloc(numtextures * sizeof(*textureheight), PU_STATIC, 0);  
+  patchlesstextures = IPU_static_malloc(numtextures * sizeof(IPUpatchlesstexture_t), "patchlesstextures");
+  // LATER: texturecolumnlump = IPU_static_malloc(numtextures * sizeof(*texturecolumnlump), "texturecolumnlump");
+  // LATER: texturecolumnofs = IPU_static_malloc(numtextures * sizeof(*texturecolumnofs), "texturecolumnofs");
+  // LATER: texturecomposite = IPU_static_malloc(numtextures * sizeof(*texturecomposite), "texturecomposite");
+  // LATER: texturecompositesize = IPU_static_malloc(numtextures * sizeof(*texturecompositesize), "texturecompositesize");
+  texturewidthmask = IPU_static_malloc(numtextures * sizeof(*texturewidthmask), "texturewidthmask");
+  textureheight = IPU_static_malloc(numtextures * sizeof(*textureheight), "textureheight");
 
-  totalwidth = 0;
+  // totalwidth = 0; // JOSEF: Unused?
 
   //	Really complex printing shit...
-  temp1 = W_GetNumForName(("S_START")); // P_???????
-  temp2 = W_GetNumForName(("S_END")) - 1;
-  temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
+  // JOSEF: Printing disabled
+  // temp1 = W_GetNumForName(("S_START")); // P_??????? 
+  // temp2 = W_GetNumForName(("S_END")) - 1;
+  // temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
 
   // If stdout is a real console, use the classic vanilla "filling
   // up the box" effect, which uses backspace to "step back" inside
   // the box.  If stdout is a file, don't draw the box.
 
-  if (I_ConsoleStdout()) {
-    printf("[");
-    for (i = 0; i < temp3 + 9; i++)
-      printf(" ");
-    printf("]");
-    for (i = 0; i < temp3 + 10; i++)
-      printf("\b");
-  }
-
-  int totaltexturesize = 0; // JOSEF TMP
-
+  // if (I_ConsoleStdout()) { // JOSEF: Printing Disabled
+  //   printf("[");
+  //   for (i = 0; i < temp3 + 9; i++)
+  //     printf(" ");
+  //   printf("]");
+  //   for (i = 0; i < temp3 + 10; i++)
+  //     printf("\b");
+  // }
   for (i = 0; i < numtextures; i++, directory++) {
-    if (!(i & 63))
-      printf(".");
+    // if (!(i & 63)) // JOSEF
+    //   printf(".");
 
     if (i == numtextures1) {
       // Start looking in second texture file.
@@ -505,37 +530,41 @@ void R_InitTextures(void) {
     offset = LONG(*directory);
 
     if (offset > maxoff)
-      I_Error("R_InitTextures: bad texture directory");
+      printf("R_InitTextures: bad texture directory\n");
 
     mtexture = (maptexture_t *)((byte *)maptex + offset);
 
-    texture = textures[i] =
-        Z_Malloc(sizeof(texture_t) +
-                     sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1),
-                 PU_STATIC, 0);
+    texture = &patchlesstextures[i];
+    // texture = patchlesstextures[i] = IPU_static_malloc(
+    //   sizeof(texture_t) + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1),
+    //   "textures[i]"
+    // );
 
     texture->width = SHORT(mtexture->width);
     texture->height = SHORT(mtexture->height);
-    texture->patchcount = SHORT(mtexture->patchcount);
+    // texture->patchcount = SHORT(mtexture->patchcount); // JOSEF
 
-    totaltexturesize += texture->width * texture->height; // JOSEF TMP
+    // memcpy(texture->name, mtexture->name, sizeof(texture->name)); // JOSEF
+    ((unsigned*)texture->name)[0] = ((unsigned*)mtexture->name)[0];  // JOSEF
+    ((unsigned*)texture->name)[1] = ((unsigned*)mtexture->name)[1];
 
-    memcpy(texture->name, mtexture->name, sizeof(texture->name));
-    mpatch = &mtexture->patches[0];
-    patch = &texture->patches[0];
+    // JOSEF: patches unneeded for render tiles (?)
+    // mpatch = &mtexture->patches[0];
+    // patch = &texture->patches[0];
+    // for (j = 0; j < texture->patchcount; j++, mpatch++, patch++) {
+    //   patch->originx = SHORT(mpatch->originx);
+    //   patch->originy = SHORT(mpatch->originy);
+    //   patch->patch = patchlookup[SHORT(mpatch->patch)];
+    //   if (patch->patch == -1) {
+    //     I_Error("R_InitTextures: Missing patch in texture %s", texture->name);
+    //   }
+    // }
 
-    for (j = 0; j < texture->patchcount; j++, mpatch++, patch++) {
-      patch->originx = SHORT(mpatch->originx);
-      patch->originy = SHORT(mpatch->originy);
-      patch->patch = patchlookup[SHORT(mpatch->patch)];
-      if (patch->patch == -1) {
-        I_Error("R_InitTextures: Missing patch in texture %s", texture->name);
-      }
-    }
-    texturecolumnlump[i] =
-        Z_Malloc(texture->width * sizeof(**texturecolumnlump), PU_STATIC, 0);
-    texturecolumnofs[i] =
-        Z_Malloc(texture->width * sizeof(**texturecolumnofs), PU_STATIC, 0);
+    // JOSEF: Later, if needed at all
+    // texturecolumnlump[i] = 
+    //     Z_Malloc(texture->width * sizeof(**texturecolumnlump), PU_STATIC, 0);
+    // texturecolumnofs[i] =
+    //     Z_Malloc(texture->width * sizeof(**texturecolumnofs), PU_STATIC, 0);
 
     j = 1;
     while (j * 2 <= texture->width)
@@ -544,36 +573,30 @@ void R_InitTextures(void) {
     texturewidthmask[i] = j - 1;
     textureheight[i] = texture->height << FRACBITS;
 
-    totalwidth += texture->width;
+    // totalwidth += texture->width; // JOSEF: Unused?
   }
 
-  printf("\n JOSEF: Total Texture Size = %d bytes (%dKb), numtextures = %d\n",
-    totaltexturesize,
-    totaltexturesize / 1000,
-    numtextures
-  );
-
-  Z_Free(patchlookup);
-
-  W_ReleaseLumpName(("TEXTURE1"));
-  if (maptex2)
-    W_ReleaseLumpName(("TEXTURE2"));
+  // JOSEF
+  // Z_Free(patchlookup);
+  // W_ReleaseLumpName(("TEXTURE1"));
+  // if (maptex2)
+  //   W_ReleaseLumpName(("TEXTURE2"));
 
   // Precalculate whatever possible.
-
-  for (i = 0; i < numtextures; i++)
-    R_GenerateLookup(i);
+  // for (i = 0; i < numtextures; i++) // JOSEF
+  //   R_GenerateLookup(i);
 
   // Create translation table for global animation.
-  texturetranslation =
-      Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, 0);
-
-  for (i = 0; i < numtextures; i++)
-    texturetranslation[i] = i;
+  // texturetranslation =   // JOSEF
+      // Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, 0);
+  // for (i = 0; i < numtextures; i++)
+  //   texturetranslation[i] = i;
 
   GenerateTextureHashTable();
 }
 
+
+/*
 //
 // R_InitFlats
 //
@@ -667,6 +690,16 @@ int R_FlatNumForName(char *name) {
   }
   return i - firstflat;
 }
+*/
+
+int JOSEFstrsame(const char* restrict a, const char* restrict b) {
+  for (int i = 0; i < 8; ++i) {
+    char c_a = JOSEFtoupper(a[i]), c_b = JOSEFtoupper(b[i]);
+    if (c_a != c_b) return 0;
+    if (c_a == '\0' || c_b == '\0') return 1;
+  }
+  return 1;
+}
 
 //
 // R_CheckTextureNumForName
@@ -674,7 +707,7 @@ int R_FlatNumForName(char *name) {
 // Filter out NoTexture indicator.
 //
 int R_CheckTextureNumForName(char *name) {
-  texture_t *texture;
+  IPUpatchlesstexture_t *texture;
   int key;
 
   // "NoTexture" marker.
@@ -686,7 +719,8 @@ int R_CheckTextureNumForName(char *name) {
   texture = textures_hashtable[key];
 
   while (texture != NULL) {
-    if (!strncasecmp(texture->name, name, 8))
+    // if (!strncasecmp(texture->name, name, 8)) // JOSEF
+    if (JOSEFstrsame(texture->name, name))
       return texture->index;
 
     texture = texture->next;
@@ -706,11 +740,12 @@ int R_TextureNumForName(char *name) {
   i = R_CheckTextureNumForName(name);
 
   if (i == -1) {
-    I_Error("R_TextureNumForName: %s not found", name);
+    printf("# # ERROR # # : R_TextureNumForName: %s not found\n", name);
   }
   return i;
 }
 
+/*
 //
 // R_PrecacheLevel
 // Preloads all relevant graphics for the level.
@@ -817,3 +852,5 @@ void R_PrecacheLevel(void) {
 
   Z_Free(spritepresent);
 }
+
+*/

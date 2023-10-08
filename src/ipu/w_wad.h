@@ -71,4 +71,6 @@ extern unsigned int W_LumpNameHash(const char *s);
 void W_ReleaseLumpNum(lumpindex_t lump);
 void W_ReleaseLumpName(char *name);
 
+char JOSEFtoupper(const char c);
+
 #endif

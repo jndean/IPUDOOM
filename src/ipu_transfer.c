@@ -108,6 +108,13 @@ void IPU_R_ExecuteSetViewSize_PackMiscValues(void* buf) {
   pack->setdetail = setdetail;
 }
 
+void IPU_R_Init_PackMiscValues(void* buf) {
+  assert(sizeof(R_Init_MiscValues_t) <= IPUMISCVALUESSIZE);
+  // R_Init_MiscValues_t* pack = buf;
+  // pack->TEXTURE1lumplength = W_LumpLength(W_GetNumForName(("TEXTURE1")));
+  // Nothing to pack? Todo: Remove me later
+}
+
 void IPU_Setup_PackMarkNums(void* buf) {
   int bufpos = 10 * sizeof(short);
   char namebuf[9] = "AMMNUM0\0";

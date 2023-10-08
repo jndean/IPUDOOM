@@ -20,7 +20,7 @@ extern "C" {
 #define IPUMAPPEDLINEUPDATES (2)
 
 #define IPUFIRSTRENDERTILE (0)
-#define IPUNUMRENDERTILES (8)
+#define IPUNUMRENDERTILES (32)
 #define IPUCOLSPERRENDERTILE (SCREENWIDTH / IPUNUMRENDERTILES)
 
 
@@ -50,7 +50,6 @@ typedef struct {
     int mappedline_updates[IPUMAPPEDLINEUPDATES];
 } G_Ticker_MiscValues_t;
 
-
 typedef struct {
     event_t events[IPUMAXEVENTSPERTIC];
     unsigned char num_ev;
@@ -62,11 +61,14 @@ typedef struct {
     int dummy; // just so struct is not empty
 } R_RenderPlayerView_MiscValues_t;
 
-
 typedef struct {
     int setblocks;
     int setdetail;
 } R_ExecuteSetViewSize_MiscValues_t;
+
+typedef struct {
+    int dummy; // Nothing here yet... maybe ever?
+} R_Init_MiscValues_t;
 
 
 #ifdef __cplusplus

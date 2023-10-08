@@ -646,6 +646,8 @@ void R_ExecuteSetViewSize(void) {
 //
 
 void R_Init(void) {
+  IPU_R_Init();
+
   R_InitData();
   printf(".");
   R_InitPointToAngle();

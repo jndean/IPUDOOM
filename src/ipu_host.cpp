@@ -9,6 +9,8 @@
 #include <poplar/DeviceManager.hpp>
 #include <poplar/Engine.hpp>
 #include <poplar/IPUModel.hpp>
+#include <poplar/Program.hpp>
+#include <poplar/HostFunctionCallback.hpp>
 
 #include "i_video.h"
 #include "ipu/ipu_interface.h"
@@ -44,7 +46,9 @@ class IpuDoom {
   void run_AM_Drawer();
   void run_R_RenderPlayerView();
   void run_R_ExecuteSetViewSize();
-  void run_IPU_Setup();
+  void run_R_Init();
+  void run_IPU_Init();
+  void run_IPU_MiscSetup();
   void run_G_DoLoadLevel();
   void run_G_Ticker();
   void run_G_Responder(G_Responder_MiscValues_t* buf);
@@ -140,6 +144,33 @@ void IpuDoom::buildIpuGraph() {
       })),
   });
 
+  // -------- R_Init ------ //
+
+  poplar::ComputeSet R_Init_CS = m_ipuGraph.addComputeSet("R_Init_CS");
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(R_Init_CS, "R_Init_Vertex", {
+      {"lumpNum", m_lumpNum[renderTile]}, {"lumpBuf", lumpBuf}, {"miscValues", m_miscValuesBuf}});
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 100);
+  }
+
+  poplar::HostFunction requestLumpFromHost = m_ipuGraph.addHostFunction(
+    "requestLumpFromHost",
+    {poplar::Graph::HostFunctionArgument{poplar::INT, 1}},
+    {poplar::Graph::HostFunctionArgument{poplar::UNSIGNED_CHAR, IPUMAXLUMPBYTES}}
+  );
+
+  poplar::program::Sequence R_Init_prog({
+      poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
+      poplar::program::Repeat(2, poplar::program::Sequence({ // <- number of R_Init_CS steps
+        poplar::program::Execute(R_Init_CS),
+        // poplar::program::Copy(m_lumpNum[0], lumpNumStream), // Only listen to first tile's requests
+        // poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded
+        // poplar::program::Copy(lumpBufStream, lumpBuf),
+        poplar::program::Call(requestLumpFromHost, {m_lumpNum[0]}, {lumpBuf}),
+      })),
+  });
+
   // ---------------- G_Ticker --------------//
 
 
@@ -172,12 +203,24 @@ void IpuDoom::buildIpuGraph() {
   });
 
 
-  // -------------- IPU state setup ------------//
-
+  // -------------- IPU Init setup (Happens after most CPU setup) ------------//
 
   poplar::ComputeSet IPU_Init_CS = m_ipuGraph.addComputeSet("IPU_Init_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
-    vtx = m_ipuGraph.addVertex(IPU_Init_CS, "IPU_Init_Vertex", 
+    vtx = m_ipuGraph.addVertex(IPU_Init_CS, "IPU_Init_Vertex");
+    m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
+    m_ipuGraph.setPerfEstimate(vtx, 10000);
+  }
+  poplar::program::Sequence IPU_Init_Prog({
+      poplar::program::Execute(IPU_Init_CS),
+  });
+
+
+  // -------------- IPU misc state setup (Happens after most CPU setup) ------------//
+
+  poplar::ComputeSet IPU_MiscSetup_CS = m_ipuGraph.addComputeSet("IPU_MiscSetup_CS");
+  for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
+    vtx = m_ipuGraph.addVertex(IPU_MiscSetup_CS, "IPU_MiscSetup_Vertex", 
       {{"frame", ipuFrameSlices[renderTile]}});
     m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
     m_ipuGraph.setPerfEstimate(vtx, 10000);
@@ -188,18 +231,18 @@ void IpuDoom::buildIpuGraph() {
   auto marknumSpriteBufStream =
       m_ipuGraph.addHostToDeviceFIFO("marknumSpriteBuf-stream", poplar::UNSIGNED_CHAR, IPUAMMARKBUFSIZE);
 
-  poplar::ComputeSet IPU_Setup_UnpackMarknumSprites_CS = m_ipuGraph.addComputeSet("IPU_Setup_UnpackMarknumSprites_CS");
+  poplar::ComputeSet IPU_UnpackMarknumSprites_CS = m_ipuGraph.addComputeSet("IPU_UnpackMarknumSprites_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
-    vtx = m_ipuGraph.addVertex(IPU_Setup_UnpackMarknumSprites_CS, "IPU_Setup_UnpackMarknumSprites_Vertex", 
+    vtx = m_ipuGraph.addVertex(IPU_UnpackMarknumSprites_CS, "IPU_UnpackMarknumSprites_Vertex", 
     {{"buf", marknumSpriteBuf}});
     m_ipuGraph.setTileMapping(vtx, renderTile + IPUFIRSTRENDERTILE);
     m_ipuGraph.setPerfEstimate(vtx, IPUAMMARKBUFSIZE * 100);
   }
   
-  poplar::program::Sequence IPU_Init_Prog({
-      poplar::program::Execute(IPU_Init_CS),
+  poplar::program::Sequence IPU_MiscSetup_Prog({
+      poplar::program::Execute(IPU_MiscSetup_CS),
       poplar::program::Copy(marknumSpriteBufStream, marknumSpriteBuf),
-      poplar::program::Execute(IPU_Setup_UnpackMarknumSprites_CS),
+      poplar::program::Execute(IPU_UnpackMarknumSprites_CS),
   });
 
 
@@ -236,25 +279,32 @@ void IpuDoom::buildIpuGraph() {
 
   // ---------------- Final prog --------------//
 
-  printf("Creating engine...\n");
   m_ipuEngine = std::make_unique<poplar::Engine>(std::move(poplar::Engine(
     m_ipuGraph, {
-      IPU_Init_Prog,
+      IPU_MiscSetup_Prog,
       G_DoLoadLevel_prog,
       G_Ticker_prog,
       G_Responder_prog,
       AM_Drawer_prog,
       R_RenderPlayerView_prog,
       R_ExecuteSetViewSize_prog,
+      R_Init_prog,
+      IPU_Init_Prog,
   })));
 
-  m_ipuEngine->connectStream("frame-instream", I_VideoBuffer);
-  m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer);
   m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
   m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
+  // Connect frame-instream/outstream later in run_IPU_MiscSetup because 
+  // I_VideoBuffer is initialised quite late
 
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
     IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
+  });
+  m_ipuEngine->connectHostFunction(
+    "requestLumpFromHost", 0, [](poplar::ArrayRef<const void *> inputs, poplar::ArrayRef<void *> outputs) {
+      const int* _lumpNum = static_cast<const int *>(inputs[0]);
+      unsigned char* _lumpBuf = static_cast<unsigned char *>(outputs[0]);
+      IPU_LoadLumpForTransfer(*_lumpNum, _lumpBuf);
   });
   m_ipuEngine->connectStreamToCallback("marknumSpriteBuf-stream", [this](void* p) {
     IPU_Setup_PackMarkNums(p);
@@ -264,7 +314,10 @@ void IpuDoom::buildIpuGraph() {
 }
 
 // --- Internal interface from class IpuDoom to m_ipuEngine --- //
-void IpuDoom::run_IPU_Setup() {
+
+void IpuDoom::run_IPU_MiscSetup() {
+  m_ipuEngine->connectStream("frame-instream", I_VideoBuffer); 
+  m_ipuEngine->connectStream("frame-outstream", I_VideoBuffer); 
   m_ipuEngine->run(0);
 }
 void IpuDoom::run_G_DoLoadLevel() {
@@ -290,20 +343,29 @@ void IpuDoom::run_R_ExecuteSetViewSize() {
   IPU_R_ExecuteSetViewSize_PackMiscValues(m_miscValuesBuf_h);
   m_ipuEngine->run(6);
 }
+void IpuDoom::run_R_Init() {
+  IPU_R_Init_PackMiscValues(m_miscValuesBuf_h);
+  m_ipuEngine->run(7);
+}
+void IpuDoom::run_IPU_Init() {
+  m_ipuEngine->run(8);
+}
 
 static std::unique_ptr<IpuDoom> ipuDoomInstance = nullptr;
 
 
-// --- External interface from C to class IpuDoom --- //
+// --- External interface from C to the singleton IpuDoom object --- //
 extern "C" {
-void IPU_Init() { 
-  ipuDoomInstance = std::make_unique<IpuDoom>(); 
-  ipuDoomInstance->run_IPU_Setup(); 
-}
-void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
-void IPU_R_RenderPlayerView() { ipuDoomInstance->run_R_RenderPlayerView(); }
-void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
-void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
-void IPU_G_Responder(G_Responder_MiscValues_t* buf) { ipuDoomInstance->run_G_Responder(buf); }
-void IPU_R_ExecuteSetViewSize() { ipuDoomInstance->run_R_ExecuteSetViewSize(); }
+  void IPU_Init() { 
+    ipuDoomInstance = std::make_unique<IpuDoom>(); 
+    ipuDoomInstance->run_IPU_Init();
+  }
+  void IPU_MiscSetup() { ipuDoomInstance->run_IPU_MiscSetup(); }
+  void IPU_AM_Drawer() { ipuDoomInstance->run_AM_Drawer(); }
+  void IPU_R_RenderPlayerView() { ipuDoomInstance->run_R_RenderPlayerView(); }
+  void IPU_G_DoLoadLevel() { ipuDoomInstance->run_G_DoLoadLevel(); }
+  void IPU_G_Ticker() { ipuDoomInstance->run_G_Ticker(); }
+  void IPU_G_Responder(G_Responder_MiscValues_t* buf) { ipuDoomInstance->run_G_Responder(buf); }
+  void IPU_R_ExecuteSetViewSize() { ipuDoomInstance->run_R_ExecuteSetViewSize(); }
+  void IPU_R_Init() { ipuDoomInstance->run_R_Init(); }
 }

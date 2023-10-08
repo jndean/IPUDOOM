@@ -21,11 +21,13 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	r_bsp.gp \
 	r_codelets.gp \
 	r_draw.gp \
+	r_data.gp \
 	r_main.gp \
 	r_plane.gp \
 	r_segs.gp \
 	tables.gp \
 	v_video.gp \
+	w_wad.gp \
 	doomstat.gp \
 )
 
@@ -33,7 +35,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 CPU_FLAGS = -I src -I /usr/local/include/SDL2 -I/usr/include/libpng16 -I/opt/poplar/include \
       		-D_REENTRANT -lSDL2 -lSDL2_mixer -lSDL2_net -lpng16 -lz -lpoplar \
      		-Wall -Werror \
-      		-O2 # -m32
+      		-O2 -g
 
 IPU_FLAGS = -I src/ipu \
 			--target=ipu2 \

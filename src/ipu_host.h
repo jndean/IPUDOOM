@@ -10,7 +10,9 @@ extern "C" {
 
 void IPU_Init(void);
 
+void IPU_MiscSetup(void);
 void IPU_AM_Drawer(void);
+void IPU_R_Init(void);
 void IPU_R_RenderPlayerView(void);
 void IPU_R_ExecuteSetViewSize(void);
 

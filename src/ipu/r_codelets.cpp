@@ -10,12 +10,36 @@
 
 
 extern "C" {
+  void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals);
   void R_RenderPlayerView(player_t *player);
   void R_ExecuteSetViewSize(void);
 };
 
 
-// --------------- P_Setup ----------------- //
+struct R_Init_Vertex: public poplar::Vertex {
+  
+  poplar::Input<poplar::Vector<unsigned char>> miscValues;
+  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
+  poplar::Output<int> lumpNum;
+
+  void compute() {
+    static int step = 0;
+
+    switch (step++) {
+    case 0:
+      *lumpNum = 105;
+    
+    break; case 1:
+      R_InitTextures((int*)&lumpBuf[0], (R_Init_MiscValues_t*)&miscValues[0]);
+    
+
+      *lumpNum = 0;
+      step = 0;
+    }
+
+  }
+};
+
 
 struct R_RenderPlayerView_Vertex : public poplar::Vertex {
   poplar::Input<poplar::Vector<unsigned char>> miscValues;
