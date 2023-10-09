@@ -3,8 +3,10 @@
 #include <cassert>
 
 #include "doomtype.h"
-#include "r_main.h"
 #include "i_video.h"
+
+#include "ipu_utils.h"
+#include "ipu_texturetiles.h"
 
 
 typedef uint8_t pixel_t;
@@ -57,6 +59,9 @@ struct IPU_Init_Vertex : public poplar::SupervisorVertex {
     }
     logical += 2 * row;
     tileID = logical;
+
+    
+    // IPU_R_InitColumnRequester(physical);
 
   }
 };

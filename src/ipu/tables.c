@@ -578,7 +578,7 @@ const fixed_t finetangent[4096] =
     11392683,13145455,15535599,18988036,24413316,34178904,56965752,170910304
 };
 
-// 40K lookup table is a bit dear for IPU, could calc live instead
+// 40K lookup table is a bit dear for IPU, eventually calculate live instead
 fixed_t IPU_finesine(int i) {
     return finesine[i];
 

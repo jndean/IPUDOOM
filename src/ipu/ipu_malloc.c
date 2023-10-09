@@ -1,8 +1,8 @@
 #include <stdlib.h>
 
-#include "ipu_malloc.h"
 #include "print.h"
-#include "r_main.h"
+#include "ipu_malloc.h"
+#include "ipu_utils.h"
 
 #define ALIGN32(x) (((x) + 3) & (~3))
 

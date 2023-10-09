@@ -254,9 +254,7 @@ int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line) {
 //  the y (<=x) is scaled and divided by x to get a
 //  tangent (slope) value which is looked up in the
 //  tantoangle[] table.
-
 //
-
 angle_t R_PointToAngle(fixed_t x, fixed_t y) {
   x -= viewx;
   y -= viewy;
@@ -676,6 +674,7 @@ void R_ExecuteSetViewSize(void) {
   */
 }
 
+/*
 //
 // R_Init
 //
@@ -683,27 +682,24 @@ void R_ExecuteSetViewSize(void) {
 void R_Init(void) {
   R_InitData();
 
-  /* LATER
-  // printf(".");
+  printf(".");
   R_InitPointToAngle();
-  // printf(".");
+  printf(".");
   R_InitTables();
   // viewwidth / viewheight / detailLevel are set by the defaults
-  // printf(".");
+  printf(".");
 
   R_SetViewSize(screenblocks, detailLevel);
   R_InitPlanes();
-  // printf(".");
+  printf(".");
   R_InitLightTables();
-  // printf(".");
+  printf(".");
   R_InitSkyMap();
   R_InitTranslationTables();
-  // printf(".");
-  */
+  printf(".");
 
   framecount = 0;
 }
-/*
 
 //
 // R_PointInSubsector
@@ -746,7 +742,7 @@ void R_SetupFrame(player_t *player) {
   viewsin = IPU_finesine(viewangle >> ANGLETOFINESHIFT);
   viewcos = finecosine[viewangle >> ANGLETOFINESHIFT];
 
-  // JOSEF TMP tests!
+  // JOSEF TMP, some tests to about replacing sin LUTs!
   // angle_t sin_input = viewangle >> ANGLETOFINESHIFT;
   // float sin_inscaled = (sin_input + 0.5f) * 3.14159265359f * 2 / FINEANGLES;
   // float sin_sin = sinf(sin_inscaled);

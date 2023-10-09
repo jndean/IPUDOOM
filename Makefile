@@ -7,6 +7,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	ipu_vertices.gp \
 	ipu_transfer.gp \
 	ipu_malloc.gp \
+	ipu_texturetiles.gp \
 	i_video.gp \
 	g_game.gp \
 	g_game_codelets.gp \

@@ -41,6 +41,7 @@
 */
 
 #include <print.h>
+#include "ipu_utils.h"
 #include "ipu_transfer.h"
 #include "ipu_malloc.h"
 
@@ -372,7 +373,6 @@ byte *R_GetColumn(int tex, int col) {
   return texturecomposite[tex] + ofs;
 }
 */
-
 static void GenerateTextureHashTable(void) {
   IPUpatchlesstexture_t **rover;
   int i;
@@ -587,10 +587,12 @@ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
   //   R_GenerateLookup(i);
 
   // Create translation table for global animation.
-  // texturetranslation =   // JOSEF
-      // Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, 0);
-  // for (i = 0; i < numtextures; i++)
-  //   texturetranslation[i] = i;
+  texturetranslation = IPU_static_malloc(
+    (numtextures + 1) * sizeof(*texturetranslation), 
+    "texturetranslation"
+  );
+  for (i = 0; i < numtextures; i++)
+    texturetranslation[i] = i;
 
   GenerateTextureHashTable();
 }

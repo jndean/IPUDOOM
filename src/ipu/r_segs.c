@@ -38,6 +38,7 @@
 #include "v_patch.h"
 
 #include <print.h>
+#include "ipu_texturetiles.h"
 
 
 // OPTIMIZE: closed two sided lines as single sided
@@ -196,7 +197,7 @@ void R_RenderSegLoop(void) {
   int yl;
   int yh;
   int mid;
-  // fixed_t texturecolumn; // LATER
+  fixed_t texturecolumn;
   int top;
   int bottom;
 
@@ -240,9 +241,9 @@ void R_RenderSegLoop(void) {
     // texturecolumn and lighting are independent of wall tiers
     if (segtextured) {
       // calculate texture offset
-      // angle = (rw_centerangle + xtoviewangle[rw_x]) >> ANGLETOFINESHIFT;
-      // texturecolumn = rw_offset - FixedMul(finetangent[angle], rw_distance); // LATER
-      // texturecolumn >>= FRACBITS;              // LATER
+      angle = (rw_centerangle + xtoviewangle[rw_x]) >> ANGLETOFINESHIFT;
+      texturecolumn = rw_offset - FixedMul(finetangent[angle], rw_distance);
+      texturecolumn >>= FRACBITS;
       // calculate lighting
       index = rw_scale >> LIGHTSCALESHIFT;
 
@@ -254,8 +255,7 @@ void R_RenderSegLoop(void) {
       dc_iscale = 0xffffffffu / (unsigned)rw_scale;
     } else {
       // purely to shut up the compiler
-
-      // texturecolumn = 0; // LATER
+      texturecolumn = 0;
     }
 
     // draw the wall tiers
@@ -263,8 +263,9 @@ void R_RenderSegLoop(void) {
       // single sided line
       dc_yl = yl;
       dc_yh = yh;
-      // dc_texturemid = rw_midtexturemid; // LATER
-      // dc_source = R_GetColumn(midtexture, texturecolumn); // LATER
+      dc_texturemid = rw_midtexturemid;
+      // dc_source = R_GetColumn(midtexture, texturecolumn); // JOSEF
+      dc_source = IPU_R_RequestColumn(midtexture, texturecolumn); 
       colfunc();
       ceilingclip[rw_x] = viewheight;
       floorclip[rw_x] = -1;
@@ -281,8 +282,9 @@ void R_RenderSegLoop(void) {
         if (mid >= yl) {
           dc_yl = yl;
           dc_yh = mid;
-          // dc_texturemid = rw_toptexturemid; // LATER
-          // dc_source = R_GetColumn(toptexture, texturecolumn); // LATER
+          dc_texturemid = rw_toptexturemid;
+          // dc_source = R_GetColumn(toptexture, texturecolumn); // JOSEF
+          dc_source = IPU_R_RequestColumn(toptexture, texturecolumn); 
           
           colfunc();
           ceilingclip[rw_x] = mid;
@@ -306,8 +308,9 @@ void R_RenderSegLoop(void) {
         if (mid <= yh) {
           dc_yl = mid;
           dc_yh = yh;
-          // dc_texturemid = rw_bottomtexturemid;       // LATER
-          // dc_source = R_GetColumn(bottomtexture, texturecolumn); // LATER
+          dc_texturemid = rw_bottomtexturemid;
+          // dc_source = R_GetColumn(bottomtexture, texturecolumn); // JOSEF
+          dc_source = IPU_R_RequestColumn(bottomtexture, texturecolumn); 
           colfunc();
           floorclip[rw_x] = mid;
         } else
@@ -397,20 +400,19 @@ void R_StoreWallRange(int start, int stop) {
 
   if (!backsector) {
     // single sided line
-    midtexture = sidedef->midtexture; //LATER: texturetranslation[sidedef->midtexture];
+    midtexture = texturetranslation[sidedef->midtexture];
     // a single sided line is terminal, so it must mark ends
     markfloor = markceiling = true;
 
-    //  ---- JOSEF: LATER ---- 
-    // if (linedef->flags & ML_DONTPEGBOTTOM) {
-    //   vtop = frontsector->floorheight + textureheight[sidedef->midtexture];
-    //   // bottom of texture at bottom
-    //   rw_midtexturemid = vtop - viewz;
-    // } else {
-    //   // top of texture at top
-    //   rw_midtexturemid = worldtop;
-    // }
-    // rw_midtexturemid += sidedef->rowoffset;
+    if (linedef->flags & ML_DONTPEGBOTTOM) {
+      vtop = frontsector->floorheight + textureheight[sidedef->midtexture];
+      // bottom of texture at bottom
+      rw_midtexturemid = vtop - viewz;
+    } else {
+      // top of texture at top
+      rw_midtexturemid = worldtop;
+    }
+    rw_midtexturemid += sidedef->rowoffset;
     
 
     ds_p->silhouette = SIL_BOTH;
@@ -488,20 +490,20 @@ void R_StoreWallRange(int start, int stop) {
 
     if (worldhigh < worldtop) {
       // top texture
-      toptexture = sidedef->toptexture; // LATER: texturetranslation[sidedef->toptexture];
-      // if (linedef->flags & ML_DONTPEGTOP) {
-      //   // top of texture at top
-      //   rw_toptexturemid = worldtop;
-      // } else {
-      //   vtop = backsector->ceilingheight + textureheight[sidedef->toptexture];
+      toptexture = texturetranslation[sidedef->toptexture];
+      if (linedef->flags & ML_DONTPEGTOP) {
+        // top of texture at top
+        rw_toptexturemid = worldtop;
+      } else {
+        vtop = backsector->ceilingheight + textureheight[sidedef->toptexture];
 
-      //   // bottom of texture
-      //   rw_toptexturemid = vtop - viewz;
-      // }
+        // bottom of texture
+        rw_toptexturemid = vtop - viewz;
+      }
     }
     if (worldlow > worldbottom) {
       // bottom texture
-      bottomtexture = sidedef->bottomtexture; // LATER: texturetranslation[sidedef->bottomtexture];
+      bottomtexture = texturetranslation[sidedef->bottomtexture];
 
       if (linedef->flags & ML_DONTPEGBOTTOM) { 
         // bottom of texture at bottom

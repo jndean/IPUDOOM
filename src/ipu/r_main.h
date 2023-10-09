@@ -82,7 +82,7 @@ extern int detailshift;
 // Used to select shadow mode etc.
 //
 
-// extern void (*colfunc)(void); 
+// extern void (*colfunc)(void); // JOSEF
 void colfunc(void); // Don't want to call via pointer on IPU
 extern void (*transcolfunc)(void);
 extern void (*basecolfunc)(void);
@@ -92,7 +92,6 @@ extern void (*spanfunc)(void);
 
 
 // JOSEF
-extern int tileID;
 extern int tileLeftClip;
 extern int tileRightClip;
 

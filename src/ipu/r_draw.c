@@ -113,10 +113,6 @@ void R_DrawColumn(void) {
   fixed_t frac;
   fixed_t fracstep;
 
-  // JOSEF: Each tile only renders a portion of the frame
-  if ((dc_x < tileLeftClip) || (dc_x >= tileRightClip)) 
-    return;
-
   count = dc_yh - dc_yl;
 
   // Zero length, column does not exceed a pixel.
@@ -124,7 +120,6 @@ void R_DrawColumn(void) {
     return;
 
   if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT) {
-    // I_Error("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
     printf("ERROR: R_DrawColumn: %u to %u at %u\n", dc_yl, dc_yh, dc_x);
   }
   char colour = (bspnum - (lightnum & 1)) % 256; // JOSEF: TMP!
@@ -136,8 +131,8 @@ void R_DrawColumn(void) {
 
   // Determine scaling,
   //  which is the only mapping to be done.
-  // fracstep = dc_iscale;                                // LATER
-  // frac = dc_texturemid + (dc_yl - centery) * fracstep; // LATER
+  fracstep = dc_iscale;
+  frac = dc_texturemid + (dc_yl - centery) * fracstep;
 
   // Inner loop that does the actual texture mapping,
   //  e.g. a DDA-lile scaling.
@@ -145,10 +140,13 @@ void R_DrawColumn(void) {
   do {
     // Re-map color indices from wall texture column
     //  using a lighting/special effects LUT.
-    *dest = colour; // LATER: dc_colormap[dc_source[(frac >> FRACBITS) & 127]]; // LATER
+    
+    // LATER: *dest = dc_colormap[dc_source[(frac >> FRACBITS) & 127]]; // LATER
+    // *dest = colour;
+    *dest = dc_source[(frac >> FRACBITS) & 127];
 
     dest += IPUCOLSPERRENDERTILE; // JOSEF: SCREENWIDTH;
-    // frac += fracstep; // LATER
+    frac += fracstep;
 
   } while (count--);
 }

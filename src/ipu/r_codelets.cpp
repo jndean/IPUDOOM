@@ -7,6 +7,8 @@
 #include "i_video.h"
 
 #include "ipu_transfer.h"
+#include "ipu_utils.h"
+#include "ipu_texturetiles.h"
 
 
 extern "C" {
@@ -31,7 +33,7 @@ struct R_Init_Vertex: public poplar::Vertex {
     
     break; case 1:
       R_InitTextures((int*)&lumpBuf[0], (R_Init_MiscValues_t*)&miscValues[0]);
-    
+      IPU_R_InitColumnRequester();
 
       *lumpNum = 0;
       step = 0;
