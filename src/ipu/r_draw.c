@@ -107,6 +107,7 @@ extern int lightnum;
 // Thus a special case loop for very fast rendering can
 //  be used. It has also been used with Wolfenstein 3D.
 //
+__SUPER__ 
 void R_DrawColumn(void) {
   int count;
   pixel_t *dest;
@@ -695,6 +696,7 @@ void R_DrawSpanLow(void) {
 //  for getting the framebuffer address
 //  of a pixel to draw.
 //
+__SUPER__ 
 void R_InitBuffer(int width, int height) {
   int i;
 

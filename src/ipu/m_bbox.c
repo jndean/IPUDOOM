@@ -26,7 +26,7 @@
 #include <limits.h>
 
 
-
+__SUPER__ 
 void M_ClearBox (fixed_t *box)
 {
     box[BOXTOP] = box[BOXRIGHT] = INT_MIN;
@@ -34,6 +34,7 @@ void M_ClearBox (fixed_t *box)
 }
 
 
+__SUPER__ 
 void
 M_AddToBox
 ( fixed_t*	box,

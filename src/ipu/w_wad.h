@@ -52,25 +52,25 @@ struct lumpinfo_s
 extern lumpinfo_t **lumpinfo;
 extern unsigned int numlumps;
 
-wad_file_t *W_AddFile(char *filename);
-void W_Reload(void);
+__SUPER__ wad_file_t *W_AddFile(char *filename);
+__SUPER__ void W_Reload(void);
 
-lumpindex_t W_CheckNumForName(char *name);
-lumpindex_t W_GetNumForName(char *name);
+__SUPER__ lumpindex_t W_CheckNumForName(char *name);
+__SUPER__ lumpindex_t W_GetNumForName(char *name);
 
-int W_LumpLength(lumpindex_t lump);
-void W_ReadLump(lumpindex_t lump, void *dest);
+__SUPER__ int W_LumpLength(lumpindex_t lump);
+__SUPER__ void W_ReadLump(lumpindex_t lump, void *dest);
 
-void *W_CacheLumpNum(lumpindex_t lump, int tag);
-void *W_CacheLumpName(char *name, int tag);
+__SUPER__ void *W_CacheLumpNum(lumpindex_t lump, int tag);
+__SUPER__ void *W_CacheLumpName(char *name, int tag);
 
-void W_GenerateHashTable(void);
+__SUPER__ void W_GenerateHashTable(void);
 
-extern unsigned int W_LumpNameHash(const char *s);
+__SUPER__ extern unsigned int W_LumpNameHash(const char *s);
 
-void W_ReleaseLumpNum(lumpindex_t lump);
-void W_ReleaseLumpName(char *name);
+__SUPER__ void W_ReleaseLumpNum(lumpindex_t lump);
+__SUPER__ void W_ReleaseLumpName(char *name);
 
-char JOSEFtoupper(const char c);
+__SUPER__ char JOSEFtoupper(const char c);
 
 #endif

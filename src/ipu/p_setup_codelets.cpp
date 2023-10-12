@@ -10,17 +10,17 @@
 
 
 extern "C" {
-    void P_SetupLevel_pt0(const unsigned char *buf);
-    void P_LoadBlockMap(const unsigned char *buf);
-    void P_LoadVertexes(const unsigned char *buf);
-    void P_LoadSectors(const unsigned char *buf);
-    void P_LoadSideDefs(const unsigned char *buf);
-    void P_LoadLineDefs(const unsigned char *buf);
-    void P_LoadSubsectors(const unsigned char *buf);
-    void P_LoadNodes(const unsigned char *buf);
-    void P_LoadSegs(const unsigned char *buf);
-    void P_LoadThings(const unsigned char *buf);
-    void P_GroupLines(const unsigned char *buf);
+    __SUPER__ void P_SetupLevel_pt0(const unsigned char *buf);
+    __SUPER__ void P_LoadBlockMap(const unsigned char *buf);
+    __SUPER__ void P_LoadVertexes(const unsigned char *buf);
+    __SUPER__ void P_LoadSectors(const unsigned char *buf);
+    __SUPER__ void P_LoadSideDefs(const unsigned char *buf);
+    __SUPER__ void P_LoadLineDefs(const unsigned char *buf);
+    __SUPER__ void P_LoadSubsectors(const unsigned char *buf);
+    __SUPER__ void P_LoadNodes(const unsigned char *buf);
+    __SUPER__ void P_LoadSegs(const unsigned char *buf);
+    __SUPER__ void P_LoadThings(const unsigned char *buf);
+    __SUPER__ void P_GroupLines(const unsigned char *buf);
 };
 
 
@@ -28,11 +28,11 @@ extern "C" {
 // --------------- P_Setup ----------------- //
 
 
-class P_SetupLevel_Vertex : public poplar::Vertex {
+class P_SetupLevel_Vertex : public poplar::SupervisorVertex {
   poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
   poplar::Output<int> lumpNum;
  public:
-  bool compute() {
+  __SUPER__ bool compute() {
     static int step = 0;
     int next;
     // Switch statements are bonkers

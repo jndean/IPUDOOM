@@ -42,12 +42,13 @@ thinker_t thinkercap;
 //
 // P_InitThinkers
 //
-void P_InitThinkers(void) { thinkercap.prev = thinkercap.next = &thinkercap; }
+__SUPER__ void P_InitThinkers(void) { thinkercap.prev = thinkercap.next = &thinkercap; }
 
 //
 // P_AddThinker
 // Adds a new thinker at the end of the list.
 //
+__SUPER__ 
 void P_AddThinker(thinker_t *thinker) {
   thinkercap.prev->next = thinker;
   thinker->next = &thinkercap;
@@ -60,6 +61,7 @@ void P_AddThinker(thinker_t *thinker) {
 // Deallocation is lazy -- it will not actually be freed
 // until its thinking turn comes up.
 //
+__SUPER__ 
 void P_RemoveThinker(thinker_t *thinker) {
   // FIXME: NOP.
   thinker->function.acv = (actionf_v)(-1);
@@ -69,6 +71,7 @@ void P_RemoveThinker(thinker_t *thinker) {
 // P_AllocateThinker
 // Allocates memory and adds a new thinker at the end of the list.
 //
+__SUPER__ 
 void P_AllocateThinker(thinker_t *thinker) {}
 
 //

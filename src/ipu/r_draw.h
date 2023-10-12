@@ -36,8 +36,8 @@ extern byte *dc_source;
 // The span blitting interface.
 // Hook in assembler or system specific BLT
 //  here.
-void R_DrawColumn(void);
-void R_DrawColumnLow(void);
+__SUPER__ void R_DrawColumn(void);
+__SUPER__ void R_DrawColumnLow(void);
 
 // The Spectre/Invisibility effect.
 void R_DrawFuzzColumn(void);
@@ -75,7 +75,7 @@ void R_DrawSpan(void);
 // Low resolution mode, 160x200?
 void R_DrawSpanLow(void);
 
-void R_InitBuffer(int width, int height);
+__SUPER__ void R_InitBuffer(int width, int height);
 
 // Initialize color translation tables,
 //  for player rendering etc.

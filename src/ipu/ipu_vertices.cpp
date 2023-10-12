@@ -13,29 +13,28 @@ typedef uint8_t pixel_t;
 
 
 extern "C" {
-    void AM_LevelInit(void);
-    void AM_Drawer(pixel_t*);
-    void IPU_Setup_UnpackMarkNums(const unsigned char* buf);
+  __SUPER__ void AM_LevelInit(void);
+  __SUPER__ void AM_Drawer(pixel_t*);
+  __SUPER__ void IPU_Setup_UnpackMarkNums(const unsigned char* buf);
 };
 
 
-class AM_LevelInit_Vertex : public poplar::Vertex {
+class AM_LevelInit_Vertex : public poplar::SupervisorVertex {
  public:
-  bool compute() {
+  __SUPER__ bool compute() {
     AM_LevelInit(); 
     return true;
   }
 };
 
 
-class AM_Drawer_Vertex : public poplar::Vertex {
+class AM_Drawer_Vertex : public poplar::SupervisorVertex {
  public:
   poplar::InOut<poplar::Vector<unsigned char>> frame;
 
-  bool compute() {
+  __SUPER__ void compute() {
     assert(&frame[0] == I_VideoBuffer);
     AM_Drawer(&frame[0]);
-    return true;
   }
 };
 
@@ -44,8 +43,7 @@ class AM_Drawer_Vertex : public poplar::Vertex {
 
 struct IPU_Init_Vertex : public poplar::SupervisorVertex {
 
-  __attribute__((target("supervisor")))
-  void compute() {
+  __SUPER__ void compute() {
 
     // Deduce logical tile ID
     int physical = __builtin_ipu_get_tile_id();
@@ -60,9 +58,6 @@ struct IPU_Init_Vertex : public poplar::SupervisorVertex {
     logical += 2 * row;
     tileID = logical;
 
-    
-    // IPU_R_InitColumnRequester(physical);
-
   }
 };
 
@@ -72,18 +67,17 @@ struct IPU_Init_Vertex : public poplar::SupervisorVertex {
 struct IPU_MiscSetup_Vertex : public poplar::SupervisorVertex {
   poplar::InOut<poplar::Vector<unsigned char>> frame;
 
-  __attribute__((target("supervisor")))
-  void compute() {
+  __SUPER__ void compute() {
 
     I_VideoBuffer = &frame[0];
 
   }
 };
 
-struct IPU_UnpackMarknumSprites_Vertex : public poplar::Vertex {
+struct IPU_UnpackMarknumSprites_Vertex : public poplar::SupervisorVertex {
   poplar::Input<poplar::Vector<unsigned char>> buf;
 
-  void compute() {
+  __SUPER__ void compute() {
     IPU_Setup_UnpackMarkNums(&buf[0]);
     return;
   }

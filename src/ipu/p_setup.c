@@ -12,7 +12,7 @@
 #include "print.h"
 
 
-void P_SpawnMapThing(mapthing_t *mthing);
+__SUPER__ void P_SpawnMapThing(mapthing_t *mthing);
 
 //
 // MAP related Lookup tables.
@@ -80,6 +80,7 @@ mapthing_t playerstarts[MAXPLAYERS];
 //
 // P_LoadVertexes
 //
+__SUPER__ 
 void P_LoadVertexes(const unsigned char *buf) {
   byte *data;
   int i;
@@ -130,6 +131,7 @@ sector_t *GetSectorAtNullAddress(void) {
 //
 // P_LoadSegs
 //
+__SUPER__ 
 void P_LoadSegs(const unsigned char *buf) {
   byte *data;
   int i;
@@ -195,6 +197,7 @@ void P_LoadSegs(const unsigned char *buf) {
 //
 // P_LoadSectors
 //
+__SUPER__ 
 void P_LoadSectors(const unsigned char *buf) {
   byte *data;
   int i;
@@ -224,6 +227,7 @@ void P_LoadSectors(const unsigned char *buf) {
 //
 // P_LoadNodes
 //
+__SUPER__ 
 __attribute__((optnone))  // Workaround for https://graphcore.atlassian.net/browse/LLVM-330
 void P_LoadNodes(const unsigned char *buf) {
   int i;
@@ -258,6 +262,7 @@ void P_LoadNodes(const unsigned char *buf) {
 //
 // P_LoadThings
 //
+__SUPER__ 
 void P_LoadThings(const unsigned char *buf) {
   byte *data;
   int i;
@@ -308,6 +313,7 @@ void P_LoadThings(const unsigned char *buf) {
 //
 // P_LoadSideDefs
 //
+__SUPER__ 
 void P_LoadSideDefs(const unsigned char *buf) {
   byte *data;
   int i;
@@ -335,6 +341,7 @@ void P_LoadSideDefs(const unsigned char *buf) {
 // P_LoadLineDefs
 // Also counts secret lines for intermissions.
 //
+__SUPER__ 
 void P_LoadLineDefs(const unsigned char *buf) {
   byte *data;
   int i;
@@ -404,6 +411,7 @@ void P_LoadLineDefs(const unsigned char *buf) {
 //
 // P_LoadSubsectors
 //
+__SUPER__ 
 void P_LoadSubsectors(const unsigned char *buf) {
   byte *data;
   int i;
@@ -428,6 +436,7 @@ void P_LoadSubsectors(const unsigned char *buf) {
 //
 // P_SetupLevel
 //
+__SUPER__ 
 void P_SetupLevel_pt0(const unsigned char unused) {
   int i;
 
@@ -521,6 +530,7 @@ void P_SetupLevel_pt0(const unsigned char unused) {
 //
 // P_LoadBlockMap
 //
+__SUPER__ 
 void P_LoadBlockMap(const unsigned char *buf) {
   int i;
   int count;
@@ -553,6 +563,7 @@ void P_LoadBlockMap(const unsigned char *buf) {
 // Builds sector line lists and subsector sector numbers.
 // Finds block bounding boxes for sectors.
 //
+__SUPER__ 
 void P_GroupLines(const unsigned char *buf) {
   (void) buf;
 

@@ -20,7 +20,7 @@
 #ifndef __M_FIXED__
 #define __M_FIXED__
 
-
+#include "ipu_utils.h"
 
 
 //
@@ -32,8 +32,8 @@
 typedef int fixed_t;
 
 
-fixed_t FixedMul	(fixed_t a, fixed_t b);
-fixed_t FixedDiv	(fixed_t a, fixed_t b);
+__SUPER__ fixed_t FixedMul	(fixed_t a, fixed_t b);
+__SUPER__ fixed_t FixedDiv	(fixed_t a, fixed_t b);
 
 
 

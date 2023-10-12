@@ -38,6 +38,7 @@
 #include "v_patch.h"
 
 #include <print.h>
+#include "ipu_utils.h"
 #include "ipu_texturetiles.h"
 
 
@@ -93,6 +94,7 @@ lighttable_t **walllights;
 
 short *maskedtexturecol;
 
+__SUPER__ 
 int abs(int); // JOSEF
 
 /*
@@ -190,7 +192,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, int x1, int x2) {
 //
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
-
+__SUPER__ 
 void R_RenderSegLoop(void) {
   angle_t angle;
   unsigned index;
@@ -341,6 +343,7 @@ int lightnum; // JOSEF: Temprarily made this global for vis
 // A wall segment will be drawn
 //  between start and stop pixels (inclusive).
 //
+__SUPER__ 
 void R_StoreWallRange(int start, int stop) {
   fixed_t hyp;
   fixed_t sineval;

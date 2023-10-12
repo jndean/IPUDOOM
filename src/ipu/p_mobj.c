@@ -448,6 +448,7 @@ void P_MobjThinker(mobj_t *mobj) {
 //
 // P_SpawnMobj
 //
+__SUPER__ 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type) {
   mobj_t *mobj;
   state_t *st;
@@ -598,6 +599,7 @@ void P_RespawnSpecials(void) {
 // Most of the player structure stays unchanged
 //  between levels.
 //
+__SUPER__ 
 void P_SpawnPlayer(mapthing_t *mthing) {
   player_t *p;
   fixed_t x;
@@ -668,6 +670,7 @@ void P_SpawnPlayer(mapthing_t *mthing) {
 // The fields of the mapthing should
 // already be in host byte order.
 //
+__SUPER__ 
 void P_SpawnMapThing(mapthing_t *mthing) {
   int i;
   int bit;

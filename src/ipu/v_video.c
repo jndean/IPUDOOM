@@ -133,7 +133,7 @@ void V_SetPatchClipCallback(vpatchclipfunc_t func)
 // V_DrawPatch
 // Masks a column based masked pic to the screen. 
 //
-
+__SUPER__
 void V_DrawPatch(int x, int y, patch_t *patch)
 { 
     int count;
@@ -597,6 +597,7 @@ void V_DrawRawScreen(byte *raw)
 //
 // V_Init
 // 
+__SUPER__
 void V_Init (void) 
 { 
     // no-op!
@@ -606,6 +607,7 @@ void V_Init (void)
 
 // Set the buffer that the code draws to.
 
+__SUPER__
 void V_UseBuffer(pixel_t *buffer)
 {
     dest_screen = buffer;
@@ -613,6 +615,7 @@ void V_UseBuffer(pixel_t *buffer)
 
 // Restore screen buffer to the i_video screen buffer.
 
+__SUPER__
 void V_RestoreBuffer(void)
 {
     dest_screen = I_VideoBuffer;

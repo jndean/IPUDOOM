@@ -48,10 +48,10 @@ extern lighttable_t **dscalelight;
 typedef void (*drawfunc_t)(int start, int stop);
 
 // BSP?
-void R_ClearClipSegs(void);
-void R_ClearDrawSegs(void);
+__SUPER__ void R_ClearClipSegs(void);
+__SUPER__ void R_ClearDrawSegs(void);
 
-void R_RenderBSPNode(int bspnum);
-void R_RenderBSPNodeNonRecursive(void); // Nonrecursive verion for IPU
+__SUPER__ void R_RenderBSPNode(int bspnum);
+__SUPER__ void R_RenderBSPNodeNonRecursive(void); // Nonrecursive verion for IPU
 
 #endif

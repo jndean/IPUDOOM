@@ -93,6 +93,7 @@ fixed_t cachedystep[SCREENHEIGHT];
 // R_InitPlanes
 // Only at game startup.
 //
+__SUPER__ 
 void R_InitPlanes(void) {
   // Doh!
 }
@@ -161,6 +162,7 @@ void R_MapPlane(int y, int x1, int x2) {
 // R_ClearPlanes
 // At begining of frame.
 //
+__SUPER__ 
 void R_ClearPlanes(void) {
   int i;
   angle_t angle;

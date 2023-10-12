@@ -373,6 +373,7 @@ byte *R_GetColumn(int tex, int col) {
   return texturecomposite[tex] + ofs;
 }
 */
+__SUPER__
 static void GenerateTextureHashTable(void) {
   IPUpatchlesstexture_t **rover;
   int i;
@@ -417,6 +418,7 @@ static void GenerateTextureHashTable(void) {
 // Initializes the texture list
 //  with the textures from the world map.
 //
+__SUPER__
 void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
   maptexture_t *mtexture;
   IPUpatchlesstexture_t *texture;
@@ -694,6 +696,7 @@ int R_FlatNumForName(char *name) {
 }
 */
 
+__SUPER__
 int JOSEFstrsame(const char* restrict a, const char* restrict b) {
   for (int i = 0; i < 8; ++i) {
     char c_a = JOSEFtoupper(a[i]), c_b = JOSEFtoupper(b[i]);
@@ -708,6 +711,7 @@ int JOSEFstrsame(const char* restrict a, const char* restrict b) {
 // Check whether texture is available.
 // Filter out NoTexture indicator.
 //
+__SUPER__
 int R_CheckTextureNumForName(char *name) {
   IPUpatchlesstexture_t *texture;
   int key;
@@ -736,6 +740,7 @@ int R_CheckTextureNumForName(char *name) {
 // Calls R_CheckTextureNumForName,
 //  aborts with error message.
 //
+__SUPER__
 int R_TextureNumForName(char *name) {
   int i;
 

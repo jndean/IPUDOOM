@@ -21,9 +21,9 @@
 
 
 // NOT called by W_Ticker. Fixme.
-void P_SetupLevel();
+__SUPER__ void P_SetupLevel();
 
 // Called by startup code.
-void P_Init(void);
+__SUPER__ void P_Init(void);
 
 #endif

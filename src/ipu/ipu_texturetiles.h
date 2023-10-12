@@ -12,9 +12,9 @@ extern "C" {
 
 
 
-void IPU_R_InitColumnRequester(void);
+__SUPER__ void IPU_R_InitColumnRequester(void);
 
-byte* IPU_R_RequestColumn(int texture, int column);
+__SUPER__ byte* IPU_R_RequestColumn(int texture, int column);
 
 
 

@@ -241,6 +241,7 @@ static boolean stopped = true;
 //
 //
 //
+__SUPER__
 void AM_activateNewScale(void) {
   m_x += m_w / 2;
   m_y += m_h / 2;
@@ -255,6 +256,7 @@ void AM_activateNewScale(void) {
 //
 //
 //
+__SUPER__
 void AM_saveScaleAndLoc(void) {
   old_m_x = m_x;
   old_m_y = m_y;
@@ -265,6 +267,7 @@ void AM_saveScaleAndLoc(void) {
 //
 //
 //
+__SUPER__
 void AM_restoreScaleAndLoc(void) {
 
   m_w = old_m_w;
@@ -287,6 +290,7 @@ void AM_restoreScaleAndLoc(void) {
 //
 // adds a marker at the current location
 //
+__SUPER__
 void AM_addMark(void) {
   markpoints[markpointnum].x = m_x + m_w / 2;
   markpoints[markpointnum].y = m_y + m_h / 2;
@@ -297,6 +301,7 @@ void AM_addMark(void) {
 // Determines bounding box of all vertices,
 // sets global variables controlling zoom range.
 //
+__SUPER__
 void AM_findMinMaxBoundaries(void) {
   int i;
   fixed_t a;
@@ -333,6 +338,7 @@ void AM_findMinMaxBoundaries(void) {
 //
 //
 //
+__SUPER__
 void AM_changeWindowLoc(void) {
   if (m_paninc.x || m_paninc.y) {
     followplayer = 0;
@@ -359,6 +365,7 @@ void AM_changeWindowLoc(void) {
 //
 //
 //
+__SUPER__
 void AM_initVariables(void) {
   int pnum;
   // static event_t st_notify = {ev_keyup, AM_MSGENTERED, 0, 0}; // LATER
@@ -409,6 +416,7 @@ void AM_initVariables(void) {
 }
 
 
+__SUPER__
 void AM_clearMarks(void) {
   int i;
 
@@ -421,6 +429,7 @@ void AM_clearMarks(void) {
 // should be called at the start of every level
 // right now, i figure it out myself
 //
+__SUPER__
 void AM_LevelInit(void) {
   leveljuststarted = 0;
 
@@ -441,6 +450,7 @@ void AM_LevelInit(void) {
 //
 //
 //
+__SUPER__
 void AM_Stop(void) {
   // static event_t st_notify = {0, ev_keyup, AM_MSGEXITED, 0}; // LATER
 
@@ -453,6 +463,7 @@ void AM_Stop(void) {
 //
 //
 //
+__SUPER__
 void AM_Start(void) {
   static int lastlevel = -1, lastepisode = -1;
 
@@ -471,6 +482,7 @@ void AM_Start(void) {
 //
 // set the window scale to the maximum size
 //
+__SUPER__
 void AM_minOutWindowScale(void) {
   scale_mtof = min_scale_mtof;
   scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -480,6 +492,7 @@ void AM_minOutWindowScale(void) {
 //
 // set the window scale to the minimum size
 //
+__SUPER__
 void AM_maxOutWindowScale(void) {
   scale_mtof = max_scale_mtof;
   scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -489,6 +502,7 @@ void AM_maxOutWindowScale(void) {
 //
 // Handle events (user inputs) in automap mode
 //
+__SUPER__
 boolean AM_Responder(event_t *ev) {
 
   int rc;
@@ -637,6 +651,7 @@ boolean AM_Responder(event_t *ev) {
 //
 // Zooming
 //
+__SUPER__
 void AM_changeWindowScale(void) {
 
   // Change the scaling multipliers
@@ -654,6 +669,7 @@ void AM_changeWindowScale(void) {
 //
 //
 //
+__SUPER__
 void AM_doFollowPlayer(void) {
 
   if (f_oldloc.x != am_playerpos.x || f_oldloc.y != am_playerpos.y) {
@@ -674,6 +690,7 @@ void AM_doFollowPlayer(void) {
 //
 // Updates on Game Tick
 //
+__SUPER__
 void AM_Ticker(void) {
   if (!automapactive) 
     return;
@@ -698,6 +715,7 @@ void AM_Ticker(void) {
 //
 // Clear automap frame buffer.
 //
+__SUPER__
 void AM_clearFB(int color) { memset(fb, color, f_w * f_h * sizeof(*fb)); }
 
 //
@@ -707,6 +725,7 @@ void AM_clearFB(int color) { memset(fb, color, f_w * f_h * sizeof(*fb)); }
 // faster reject and precalculated slopes.  If the speed is needed,
 // use a hash algorithm to handle  the common cases.
 //
+__SUPER__
 boolean AM_clipMline(mline_t *ml, fline_t *fl) {
   enum { LEFT = 1, RIGHT = 2, BOTTOM = 4, TOP = 8 };
 
@@ -821,6 +840,7 @@ boolean AM_clipMline(mline_t *ml, fline_t *fl) {
 //
 // Classic Bresenham w/ whatever optimizations needed for speed
 //
+__SUPER__
 void AM_drawFline(fline_t *fl, int color) {
   register int x;
   register int y;
@@ -886,6 +906,7 @@ void AM_drawFline(fline_t *fl, int color) {
 //
 // Clip lines, draw visible part sof lines.
 //
+__SUPER__
 void AM_drawMline(mline_t *ml, int color) {
   static fline_t fl;
 
@@ -896,6 +917,7 @@ void AM_drawMline(mline_t *ml, int color) {
 //
 // Draws flat (floor/ceiling tile) aligned grid lines.
 //
+__SUPER__
 void AM_drawGrid(int color) {
   fixed_t x, y;
   fixed_t start, end;
@@ -938,6 +960,7 @@ void AM_drawGrid(int color) {
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
+__SUPER__
 void AM_drawWalls(void) {
   int i;
   static mline_t l;
@@ -986,18 +1009,20 @@ void AM_drawWalls(void) {
 // Rotation in 2D.
 // Used to rotate player arrow line character.
 //
+__SUPER__
 void AM_rotate(fixed_t *x, fixed_t *y, angle_t a) {
   fixed_t tmpx;
 
   tmpx = FixedMul(*x, finecosine[a >> ANGLETOFINESHIFT]) -
-         FixedMul(*y, IPU_finesine(a >> ANGLETOFINESHIFT));
+         FixedMul(*y, finesine[a >> ANGLETOFINESHIFT]);
 
-  *y = FixedMul(*x, IPU_finesine(a >> ANGLETOFINESHIFT)) +
+  *y = FixedMul(*x, finesine[a >> ANGLETOFINESHIFT]) +
        FixedMul(*y, finecosine[a >> ANGLETOFINESHIFT]);
 
   *x = tmpx;
 }
 
+__SUPER__
 void AM_drawLineCharacter(mline_t *lineguy, int lineguylines, fixed_t scale,
                           angle_t angle, int color, fixed_t x, fixed_t y) {
   int i;
@@ -1036,6 +1061,7 @@ void AM_drawLineCharacter(mline_t *lineguy, int lineguylines, fixed_t scale,
   }
 }
 
+__SUPER__
 void AM_drawPlayers(void) {
   int i;
   player_t *p;
@@ -1074,6 +1100,7 @@ void AM_drawPlayers(void) {
   */
 }
 
+__SUPER__
 void AM_drawMarks(void) {
   int i, fx, fy, w, h;
 
@@ -1092,10 +1119,12 @@ void AM_drawMarks(void) {
   }
 }
 
+__SUPER__
 void AM_drawCrosshair(int color) {
   fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
 }
 
+__SUPER__
 void AM_drawIPUWatermark(int color) {
   const int wmx = 283, wmy = 160;
   for (int i = 0; i < arrlen(ipu_watermark_lines); ++i) {
@@ -1106,6 +1135,7 @@ void AM_drawIPUWatermark(int color) {
   }
 }
 
+__SUPER__
 void AM_Drawer(pixel_t* fb_tensor) {
   fb = fb_tensor; // JOSEF
   V_UseBuffer(fb);

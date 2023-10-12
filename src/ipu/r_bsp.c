@@ -47,11 +47,13 @@ sector_t *backsector;
 drawseg_t drawsegs[MAXDRAWSEGS];
 drawseg_t *ds_p;
 
+__SUPER__
 void R_StoreWallRange(int start, int stop);
 
 //
 // R_ClearDrawSegs
 //
+__SUPER__
 void R_ClearDrawSegs(void) { ds_p = drawsegs; }
 
 //
@@ -90,6 +92,7 @@ int bspnum;
 //  e.g. single sided LineDefs (middle texture)
 //  that entirely block the view.
 //
+__SUPER__
 void R_ClipSolidWallSegment(int first, int last) {
   cliprange_t *next;
   cliprange_t *start;
@@ -169,6 +172,7 @@ crunch:
 // Does handle windows,
 //  e.g. LineDefs with upper and lower texture.
 //
+__SUPER__
 void R_ClipPassWallSegment(int first, int last) {
   cliprange_t *start;
 
@@ -209,6 +213,7 @@ void R_ClipPassWallSegment(int first, int last) {
 //
 // R_ClearClipSegs
 //
+__SUPER__ 
 void R_ClearClipSegs(void) {
   solidsegs[0].first = -0x7fffffff;
   // solidsegs[0].last = -1;            // JOSEF
@@ -224,6 +229,7 @@ void R_ClearClipSegs(void) {
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
+__SUPER__ 
 void R_AddLine(seg_t *line) {
   int x1;
   int x2;
@@ -336,6 +342,7 @@ int checkcoord[12][4] = {{3, 0, 2, 1}, {3, 0, 2, 0}, {3, 1, 2, 0}, {0},
                          {2, 0, 2, 1}, {0, 0, 0, 0}, {3, 1, 3, 0}, {0},
                          {2, 0, 3, 1}, {2, 1, 3, 1}, {2, 1, 3, 0}};
 
+__SUPER__
 boolean R_CheckBBox(fixed_t *bspcoord) {
   int boxx;
   int boxy;
@@ -444,6 +451,7 @@ boolean R_CheckBBox(fixed_t *bspcoord) {
 // Add sprites of things in sector.
 // Draw one or more line segments.
 //
+__SUPER__
 void R_Subsector(int num) {
   int count;
   seg_t *line;
@@ -526,6 +534,7 @@ void R_RenderBSPNode(int bspnum) {
 //
 // R_RenderBSPNodeNonRecursive
 // Non-recursive version is more suitable to IPU software stack
+__SUPER__
 void R_RenderBSPNodeNonRecursive() {
   node_t *bsp;
   int side;

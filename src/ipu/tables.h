@@ -47,7 +47,7 @@
 
 // Effective size is 10240.
 extern const fixed_t finesine[5*FINEANGLES/4];
-fixed_t IPU_finesine(int i); // Replace big lookup on IPU
+__SUPER__ fixed_t IPU_finesine(int i); // Replace big lookup on IPU
 
 // Re-use data, is just PI/2 pahse shift.
 extern const fixed_t *finecosine;
@@ -90,7 +90,7 @@ extern const angle_t tantoangle[SLOPERANGE+1];
 
 // Utility function,
 //  called by R_PointToAngle.
-int SlopeDiv(unsigned int num, unsigned int den);
+__SUPER__ int SlopeDiv(unsigned int num, unsigned int den);
 
 
 #endif

@@ -83,7 +83,7 @@ extern int detailshift;
 //
 
 // extern void (*colfunc)(void); // JOSEF
-void colfunc(void); // Don't want to call via pointer on IPU
+__SUPER__ void colfunc(void); // Don't want to call via pointer on IPU
 extern void (*transcolfunc)(void);
 extern void (*basecolfunc)(void);
 extern void (*fuzzcolfunc)(void);
@@ -97,33 +97,33 @@ extern int tileRightClip;
 
 //
 // Utility functions.
-int R_PointOnSide(fixed_t x, fixed_t y, node_t *node);
+__SUPER__ int R_PointOnSide(fixed_t x, fixed_t y, node_t *node);
 
-int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line);
+__SUPER__ int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line);
 
-angle_t R_PointToAngle(fixed_t x, fixed_t y);
+__SUPER__ angle_t R_PointToAngle(fixed_t x, fixed_t y);
 
-angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
+__SUPER__ angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 
-fixed_t R_PointToDist(fixed_t x, fixed_t y);
+__SUPER__ fixed_t R_PointToDist(fixed_t x, fixed_t y);
 
-fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
+__SUPER__ fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
 
-subsector_t *R_PointInSubsector(fixed_t x, fixed_t y);
+__SUPER__ subsector_t *R_PointInSubsector(fixed_t x, fixed_t y);
 
-void R_AddPointToBox(int x, int y, fixed_t *box);
+__SUPER__ void R_AddPointToBox(int x, int y, fixed_t *box);
 
 //
 // REFRESH - the actual rendering functions.
 //
 
 // Called by G_Drawer.
-void R_RenderPlayerView(player_t *player);
+__SUPER__ void R_RenderPlayerView(player_t *player);
 
 // Called by startup code.
-void R_Init(void);
+__SUPER__ void R_Init(void);
 
 // Called by M_Responder.
-void R_SetViewSize(int blocks, int detail);
+__SUPER__ void R_SetViewSize(int blocks, int detail);
 
 #endif

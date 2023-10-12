@@ -14,6 +14,7 @@ extern int setdetail; // r_main.c
 
 int gamelumpnum;
 
+__SUPER__
 void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   gameepisode = pack->gameepisode;
   gamemap = pack->gamemap;
@@ -25,6 +26,7 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   }
 }
 
+__SUPER__
 void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
   gamestate = pack->gamestate;
   if (gamestate != GS_LEVEL)
@@ -52,6 +54,7 @@ void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
 
 }
 
+__SUPER__
 void IPU_Setup_UnpackMarkNums(const unsigned char* buf) {
   short* offsets = (short*) buf;
   const int offsetssize = 10 * sizeof(short);
@@ -62,11 +65,12 @@ void IPU_Setup_UnpackMarkNums(const unsigned char* buf) {
 }
 
 
+__SUPER__ 
 void IPU_R_RenderPlayerView_UnpackMiscValues(R_RenderPlayerView_MiscValues_t* pack) {
   // Nothing to unpack
 }
 
-
+__SUPER__
 void IPU_R_ExecuteSetViewSize_UnpackMiscValues(R_ExecuteSetViewSize_MiscValues_t* pack) {
   setblocks = pack->setblocks;
   setdetail = pack->setdetail;

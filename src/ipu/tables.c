@@ -32,13 +32,14 @@
 
 #include "tables.h"
 #include <math.h> // JOSEF
+#include "ipu_texturetiles.h"
 
 // to get a global angle from cartesian coordinates, the coordinates are
 // flipped until they are in the first octant of the coordinate system, then
 // the y (<=x) is scaled and divided by x to get a tangent (slope) value
 // which is looked up in the tantoangle[] table.  The +1 size is to handle
 // the case when x==y without additional checking.
-
+__SUPER__
 int SlopeDiv(unsigned int num, unsigned int den)
 {
     unsigned ans;
@@ -579,6 +580,7 @@ const fixed_t finetangent[4096] =
 };
 
 // 40K lookup table is a bit dear for IPU, eventually calculate live instead
+__SUPER__
 fixed_t IPU_finesine(int i) {
     return finesine[i];
 

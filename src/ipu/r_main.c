@@ -111,6 +111,7 @@ int extralight;
 
 // void (*colfunc)(void); // JOSEF
 
+__SUPER__
 void colfunc() { // JOSEF: Don't call through pointer, explicit call
   if (!detailshift) R_DrawColumn();
   // else           R_DrawColumnLow(); // LATER
@@ -133,6 +134,7 @@ int abs(int);
 // Expand a given bbox
 // so that it encloses a given point.
 //
+__SUPER__
 void R_AddPointToBox(int x, int y, fixed_t *box) {
   if (x < box[BOXLEFT])
     box[BOXLEFT] = x;
@@ -150,6 +152,7 @@ void R_AddPointToBox(int x, int y, fixed_t *box) {
 //  check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
+__SUPER__
 int R_PointOnSide(fixed_t x, fixed_t y, node_t *node) {
   fixed_t dx;
   fixed_t dy;
@@ -255,6 +258,7 @@ int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line) {
 //  tangent (slope) value which is looked up in the
 //  tantoangle[] table.
 //
+__SUPER__
 angle_t R_PointToAngle(fixed_t x, fixed_t y) {
   x -= viewx;
   y -= viewy;
@@ -315,6 +319,7 @@ angle_t R_PointToAngle(fixed_t x, fixed_t y) {
   return 0;
 }
 
+__SUPER__
 angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) {
   viewx = x1;
   viewy = y1;
@@ -322,6 +327,7 @@ angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) {
   return R_PointToAngle(x2, y2);
 }
 
+__SUPER__
 fixed_t R_PointToDist(fixed_t x, fixed_t y) {
   int angle;
   fixed_t dx;
@@ -358,6 +364,7 @@ fixed_t R_PointToDist(fixed_t x, fixed_t y) {
 //
 // R_InitPointToAngle
 //
+__SUPER__
 void R_InitPointToAngle(void) {
 // UNUSED - now getting from tables.c
 #if 0
@@ -383,6 +390,7 @@ void R_InitPointToAngle(void) {
 //  at the given angle.
 // rw_distance must be calculated first.
 //
+__SUPER__
 fixed_t R_ScaleFromGlobalAngle(angle_t visangle) {
   fixed_t scale;
   angle_t anglea;
@@ -413,8 +421,8 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle) {
   angleb = ANG90 + (visangle - rw_normalangle);
 
   // both sines are allways positive
-  sinea = IPU_finesine(anglea >> ANGLETOFINESHIFT);
-  sineb = IPU_finesine(angleb >> ANGLETOFINESHIFT);
+  sinea = finesine[anglea >> ANGLETOFINESHIFT];
+  sineb = finesine[angleb >> ANGLETOFINESHIFT];
 
   num = FixedMul(projection, sineb) << detailshift;
   den = FixedMul(rw_distance, sinea);
@@ -468,6 +476,7 @@ void R_InitTables(void) {
 //
 // R_InitTextureMapping
 //
+__SUPER__
 void R_InitTextureMapping(void) {
   int i;
   int x;
@@ -482,7 +491,6 @@ void R_InitTextureMapping(void) {
   //  so FIELDOFVIEW angles covers SCREENWIDTH.
   focallength =
       FixedDiv(centerxfrac, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
-
   for (i = 0; i < FINEANGLES / 2; i++) {
     if (finetangent[i] > FRACUNIT * 2)
       t = -1;
@@ -570,6 +578,7 @@ boolean setsizeneeded;
 int setblocks;
 int setdetail;
 
+__SUPER__
 void R_SetViewSize(int blocks, int detail) {
   setsizeneeded = true;
   setblocks = blocks;
@@ -579,6 +588,7 @@ void R_SetViewSize(int blocks, int detail) {
 //
 // R_ExecuteSetViewSize
 //
+__SUPER__
 void R_ExecuteSetViewSize(void) {
   fixed_t cosadj;
   fixed_t dy;
@@ -728,6 +738,7 @@ subsector_t *R_PointInSubsector(fixed_t x, fixed_t y) {
 //
 // R_SetupFrame
 //
+__SUPER__ 
 void R_SetupFrame(player_t *player) {
   int i;
 
@@ -739,7 +750,7 @@ void R_SetupFrame(player_t *player) {
 
   viewz = player->viewz;
 
-  viewsin = IPU_finesine(viewangle >> ANGLETOFINESHIFT);
+  viewsin = finesine[viewangle >> ANGLETOFINESHIFT];
   viewcos = finecosine[viewangle >> ANGLETOFINESHIFT];
 
   // JOSEF TMP, some tests to about replacing sin LUTs!
@@ -773,6 +784,7 @@ void R_SetupFrame(player_t *player) {
 //
 // R_RenderView
 //
+__SUPER__ 
 void R_RenderPlayerView(player_t *player) {
   R_SetupFrame(player);
 

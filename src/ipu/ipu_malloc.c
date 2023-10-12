@@ -21,7 +21,7 @@ static unsigned char PU_STATIC_pool[PU_STATIC_max_size];
 static unsigned char PU_LEVEL_pool[PU_LEVEL_max_size];
 static unsigned char PU_TMP_pool[PU_TMP_max_size];
 
-
+__SUPER__
 void* IPU_level_malloc(int size, const char* name) {
     void* ret = (void*)(&PU_LEVEL_pool[PU_LEVEL_size]);
     PU_LEVEL_size = ALIGN32(PU_LEVEL_size + size);
@@ -39,10 +39,12 @@ void* IPU_level_malloc(int size, const char* name) {
     return ret;
 }
 
+__SUPER__
 void IPU_level_free() {
     PU_LEVEL_size = 0;
 }
 
+__SUPER__
 void* IPU_static_malloc(int size, const char* name) {
     void* ret = (void*)(&PU_STATIC_pool[PU_STATIC_size]);
     PU_STATIC_size = ALIGN32(PU_STATIC_size + size);
@@ -62,6 +64,7 @@ void* IPU_static_malloc(int size, const char* name) {
 
 
 static unsigned PU_TMP_count = 0;
+__SUPER__
 void* IPU_tmp_malloc(int size, const char* name) {
     void* ret = (void*)(&PU_TMP_pool[PU_TMP_size]);
     PU_TMP_size = ALIGN32(PU_TMP_size + size);
@@ -81,6 +84,7 @@ void* IPU_tmp_malloc(int size, const char* name) {
 }
 
 
+__SUPER__
 void IPU_tmp_free(void* ptr) {
     (void) ptr;
     PU_TMP_count -= 1;
@@ -90,6 +94,7 @@ void IPU_tmp_free(void* ptr) {
 }
 
 
+__SUPER__
 void IPU_summarise_malloc() {
     if (tileID != 0) 
         return;

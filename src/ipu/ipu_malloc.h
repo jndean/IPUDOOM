@@ -4,17 +4,19 @@
 extern "C" {
 #endif
 
+#include "ipu_utils.h"
 
-void* IPU_static_malloc(int size, const char* name);
+
+__SUPER__ void* IPU_static_malloc(int size, const char* name);
 // There is no IPU_static_free()  :D
 
-void* IPU_level_malloc(int size, const char* name);
-void IPU_level_free(void);
+__SUPER__ void* IPU_level_malloc(int size, const char* name);
+__SUPER__ void IPU_level_free(void);
 
-void* IPU_tmp_malloc(int size, const char* name);
-void IPU_tmp_free(void* ptr);
+__SUPER__ void* IPU_tmp_malloc(int size, const char* name);
+__SUPER__ void IPU_tmp_free(void* ptr);
 
-void IPU_summarise_malloc(void);
+__SUPER__ void IPU_summarise_malloc(void);
 
 
 #ifdef __cplusplus

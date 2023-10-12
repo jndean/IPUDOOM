@@ -68,13 +68,14 @@ static lumpinfo_t *reloadlumps = NULL;
 static char *reloadname = NULL;
 static int reloadlump = -1;
 */
-
+__SUPER__ 
 char JOSEFtoupper(const char c) {
     if (c < 97 || c > 122) return c;
     return c ^ 0x20;    
 }
 
 // Hash function used for lump names.
+__SUPER__ 
 unsigned int W_LumpNameHash(const char *s)
 {
     // This is the djb2 string hash function, modded to work on strings

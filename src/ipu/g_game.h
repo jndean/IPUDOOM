@@ -24,8 +24,11 @@
 #include "d_ticcmd.h"
 #include "doomtype.h"
 
+#include "ipu_utils.h"
+
 
 // JOSEF TMP
+__SUPER__ 
 void G_DoLoadLevel(void);
 
 //
@@ -69,8 +72,8 @@ void G_WorldDone(void);
 
 void G_BuildTiccmd(ticcmd_t *cmd, int maketic);
 
-void G_Ticker(void);
-boolean G_Responder(event_t *ev);
+__SUPER__ void G_Ticker(void);
+__SUPER__ boolean G_Responder(event_t *ev);
 
 void G_ScreenShot(void);
 

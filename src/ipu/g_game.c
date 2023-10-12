@@ -69,6 +69,7 @@ int testcontrols_mousespeed;
 //
 // G_DoLoadLevel
 //
+__SUPER__ 
 void G_DoLoadLevel(void) {
   int i;
 
@@ -136,6 +137,7 @@ void G_DoLoadLevel(void) {
 // G_Ticker
 // Make ticcmd_ts for the players.
 //
+__SUPER__ 
 void G_Ticker(void) {
   int i;
   int buf;
@@ -295,6 +297,7 @@ void G_Ticker(void) {
 // G_Responder
 // Get info needed to make ticcmd_ts for the players.
 //
+__SUPER__ 
 boolean G_Responder(event_t *ev) {
 
   /* LATER

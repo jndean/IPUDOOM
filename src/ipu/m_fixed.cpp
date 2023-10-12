@@ -18,23 +18,28 @@
 
 
 
+extern "C" {
 #include <limits.h>
 #include <stdint.h>
 
 #include "m_fixed.h"
+}
+#include <poplar/Vertex.hpp>
+
+#include "print.h"
 
 
-
+extern "C"
+__SUPER__ 
 int abs(int x) {
     return (x < 0) ? -x : x;
 }
 
 // Fixme. __USE_C_FIXED__ or something.
 
-fixed_t
-FixedMul
-( fixed_t	a,
-  fixed_t	b )
+extern "C"
+__SUPER__ 
+fixed_t FixedMul(fixed_t a, fixed_t b)
 {
     return ((int64_t) a * (int64_t) b) >> FRACBITS;
     // JOSEF: What about this? fewer inst.
@@ -47,23 +52,43 @@ FixedMul
 
 
 
+struct DivWorker : public poplar::Vertex {
+    fixed_t a, b;
+    void compute() {
+        // Using int64_ caused some weird errors. So use double instead...?
+        // a = (((int64_t) a) << FRACBITS) / b;
+        a = ((double) a * FRACUNIT) / (double) b; 
+    }
+};
+
 //
 // FixedDiv, C version.
 //
-
+extern "C"
+__SUPER__ 
 fixed_t FixedDiv(fixed_t a, fixed_t b)
 {
-    if ((abs(a) >> 14) >= abs(b))
-    {
-	return (a^b) < 0 ? INT_MIN : INT_MAX;
-    }
-    else
-    {
-	int64_t result;
+    if ((abs(a) >> 14) >= abs(b)) {
+    	return (a^b) < 0 ? INT_MIN : INT_MAX;
+    } else {
+        // int64_t result; // JOSEF
+        // result = ((int64_t) a << FRACBITS) / b;
+        // return (fixed_t) result;
 
-	result = ((int64_t) a << FRACBITS) / b;
-
-	return (fixed_t) result;
+        DivWorker workerArgs;
+        unsigned workerArgsPtr = (unsigned)&workerArgs - TMEM_BASE_ADDR;
+        workerArgs.a = a;
+        workerArgs.b = b;
+        void* workerFn;
+        asm volatile("setzi %0, __runCodelet_DivWorker" : [workerFn] "+r"(workerFn));
+        asm volatile(
+            "run %[workerFn], %[workerArgs], 0\n"
+            "sync %[zone]\n"
+            : [workerFn] "+r"(workerFn), 
+              [workerArgs] "+r"(workerArgsPtr)
+            : [zone] "i"(TEXCH_SYNCZONE_LOCAL)
+        );
+        return workerArgs.a;
     }
 }
 

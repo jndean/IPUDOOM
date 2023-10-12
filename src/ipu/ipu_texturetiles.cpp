@@ -3,7 +3,6 @@
 
 #include "ipu_utils.h"
 #include "ipu_texturetiles.h"
-// #include "../../xcom.hpp"
 
 
 #define NUMCACHECOLS (20)
@@ -11,8 +10,7 @@
 static byte columnCache[NUMCACHECOLS][CACHECOLSIZE];
 
 
-extern "C" 
-void IPU_R_InitColumnRequester(void) {
+extern "C" __SUPER__ void IPU_R_InitColumnRequester(void) {
     // TMP colours
     for (int i = 0; i < NUMCACHECOLS; ++i) {
         unsigned* col = (unsigned*) columnCache[i];
@@ -28,6 +26,6 @@ void IPU_R_InitColumnRequester(void) {
 }
 
 
-extern "C" byte* IPU_R_RequestColumn(int texture, int column) {
+extern "C" __SUPER__ byte* IPU_R_RequestColumn(int texture, int column) {
     return columnCache[texture % NUMCACHECOLS];
 }
