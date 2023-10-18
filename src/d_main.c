@@ -1112,7 +1112,7 @@ void D_DoomMain(void) {
   I_InitTimer();
   printf("inited timer\n");
   I_InitJoystick();
-  printf("inited joystick \n");
+  printf("init'd joystick \n");
   I_InitSound(true);
   printf("initted sound\n");
   I_InitMusic();

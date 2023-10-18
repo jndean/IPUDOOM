@@ -20,6 +20,7 @@ extern "C" {
 
 struct R_Init_Vertex: public poplar::SupervisorVertex {
   
+  poplar::Output<poplar::Vector<unsigned>> progBuf;
   poplar::Input<poplar::Vector<unsigned char>> miscValues;
   poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
   poplar::Output<int> lumpNum;
@@ -34,7 +35,7 @@ struct R_Init_Vertex: public poplar::SupervisorVertex {
     
     break; case 1:
       R_InitTextures((int*)&lumpBuf[0], (R_Init_MiscValues_t*)&miscValues[0]);
-      IPU_R_InitColumnRequester();
+      IPU_R_InitColumnRequester(&progBuf[0], progBuf.size());
 
       *lumpNum = 0;
       step = 0;
@@ -44,19 +45,34 @@ struct R_Init_Vertex: public poplar::SupervisorVertex {
 };
 
 
-struct R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
+struct 
+[[
+poplar::constraint("region(*nonExecutableDummy) != region(*progBuf)"),
+poplar::constraint("elem(*textureCache) != elem(*progBuf)"),
+]] 
+R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
   poplar::Input<poplar::Vector<unsigned char>> miscValues;
   poplar::InOut<poplar::Vector<unsigned char>> frame;
+  poplar::InOut<poplar::Vector<
+    int, poplar::VectorLayout::SPAN, 4, true>> nonExecutableDummy;
+  poplar::InOut<poplar::Vector<unsigned>> progBuf;
+  poplar::InOut<poplar::Vector<unsigned>> textureCache;
 
   __SUPER__ void compute() {
     assert(&frame[0] == I_VideoBuffer);
+    tileLocalProgBuf = &progBuf[0];
+    tileLocalTextureBuf = &textureCache[0];
+    // TMP
+    textureCache[0] = -1;
+    textureCache[1] = 1701;
+
 
     IPU_R_RenderPlayerView_UnpackMiscValues(
       (R_RenderPlayerView_MiscValues_t*) &miscValues[0]
     );
 
     R_RenderPlayerView(&players[displayplayer]);
-    return ;
+    return;
   }
 };
 
@@ -71,4 +87,36 @@ class R_ExecuteSetViewSize_Vertex : public poplar::SupervisorVertex {
     );
     R_ExecuteSetViewSize();
   }
+};
+
+
+struct 
+[[
+poplar::constraint("region(*dummy) != region(*progBuf)"),
+poplar::constraint("elem(*textureBuf) != elem(*progBuf)"),
+]] 
+R_FulfilColumnRequests_Vertex : public poplar::SupervisorVertex {
+  poplar::InOut<poplar::Vector<
+    int, poplar::VectorLayout::SPAN, 4, true>> dummy;
+  poplar::InOut<poplar::Vector<unsigned>> progBuf;
+  poplar::Output<poplar::Vector<unsigned>> textureBuf;
+
+  __SUPER__ void compute() {
+    IPU_R_FulfilColumnRequest(&progBuf[0], &textureBuf[0]);
+  }
+};
+
+struct R_InitTextureTile_Vertex : public poplar::SupervisorVertex {
+  poplar::Output<poplar::Vector<unsigned>> progBuf;
+
+  __SUPER__ void compute() {
+    IPU_R_InitTextureTile(&progBuf[0], progBuf.size());    
+  }
+};
+
+
+struct R_Sans_Vertex : public poplar::SupervisorVertex {
+    __SUPER__ void compute() { 
+      IPU_R_Sans(NULL, NULL);
+    }
 };
