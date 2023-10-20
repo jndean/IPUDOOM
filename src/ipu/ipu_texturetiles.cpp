@@ -67,6 +67,12 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned* textureBuf) {
         textureBuf[i] = 0x20202020;
       }
       XCOM_Execute(sendProgram, textureBuf, NULL);
+
+      // TMP
+      asm volatile(R"( 
+          sans 1
+          sync 0x1
+      )");
     }
 }
 
@@ -103,60 +109,114 @@ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
         textureTileLUT[i] = XCOM_logical2physical(firstTextureTile + i);
     }
 
-    // Prog Buf starts with directory of programs
+    // ProgBuf starts with directory of programs
     unsigned* progHead = progBuf + 3;
     unsigned* progEnd = &progBuf[progBufSize];
-    {
-        progBuf[0] = progHead - progBuf;
-        XCOMAssembler assembler;
-        int messageSize = sizeof(IPUColRequest_t) / sizeof(int);
-        assembler.addSend(0, messageSize, XCOM_BROADCAST, XCOM_WORSTSENDDELAY);
-        progHead = assembler.assemble(progHead, progEnd - progHead);
-    } 
-    {
-        XCOMAssembler assembler;
-        int messageSize = IPUTEXTURECACHELINESIZE;
-        assembler.addRecv(0, messageSize, 0, XCOM_WORSTRECVDELAY);
-        unsigned* newProgHead = assembler.assemble(progHead, progEnd - progHead);
-        for (unsigned* inst = progHead; inst < newProgHead; ++inst) {
-            if ((*inst & 0xfc003fffu) == 0x64000000u) {
-                muxInstructionOffset = (inst - &progBuf[progBuf[0]]);
-                break;
-            }
+    XCOMAssembler assembler;
+    
+    // First Program: performs the request and receives the response
+    progBuf[0] = progHead - progBuf;
+    int messageSize = sizeof(IPUColRequest_t) / sizeof(int);
+    assembler.addSend(0, messageSize, XCOM_BROADCAST, XCOM_WORSTSENDDELAY);
+    progHead = assembler.assemble(progHead, progEnd - progHead);
+    assembler.reset();
+    assembler.addRecv(0, IPUTEXTURECACHELINESIZE, 0, XCOM_WORSTRECVDELAY);
+    unsigned* newProgHead = assembler.assemble(progHead, progEnd - progHead);
+    // Record the mux location for later live patching
+    for (unsigned* inst = progHead; inst < newProgHead; ++inst) {
+        if ((*inst & 0xfc003fffu) == 0x64000000u) {
+            muxInstructionOffset = (inst - &progBuf[progBuf[0]]);
+            break;
         }
-        progHead = newProgHead;
-    } 
-    // Third program sends finished flag to flag reducer
-    // {
-    //     progBuf[2] = progHead - progBuf;
-    //     XCOMAssembler assembler;
-    //     int messageSize = 1;
-    //     int recvCycle = XCOM_WORSTRECVDELAY;
-    //     int sendCycle = recvCycle - XCOM_TimeToMux(__builtin_ipu_get_tile_id(), renderTile);
-    //     int direction = XCOM_EastOrWest(__builtin_ipu_get_tile_id(), renderTile);
-    //     assembler.addSend(0, messageSize, direction, sendCycle);
-    //     progHead = assembler.assemble(progHead, progEnd - progHead);
-    //     progHead++;
-    // }
+    }
+    progHead = newProgHead + 1; // +1 => don't overwrite the return statement
+    assembler.reset();
+
+    // Second Program: aggregates the 'done' flag across render tiles
+    progBuf[1] = progHead - progBuf;
+    int aggrTile = XCOM_logical2physical(IPUFIRSTRENDERTILE);
+    if (__builtin_ipu_get_tile_id() == aggrTile) {
+        for (int slot = 0; slot < IPUNUMRENDERTILES - 1; ++slot) {
+            int senderID = XCOM_logical2physical(IPUFIRSTRENDERTILE + 1 + slot);
+            assembler.addRecv((unsigned*)(4*(slot + 1)), 1, senderID, XCOM_WORSTRECVDELAY + slot,
+                              slot == IPUNUMRENDERTILES - 2);
+        }
+        progHead = assembler.assemble(progHead, progEnd - progHead);
+        progHead++;
+        
+        // Third Program: aggregation tile distributes the answer
+        progBuf[2] = progHead - progBuf;
+        assembler.reset();
+        assembler.addSend(0, 1, XCOM_BROADCAST, XCOM_WORSTSENDDELAY);
+        progHead = assembler.assemble(progHead, progEnd - progHead);
+        progHead++;
+
+    } else {
+        int myTimeSlot = tileID - (IPUFIRSTRENDERTILE + 1);
+        int direction = XCOM_EastOrWest(__builtin_ipu_get_tile_id(), aggrTile);
+        int muxCycle = XCOM_WORSTRECVDELAY + myTimeSlot;
+        int sendCycle = muxCycle - XCOM_TimeToMux(__builtin_ipu_get_tile_id(), aggrTile);
+        assembler.addSend(0, 1, direction, sendCycle);
+        progHead = assembler.assemble(progHead, progEnd - progHead);
+
+        assembler.reset();
+        sendCycle = XCOM_WORSTSENDDELAY;
+        muxCycle = sendCycle + XCOM_TimeToMux(aggrTile, __builtin_ipu_get_tile_id());
+        assembler.addRecv(0, 1, aggrTile, muxCycle);
+        progHead = assembler.assemble(progHead, progEnd - progHead);
+        progHead++;
+    }
+
+    // assembler.reset();
     
 }
 
+
+__SUPER__ 
+static bool checkRenderingFinished() {
+    auto aggregateProgA = &tileLocalProgBuf[tileLocalProgBuf[1]];
+    auto aggregateProgB = &tileLocalProgBuf[tileLocalProgBuf[2]];
+
+    tileLocalTextureBuf[0] = tileID + 100;
+    XCOM_Execute(
+        aggregateProgA,
+        tileLocalTextureBuf,
+        tileLocalTextureBuf
+    );
+    if (tileID == IPUFIRSTRENDERTILE) {
+        for (int i = 1; i < IPUNUMRENDERTILES; i++) {
+            tileLocalTextureBuf[0] += tileLocalTextureBuf[i];
+        }
+        XCOM_Execute(
+            aggregateProgB,
+            tileLocalTextureBuf,
+            NULL
+        );
+    }
+    printf("Aggregation result: %d\n", tileLocalTextureBuf[0]);
+
+    return tileLocalTextureBuf[0];
+}
 
 extern "C" 
 __SUPER__ 
 byte* IPU_R_RequestColumn(int texture, int column) {
     // progBuff starts with a program directory
     auto requestProg = &tileLocalProgBuf[tileLocalProgBuf[0]];
+    auto aggregateProgA = &tileLocalProgBuf[tileLocalProgBuf[1]];
+    auto aggregateProgB = &tileLocalProgBuf[tileLocalProgBuf[2]];
 
     if (textureFetchCount++ < 6) {
         int sourceTile = 0;
         XCOM_PatchMuxAndExecute(
-            requestProg,          // Prog
+            requestProg,               // Prog
             tileLocalTextureBuf,       // Read offset
             tileLocalTextureBuf,       // Write offset
             muxInstructionOffset,      // Patch offset
             textureTileLUT[sourceTile] // Mux value
         );
+
+       checkRenderingFinished();
 
         return (byte*) tileLocalTextureBuf;
     }
@@ -189,6 +249,12 @@ void IPU_R_Sans(unsigned* progBuf, int progBufSize) {
 
     for(; textureFetchCount < 6; textureFetchCount++) {
       asm volatile(R"(
+          sans 1
+          sync 0x1
+      )");
+
+      // TMP
+      asm volatile(R"( 
           sans 1
           sync 0x1
       )");

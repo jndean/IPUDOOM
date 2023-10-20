@@ -310,6 +310,8 @@ void IpuDoom::buildIpuGraph() {
   for (unsigned tile = IPUFIRSTTEXTURETILE + IPUNUMTEXTURETILES; tile < totalTiles; ++tile) {
     m_ipuGraph.setTileMapping(m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_Sans_Vertex"), tile);
   }
+  // Cache line is used as the aggregation buffer, make sure it's big enough
+  assert(IPUTEXTURECACHELINESIZE >= IPUNUMRENDERTILES); 
 
   poplar::program::Sequence R_RenderPlayerView_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
