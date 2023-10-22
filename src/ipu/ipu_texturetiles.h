@@ -17,19 +17,17 @@ typedef struct {
 
 
 extern unsigned* tileLocalProgBuf;
+extern unsigned* tileLocalCommsBuf;
 extern unsigned* tileLocalTextureBuf;
 
 
 __SUPER__ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize);
-
 __SUPER__ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize);
 
 __SUPER__ byte* IPU_R_RequestColumn(int texture, int column);
-
-__SUPER__ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned* textureBuf);
-
-__SUPER__ void IPU_R_Sans(unsigned* progBuf, int progBufSize);
-
+__SUPER__ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned* textureBuf, unsigned* commsBuf);
+__SUPER__ void IPU_R_Sans(unsigned* progBuf, unsigned* commsBuf);
+__SUPER__ void IPU_R_RenderTileDone(void);
 
 
 #ifdef __cplusplus
