@@ -12,7 +12,8 @@
 
 
 extern "C" {
-  __SUPER__ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals);
+  __SUPER__ void R_InitTextures(int* maptex);
+  __SUPER__ void R_InitTextures_TT(int* maptex);
   __SUPER__ void R_RenderPlayerView(player_t *player);
   __SUPER__ void R_ExecuteSetViewSize(void);
 };
@@ -29,17 +30,41 @@ struct R_Init_Vertex: public poplar::SupervisorVertex {
   void compute() {
     static int step = 0;
 
+
     switch (step++) {
     case 0:
-      *lumpNum = 105;
+      *lumpNum = ((R_Init_MiscValues_t*)&miscValues[0])->TEXTURE1_lumpnum;
     
     break; case 1:
-      R_InitTextures((int*)&lumpBuf[0], (R_Init_MiscValues_t*)&miscValues[0]);
+      R_InitTextures((int*)&lumpBuf[0]);
       IPU_R_InitColumnRequester(&progBuf[0], progBuf.size());
 
       *lumpNum = 0;
       step = 0;
     }
+
+  }
+};
+
+struct R_Init_TT_Vertex: public poplar::SupervisorVertex {
+  
+  poplar::Input<poplar::Vector<unsigned char>> miscValues;
+  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
+  poplar::Output<int> lumpNum;
+
+  __SUPER__ 
+  void compute() {
+
+static int step = 0; switch (step++) { case 0:
+
+      *lumpNum = ((R_Init_MiscValues_t*)&miscValues[0])->TEXTURE1_lumpnum;
+    
+break; case 1:
+
+      R_InitTextures_TT((int*)&lumpBuf[0]);
+
+
+*lumpNum = 0; step = 0; }
 
   }
 };
@@ -103,7 +128,7 @@ R_FulfilColumnRequests_Vertex : public poplar::SupervisorVertex {
     int, poplar::VectorLayout::SPAN, 4, true>> dummy;
   poplar::InOut<poplar::Vector<unsigned>> progBuf;
   poplar::InOut<poplar::Vector<unsigned>> commsBuf;
-  poplar::Output<poplar::Vector<unsigned>> textureBuf;
+  poplar::Output<poplar::Vector<unsigned char>> textureBuf;
 
   __SUPER__ void compute() {
     IPU_R_FulfilColumnRequest(&progBuf[0], &textureBuf[0], &commsBuf[0]);

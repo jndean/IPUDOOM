@@ -274,13 +274,13 @@ void IpuDoom::buildIpuGraph() {
   // -------- R_RenderPlayerView_CS ------ //
 
   poplar::Tensor textureBuf = m_ipuGraph.addVariable(
-    poplar::UNSIGNED_INT, 
+    poplar::UNSIGNED_CHAR, 
     {IPUNUMTEXTURETILES, IPUTEXTURETILEBUFSIZE}, 
     "textureBuf");
   poplar::Tensor textureCache = m_ipuGraph.addVariable(
     poplar::UNSIGNED_INT, 
     { IPUNUMRENDERTILES, 
-      IPUNUMTEXTURECACHELINES * IPUTEXTURECACHELINESIZE }, 
+      IPUNUMTEXTURECACHELINES * IPUTEXTURECACHELINESIZE}, 
     "textureCache");
 
   poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
@@ -308,7 +308,7 @@ void IpuDoom::buildIpuGraph() {
     });
     m_ipuGraph.setTileMapping(vtx, logicalTile);
     m_ipuGraph.setPerfEstimate(vtx, 1000);
-    m_ipuGraph.setTileMapping(textureBuf[textureTile], textureTile);
+    m_ipuGraph.setTileMapping(textureBuf[textureTile], logicalTile);
   }
   for (unsigned tile = IPUFIRSTTEXTURETILE + IPUNUMTEXTURETILES; tile < totalTiles; ++tile) {
     vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_Sans_Vertex", {

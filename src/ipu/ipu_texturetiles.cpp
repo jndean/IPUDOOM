@@ -68,7 +68,7 @@ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize) {
 
 extern "C" 
 __SUPER__ 
-void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned* textureBuf, unsigned* commsBuf) {
+void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, unsigned* commsBuf) {
     // Start of buffer is a directory of programs
     auto recvProgram = &progBuf[progBuf[0]];
     auto sendProgram = &progBuf[progBuf[1]];
@@ -89,7 +89,7 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned* textureBuf, unsigned
       byte c4 = (c1 + 1) % 256;
       unsigned colour = c1 | (c2 << 8) | (c3 << 16) | (c4 << 24);
       for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
-        textureBuf[i] = colour;
+        ((unsigned*)textureBuf)[i] = colour;
       }
       XCOM_Execute(sendProgram, textureBuf, NULL);
 

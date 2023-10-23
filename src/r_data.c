@@ -37,6 +37,8 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "ipu/ipu_interface.h"
+
 struct texture_s;
 
 //
@@ -331,7 +333,7 @@ void R_GenerateLookup(int texnum) {
 //
 // R_GetColumn
 //
-byte *R_GetColumn(int tex, int col) {
+byte *R_GetColumn_Original(int tex, int col) { // JOSEF: Renamed to `_Original`
   int lump;
   int ofs;
 
@@ -346,6 +348,66 @@ byte *R_GetColumn(int tex, int col) {
     R_GenerateComposite(tex);
 
   return texturecomposite[tex] + ofs;
+}
+
+
+// JOSEF: We dedicate several tiles on the IPU just to storing textures,
+//        so we can afford to preassemble all textures into a big blob
+byte* ipuTextureBlob;
+int* ipuTextureBlobOffsets;
+int ipuTextureBlobRanges[IPUTEXTURETILESPERRENDERTILE + 1];
+void GenerateIPUTextureBlob(void) {
+  ipuTextureBlob = malloc(IPUTEXTURETILEBUFSIZE * IPUTEXTURETILESPERRENDERTILE);
+  ipuTextureBlobOffsets = malloc(sizeof(*ipuTextureBlobOffsets) * numtextures);
+  ipuTextureBlobRanges[0] = 0;
+  int tile = 0, pos = 0;
+  for (int t = 0; t < numtextures; ++t) {
+    int tex_width = textures[t]->width;
+    int tex_height = textures[t]->height;
+    int tex_size = tex_width * tex_height;
+    
+    if (pos + tex_size >= IPUTEXTURETILEBUFSIZE) {
+      pos = 0;
+      tile += 1;
+      if (tile > IPUTEXTURETILESPERRENDERTILE) {
+        I_Error("GenerateIPUTextureDump: insufficient texture tiles");
+      }
+      ipuTextureBlobRanges[tile] = t;
+    }
+
+    ipuTextureBlobOffsets[t] = pos;
+    byte* dst = &ipuTextureBlob[tile * IPUTEXTURETILEBUFSIZE + pos];
+    for (int x = 0; x < tex_width; x += 1, dst += tex_height) {
+      byte* col = R_GetColumn_Original(t, x);
+      memcpy(dst, col, tex_height);
+    }
+    pos += tex_size;
+  }
+  ipuTextureBlobRanges[tile + 1] = numtextures;
+
+}
+
+//
+// R_GetColumn : JOSEF: The version that uses the IPU texture dump
+//
+byte *R_GetColumn(int tex, int col) {
+  int tile;
+  col &= texturewidthmask[tex];
+  for (tile = 0; tile < IPUTEXTURETILESPERRENDERTILE; ++tile) {
+    if (tex >= ipuTextureBlobRanges[tile] && 
+        tex < ipuTextureBlobRanges[tile + 1]) {
+      break;
+    }
+  }
+  if (tile == IPUTEXTURETILESPERRENDERTILE) {
+    I_Error("R_GetColumn : invalid texture index %i", tex);
+  }
+
+  return &ipuTextureBlob[
+    tile * IPUTEXTURETILEBUFSIZE +
+    ipuTextureBlobOffsets[tex] + 
+    textures[tex]->height * col
+  ];
 }
 
 static void GenerateTextureHashTable(void) {
@@ -572,7 +634,11 @@ void R_InitTextures(void) {
     texturetranslation[i] = i;
 
   GenerateTextureHashTable();
+
+  GenerateIPUTextureBlob();
 }
+
+
 
 //
 // R_InitFlats

@@ -418,9 +418,10 @@ static void GenerateTextureHashTable(void) {
 // R_InitTextures
 // Initializes the texture list
 //  with the textures from the world map.
+//  JOSEF: This is the version that runs on the render tiles
 //
 __SUPER__
-void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
+void R_InitTextures(int* maptex) {
   maptexture_t *mtexture;
   IPUpatchlesstexture_t *texture;
   mappatch_t *mpatch;
@@ -600,6 +601,197 @@ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
     texturetranslation[i] = i;
 
   GenerateTextureHashTable();
+}
+
+
+//
+// R_InitTextures__
+// Initializes the texture list
+//  with the textures from the world map.
+//  JOSEF: This is the version that runs on the texture tiles
+//
+void R_InitTextures_TT(void) {
+  maptexture_t *mtexture;
+  texture_t *texture;
+  mappatch_t *mpatch;
+  texpatch_t *patch;
+/*
+  int i;
+  int j;
+
+  int *maptex;
+  int *maptex2;
+  int *maptex1;
+
+  char name[9];
+  char *names;
+  char *name_p;
+
+  int *patchlookup;
+
+  int totalwidth;
+  int nummappatches;
+  int offset;
+  int maxoff;
+  int maxoff2;
+  int numtextures1;
+  int numtextures2;
+
+  int *directory;
+
+  int temp1;
+  int temp2;
+  int temp3;
+
+  // Load the patch names from pnames.lmp.
+  name[8] = 0;
+  names = W_CacheLumpName(("PNAMES"), PU_STATIC);
+  nummappatches = LONG(*((int *)names));
+  name_p = names + 4;
+  patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
+
+  for (i = 0; i < nummappatches; i++) {
+    M_StringCopy(name, name_p + i * 8, sizeof(name));
+    patchlookup[i] = W_CheckNumForName(name);
+  }
+  W_ReleaseLumpName(("PNAMES"));
+
+  // Load the map texture definitions from textures.lmp.
+  // The data is contained in one or two lumps,
+  //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
+  maptex = maptex1 = W_CacheLumpName(("TEXTURE1"), PU_STATIC);
+  numtextures1 = LONG(*maptex);
+  maxoff = W_LumpLength(W_GetNumForName(("TEXTURE1")));
+  directory = maptex + 1;
+
+  if (W_CheckNumForName(("TEXTURE2")) != -1) {
+    maptex2 = W_CacheLumpName(("TEXTURE2"), PU_STATIC);
+    numtextures2 = LONG(*maptex2);
+    maxoff2 = W_LumpLength(W_GetNumForName(("TEXTURE2")));
+  } else {
+    maptex2 = NULL;
+    numtextures2 = 0;
+    maxoff2 = 0;
+  }
+  numtextures = numtextures1 + numtextures2;
+
+  textures = Z_Malloc(numtextures * sizeof(*textures), PU_STATIC, 0);
+  texturecolumnlump =
+      Z_Malloc(numtextures * sizeof(*texturecolumnlump), PU_STATIC, 0);
+  texturecolumnofs =
+      Z_Malloc(numtextures * sizeof(*texturecolumnofs), PU_STATIC, 0);
+  texturecomposite =
+      Z_Malloc(numtextures * sizeof(*texturecomposite), PU_STATIC, 0);
+  texturecompositesize =
+      Z_Malloc(numtextures * sizeof(*texturecompositesize), PU_STATIC, 0);
+  texturewidthmask =
+      Z_Malloc(numtextures * sizeof(*texturewidthmask), PU_STATIC, 0);
+  textureheight = Z_Malloc(numtextures * sizeof(*textureheight), PU_STATIC, 0);  
+
+  totalwidth = 0;
+
+  //	Really complex printing shit...
+  temp1 = W_GetNumForName(("S_START")); // P_???????
+  temp2 = W_GetNumForName(("S_END")) - 1;
+  temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
+
+  // If stdout is a real console, use the classic vanilla "filling
+  // up the box" effect, which uses backspace to "step back" inside
+  // the box.  If stdout is a file, don't draw the box.
+
+  if (I_ConsoleStdout()) {
+    printf("[");
+    for (i = 0; i < temp3 + 9; i++)
+      printf(" ");
+    printf("]");
+    for (i = 0; i < temp3 + 10; i++)
+      printf("\b");
+  }
+
+  int totaltexturesize = 0; // JOSEF TMP
+
+  for (i = 0; i < numtextures; i++, directory++) {
+    if (!(i & 63))
+      printf(".");
+
+    if (i == numtextures1) {
+      // Start looking in second texture file.
+      maptex = maptex2;
+      maxoff = maxoff2;
+      directory = maptex + 1;
+    }
+
+    offset = LONG(*directory);
+
+    if (offset > maxoff)
+      I_Error("R_InitTextures: bad texture directory");
+
+    mtexture = (maptexture_t *)((byte *)maptex + offset);
+
+    texture = textures[i] =
+        Z_Malloc(sizeof(texture_t) +
+                     sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1),
+                 PU_STATIC, 0);
+
+    texture->width = SHORT(mtexture->width);
+    texture->height = SHORT(mtexture->height);
+    texture->patchcount = SHORT(mtexture->patchcount);
+
+    totaltexturesize += texture->width * texture->height; // JOSEF TMP
+
+    memcpy(texture->name, mtexture->name, sizeof(texture->name));
+    mpatch = &mtexture->patches[0];
+    patch = &texture->patches[0];
+
+    for (j = 0; j < texture->patchcount; j++, mpatch++, patch++) {
+      patch->originx = SHORT(mpatch->originx);
+      patch->originy = SHORT(mpatch->originy);
+      patch->patch = patchlookup[SHORT(mpatch->patch)];
+      if (patch->patch == -1) {
+        I_Error("R_InitTextures: Missing patch in texture %s", texture->name);
+      }
+    }
+    texturecolumnlump[i] =
+        Z_Malloc(texture->width * sizeof(**texturecolumnlump), PU_STATIC, 0);
+    texturecolumnofs[i] =
+        Z_Malloc(texture->width * sizeof(**texturecolumnofs), PU_STATIC, 0);
+
+    j = 1;
+    while (j * 2 <= texture->width)
+      j <<= 1;
+
+    texturewidthmask[i] = j - 1;
+    textureheight[i] = texture->height << FRACBITS;
+
+    totalwidth += texture->width;
+  }
+
+  printf("\n JOSEF: Total Texture Size = %d bytes (%dKb), numtextures = %d\n",
+    totaltexturesize,
+    totaltexturesize / 1000,
+    numtextures
+  );
+
+  Z_Free(patchlookup);
+
+  W_ReleaseLumpName(("TEXTURE1"));
+  if (maptex2)
+    W_ReleaseLumpName(("TEXTURE2"));
+
+  // Precalculate whatever possible.
+
+  for (i = 0; i < numtextures; i++)
+    R_GenerateLookup(i);
+
+  // Create translation table for global animation.
+  texturetranslation =
+      Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, 0);
+
+  for (i = 0; i < numtextures; i++)
+    texturetranslation[i] = i;
+
+  GenerateTextureHashTable();
+  */
 }
 
 
