@@ -93,7 +93,7 @@ void P_LoadVertexes(const unsigned char *buf) {
   numvertexes = lumplen / sizeof(mapvertex_t);
 
   // Allocate zone memory for buffer.
-  vertexes = IPU_level_malloc(numvertexes * sizeof(vertex_t), "P_LoadVertexes");
+  vertexes = IPU_malloc(numvertexes * sizeof(vertex_t), IPUMALLOC_LEVEL, "P_LoadVertexes");
 
   // Load data into cache.
   // JOSEF: data = W_CacheLumpNum(lump, PU_STATIC);
@@ -144,7 +144,7 @@ void P_LoadSegs(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsegs = lumplen / sizeof(mapseg_t);
-  segs = IPU_level_malloc(numsegs * sizeof(seg_t), "P_LoadSegs");
+  segs = IPU_malloc(numsegs * sizeof(seg_t), IPUMALLOC_LEVEL, "P_LoadSegs");
   memset(segs, 0, numsegs * sizeof(seg_t));
 
   ml = (mapseg_t *)(&buf[sizeof(int)]);
@@ -206,7 +206,7 @@ void P_LoadSectors(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsectors = lumplen / sizeof(mapsector_t);
-  sectors = IPU_level_malloc(numsectors * sizeof(sector_t), "P_LoadSectors");
+  sectors = IPU_malloc(numsectors * sizeof(sector_t), IPUMALLOC_LEVEL, "P_LoadSectors");
   memset(sectors, 0, numsectors * sizeof(sector_t));
 
   ms = (mapsector_t *)(&buf[sizeof(int)]);
@@ -238,7 +238,7 @@ void P_LoadNodes(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numnodes = lumplen / sizeof(mapnode_t);
-  nodes = IPU_level_malloc(numnodes * sizeof(node_t), "P_LoadNodes");
+  nodes = IPU_malloc(numnodes * sizeof(node_t), IPUMALLOC_LEVEL, "P_LoadNodes");
   memset(nodes, 0, numnodes * sizeof(node_t));
 
   mn = (mapnode_t *)(&buf[sizeof(int)]);
@@ -322,7 +322,7 @@ void P_LoadSideDefs(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsides = lumplen / sizeof(mapsidedef_t);
-  sides = IPU_level_malloc(numsides * sizeof(side_t), "P_LoadSideDefs");
+  sides = IPU_malloc(numsides * sizeof(side_t), IPUMALLOC_LEVEL, "P_LoadSideDefs");
   memset(sides, 0, numsides * sizeof(side_t));
 
   msd = (mapsidedef_t *)(&buf[sizeof(int)]);
@@ -352,7 +352,7 @@ void P_LoadLineDefs(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numlines = lumplen / sizeof(maplinedef_t);
-  lines = IPU_level_malloc(numlines * sizeof(line_t), "P_LoadLineDefs");
+  lines = IPU_malloc(numlines * sizeof(line_t), IPUMALLOC_LEVEL, "P_LoadLineDefs");
   memset(lines, 0, numlines * sizeof(line_t));
 
   mld = (maplinedef_t *)(&buf[sizeof(int)]);
@@ -420,7 +420,7 @@ void P_LoadSubsectors(const unsigned char *buf) {
 
   int lumplen = ((int*)buf)[0];
   numsubsectors = lumplen / sizeof(mapsubsector_t);
-  subsectors = IPU_level_malloc(numsubsectors * sizeof(subsector_t), "P_LoadSubsectors");
+  subsectors = IPU_malloc(numsubsectors * sizeof(subsector_t), IPUMALLOC_LEVEL, "P_LoadSubsectors");
 
   ms = (mapsubsector_t *)(&buf[sizeof(int)]);
   memset(subsectors, 0, numsubsectors * sizeof(subsector_t));
@@ -456,7 +456,7 @@ void P_SetupLevel_pt0(const unsigned char unused) {
   */
 
   // JOSEF, replaced; Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
-  IPU_level_free(); // LATER: free other tags, here not just level
+  IPU_free(IPUMALLOC_LEVEL);
 
   /* LATER
   // UNUSED W_Profile ();
@@ -537,7 +537,7 @@ void P_LoadBlockMap(const unsigned char *buf) {
   int lumplen;
 
   lumplen = ((int*)buf)[0];
-  blockmaplump = IPU_level_malloc(lumplen, "P_LoadBlockMap");
+  blockmaplump = IPU_malloc(lumplen, IPUMALLOC_LEVEL, "P_LoadBlockMap");
   memcpy(blockmaplump, &buf[4], lumplen);
   blockmap = blockmaplump + 4;
 
@@ -554,7 +554,7 @@ void P_LoadBlockMap(const unsigned char *buf) {
   // Clear out mobj chains
 
   count = sizeof(*blocklinks) * bmapwidth * bmapheight;
-  blocklinks = IPU_level_malloc(count, "P_LoadBlockMap");
+  blocklinks = IPU_malloc(count, IPUMALLOC_LEVEL, "P_LoadBlockMap");
   memset(blocklinks, 0, count);
 }
 
@@ -599,7 +599,7 @@ void P_GroupLines(const unsigned char *buf) {
 
   // build line tables for each sector
   // linebuffer = Z_Malloc(totallines * sizeof(line_t *), PU_LEVEL, 0);
-  linebuffer = IPU_level_malloc(totallines * sizeof(line_t *), "P_GroupLines");
+  linebuffer = IPU_malloc(totallines * sizeof(line_t *), IPUMALLOC_LEVEL, "P_GroupLines");
 
   for (i = 0; i < numsectors; ++i) {
     // Assign the line buffer for this sector

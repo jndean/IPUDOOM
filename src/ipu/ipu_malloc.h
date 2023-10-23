@@ -7,16 +7,20 @@ extern "C" {
 #include "ipu_utils.h"
 
 
-__SUPER__ void* IPU_static_malloc(int size, const char* name);
-// There is no IPU_static_free()  :D
+typedef enum IPUMallocPool {
+    IPUMALLOC_STATIC,
+    IPUMALLOC_LEVEL,
+    IPUMALLOC_TMP, // This is a category I made up, for fleeting allocations
 
-__SUPER__ void* IPU_level_malloc(int size, const char* name);
-__SUPER__ void IPU_level_free(void);
+    IPUMALLOC_NUMPOOLS
+} IPUMallocPool_t;
 
-__SUPER__ void* IPU_tmp_malloc(int size, const char* name);
-__SUPER__ void IPU_tmp_free(void* ptr);
+
+__SUPER__ void* IPU_malloc(int size, IPUMallocPool_t pool, const char* name);
+__SUPER__ void IPU_free(IPUMallocPool_t pool);
 
 __SUPER__ void IPU_summarise_malloc(void);
+
 
 
 #ifdef __cplusplus

@@ -8,88 +8,93 @@
 
 // #define IPUMALLOC_DEBUGPRINT 0
 
-enum {
-    PU_STATIC_max_size = 10000,
-    PU_LEVEL_max_size = 200000,
-    PU_TMP_max_size = 512  // This is a category I made up, for fleeting allocations
+
+static unsigned char IPUMALLOC_STATIC_pool[10000];
+static unsigned char IPUMALLOC_LEVEL_pool[200000];
+static unsigned char IPUMALLOC_TMP_pool[512]; // This is a category I made up, for fleeting allocations
+
+static unsigned char* pools[IPUMALLOC_NUMPOOLS] = {
+    IPUMALLOC_STATIC_pool,
+    IPUMALLOC_LEVEL_pool,
+    IPUMALLOC_TMP_pool,
+};
+static int poolSizes[IPUMALLOC_NUMPOOLS] = {
+    sizeof(IPUMALLOC_STATIC_pool),
+    sizeof(IPUMALLOC_LEVEL_pool),
+    sizeof(IPUMALLOC_TMP_pool)
+};
+static int poolPositions[IPUMALLOC_NUMPOOLS] = {0};
+
+static char* poolNames[IPUMALLOC_NUMPOOLS] = {
+    "STATIC pool",
+    "LEVEL pool",
+    "TMP pool"
 };
 
-static unsigned PU_STATIC_size = 0;
-static unsigned PU_LEVEL_size = 0;
-static unsigned PU_TMP_size = 0;
-static unsigned char PU_STATIC_pool[PU_STATIC_max_size];
-static unsigned char PU_LEVEL_pool[PU_LEVEL_max_size];
-static unsigned char PU_TMP_pool[PU_TMP_max_size];
+static unsigned tmpStackHeight = 0;
 
 __SUPER__
-void* IPU_level_malloc(int size, const char* name) {
-    void* ret = (void*)(&PU_LEVEL_pool[PU_LEVEL_size]);
-    PU_LEVEL_size = ALIGN32(PU_LEVEL_size + size);
+void* IPU_malloc(int size, IPUMallocPool_t pool, const char* name) {
+    char* errStr;
+
+    if (name == NULL) {
+        name = "Unnamed";
+    }
+
+    if (pool >= IPUMALLOC_NUMPOOLS || pool < 0) {
+        errStr = "Bad Pool Index";
+        goto ERROR;
+    }
+
+    void* ret = (void*) &pools[pool][poolPositions[pool]];
+    poolPositions[pool] = ALIGN32(poolPositions[pool] + size);
 
 #ifdef IPUMALLOC_DEBUGPRINT
     if (tileID == IPUMALLOC_DEBUGPRINT)
-        printf("LEVEL_ALLOC: %s = %dK, total = %dK\n", name, size / 1000, PU_LEVEL_size / 1000);
+        printf("IPUMALLOC: %s = %dK (%s @ %dK)\n", 
+            name, size / 1000, poolNames[pool], poolPositions[pool] / 1000);
 #endif
 
-    if (PU_LEVEL_size > PU_LEVEL_max_size) {
-        printf("### ERROR ###: PU_LEVEL_max_size is %d, but IPU_level_malloc wants %d\n",
-            PU_LEVEL_max_size, PU_LEVEL_size);
-        // exit(1701);
-    }
-    return ret;
-}
-
-__SUPER__
-void IPU_level_free() {
-    PU_LEVEL_size = 0;
-}
-
-__SUPER__
-void* IPU_static_malloc(int size, const char* name) {
-    void* ret = (void*)(&PU_STATIC_pool[PU_STATIC_size]);
-    PU_STATIC_size = ALIGN32(PU_STATIC_size + size);
-
-#ifdef IPUMALLOC_DEBUGPRINT
-    if (tileID == IPUMALLOC_DEBUGPRINT)
-        printf("STATIC_ALLOC: %s = %d,  total = %dK\n", name, size, PU_STATIC_size / 1000);
-#endif
-
-    if (PU_STATIC_size > PU_STATIC_max_size) {
-        printf("### ERROR ###: PU_STATIC_max_size is %d, but IPU_static_malloc wants %d\n",
-            PU_STATIC_max_size, PU_STATIC_size);
-    }
-    return ret;
-}
- // There is no IPU_static_free :)
-
-
-static unsigned PU_TMP_count = 0;
-__SUPER__
-void* IPU_tmp_malloc(int size, const char* name) {
-    void* ret = (void*)(&PU_TMP_pool[PU_TMP_size]);
-    PU_TMP_size = ALIGN32(PU_TMP_size + size);
-
-#ifdef IPUMALLOC_DEBUGPRINT
-    if (tileID == IPUMALLOC_DEBUGPRINT)
-        printf("TMP_ALLOC: %s = %dK,  total = %dK\n", name, size / 1000, PU_TMP_size / 1000);
-#endif
-
-    if (PU_TMP_size > PU_TMP_max_size) {
-        printf("### ERROR ###: PU_TMP_max_size is %d, but IPU_tmp_malloc wants %d\n",
-            PU_TMP_max_size, PU_TMP_size);
+    if (poolPositions[pool] > poolSizes[pool]) {
+        errStr = "No Space Left";
+        goto ERROR;
     }
 
-    PU_TMP_count += 1;
+    if (pool == IPUMALLOC_TMP) {
+        tmpStackHeight += 1;
+    }
+
     return ret;
+
+ERROR:
+    printf("\n# # # # IPUMALLOC FAILED # # # \nReason: %s\n Request: size=%d, pool=%d, name=%s\n",
+        errStr, size, pool, name);
+    asm volatile(
+        "setzi $m0, 0xa110c\n"
+        "setzi $m1, 0xa110c\n"
+        "setzi $m2, 0xa110c\n"
+        "setzi $m3, 0xa110c\n"
+        "setzi $m4, 0xa110c\n"
+        "trap 0\n"
+    );
+    __builtin_unreachable();
 }
 
 
 __SUPER__
-void IPU_tmp_free(void* ptr) {
-    (void) ptr;
-    PU_TMP_count -= 1;
-    if (PU_TMP_count == 0) {
-        PU_TMP_size = 0;
+void IPU_free(IPUMallocPool_t pool) {
+    switch (pool) {
+        case IPUMALLOC_LEVEL:
+            poolPositions[IPUMALLOC_LEVEL] = 0;
+        break;
+        case IPUMALLOC_TMP:
+            tmpStackHeight -= 1;
+            if (tmpStackHeight == 0) {
+                poolPositions[IPUMALLOC_TMP] = 0;
+            }
+        break;
+        default:
+            printf("IPUMALLOC ERROR: tried to free pool %d\n", pool);
     }
 }
 
@@ -102,8 +107,10 @@ void IPU_summarise_malloc() {
     printf(
         "IPU Dynamic Allocation Summary:\n"
         "Static: %dK/%dK, Level: %dK/%dK, Tmp: %d/%d\n",
-        PU_STATIC_size / 1000, PU_STATIC_max_size / 1000,
-        PU_LEVEL_size / 1000, PU_LEVEL_size/ 1000,
-        PU_TMP_size / 1000, PU_TMP_size/ 1000
+        poolPositions[IPUMALLOC_STATIC] / 1000, poolSizes[IPUMALLOC_STATIC] / 1000,
+        poolPositions[IPUMALLOC_LEVEL] / 1000, poolSizes[IPUMALLOC_LEVEL] / 1000,
+        poolPositions[IPUMALLOC_TMP], poolSizes[IPUMALLOC_TMP]
     );
 }
+
+

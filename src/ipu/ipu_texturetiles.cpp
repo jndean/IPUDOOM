@@ -14,9 +14,7 @@
 unsigned* tileLocalProgBuf;
 unsigned* tileLocalCommsBuf;
 unsigned* tileLocalTextureBuf;
-int textureFetchCount = 0;
 
-const int tmpRepeatCount = 4;
 
 //  -------- Components for the tiles that serve textures ------------ //
 

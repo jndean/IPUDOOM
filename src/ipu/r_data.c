@@ -379,8 +379,9 @@ static void GenerateTextureHashTable(void) {
   int i;
   int key;
 
-  textures_hashtable = IPU_static_malloc(
+  textures_hashtable = IPU_malloc(
     sizeof(IPUpatchlesstexture_t *) * numtextures,
+    IPUMALLOC_STATIC,
     "textures_hashtable"
   );
 
@@ -490,13 +491,13 @@ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
   // }
   numtextures = numtextures1 + numtextures2;
 
-  patchlesstextures = IPU_static_malloc(numtextures * sizeof(IPUpatchlesstexture_t), "patchlesstextures");
+  patchlesstextures = IPU_malloc(numtextures * sizeof(IPUpatchlesstexture_t), IPUMALLOC_STATIC, "patchlesstextures");
   // LATER: texturecolumnlump = IPU_static_malloc(numtextures * sizeof(*texturecolumnlump), "texturecolumnlump");
   // LATER: texturecolumnofs = IPU_static_malloc(numtextures * sizeof(*texturecolumnofs), "texturecolumnofs");
   // LATER: texturecomposite = IPU_static_malloc(numtextures * sizeof(*texturecomposite), "texturecomposite");
   // LATER: texturecompositesize = IPU_static_malloc(numtextures * sizeof(*texturecompositesize), "texturecompositesize");
-  texturewidthmask = IPU_static_malloc(numtextures * sizeof(*texturewidthmask), "texturewidthmask");
-  textureheight = IPU_static_malloc(numtextures * sizeof(*textureheight), "textureheight");
+  texturewidthmask = IPU_malloc(numtextures * sizeof(*texturewidthmask), IPUMALLOC_STATIC, "texturewidthmask");
+  textureheight = IPU_malloc(numtextures * sizeof(*textureheight), IPUMALLOC_STATIC, "textureheight");
 
   // totalwidth = 0; // JOSEF: Unused?
 
@@ -537,8 +538,9 @@ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
     mtexture = (maptexture_t *)((byte *)maptex + offset);
 
     texture = &patchlesstextures[i];
-    // texture = patchlesstextures[i] = IPU_static_malloc(
+    // texture = patchlesstextures[i] = IPU_malloc(
     //   sizeof(texture_t) + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1),
+    //   IPUMALLOC_STATIC,
     //   "textures[i]"
     // );
 
@@ -589,8 +591,9 @@ void R_InitTextures(int* maptex, R_Init_MiscValues_t* miscVals) {
   //   R_GenerateLookup(i);
 
   // Create translation table for global animation.
-  texturetranslation = IPU_static_malloc(
+  texturetranslation = IPU_malloc(
     (numtextures + 1) * sizeof(*texturetranslation), 
+    IPUMALLOC_STATIC,
     "texturetranslation"
   );
   for (i = 0; i < numtextures; i++)
@@ -861,3 +864,4 @@ void R_PrecacheLevel(void) {
 }
 
 */
+

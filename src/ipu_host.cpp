@@ -318,8 +318,6 @@ void IpuDoom::buildIpuGraph() {
     });
     m_ipuGraph.setTileMapping(vtx, tile);
   }
-  // Cache line is used as the aggregation buffer, make sure it's big enough
-  assert(IPUTEXTURECACHELINESIZE >= IPUNUMRENDERTILES); 
 
   poplar::program::Sequence R_RenderPlayerView_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
