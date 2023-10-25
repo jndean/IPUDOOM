@@ -19,6 +19,8 @@ typedef struct {
 extern unsigned* tileLocalProgBuf;
 extern unsigned* tileLocalCommsBuf;
 extern unsigned* tileLocalTextureBuf;
+extern const int* tileLocalTextureRange;
+extern const int* tileLocalTextureOffsets;
 
 
 __SUPER__ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize);

@@ -8,6 +8,11 @@ extern "C" {
 #include "doomtype.h"
 #include "r_defs.h"
 
+#include "ipu/ipu_interface.h"
+
+extern byte* ipuTextureBlob;
+extern int ipuTextureBlobOffsets[IPUMAXNUMTEXTURES];
+extern int ipuTextureBlobRanges[IPUTEXTURETILESPERRENDERTILE + 1];
 
 void IPU_G_LoadLevel_PackMiscValues(void* buf);
 void IPU_G_Ticker_PackMiscValues(void* buf);

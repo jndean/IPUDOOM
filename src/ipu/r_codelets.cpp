@@ -19,6 +19,19 @@ extern "C" {
 };
 
 
+class R_ExecuteSetViewSize_Vertex : public poplar::SupervisorVertex {
+ public:
+  poplar::Input<poplar::Vector<unsigned char>> miscValues;
+  __SUPER__ 
+  void compute() {
+    IPU_R_ExecuteSetViewSize_UnpackMiscValues(
+      (R_ExecuteSetViewSize_MiscValues_t*) &miscValues[0]
+    );
+    R_ExecuteSetViewSize();
+  }
+};
+
+
 struct R_Init_Vertex: public poplar::SupervisorVertex {
   
   poplar::Output<poplar::Vector<unsigned>> progBuf;
@@ -42,29 +55,6 @@ struct R_Init_Vertex: public poplar::SupervisorVertex {
       *lumpNum = 0;
       step = 0;
     }
-
-  }
-};
-
-struct R_Init_TT_Vertex: public poplar::SupervisorVertex {
-  
-  poplar::Input<poplar::Vector<unsigned char>> miscValues;
-  poplar::Input<poplar::Vector<unsigned char>> lumpBuf;
-  poplar::Output<int> lumpNum;
-
-  __SUPER__ 
-  void compute() {
-
-static int step = 0; switch (step++) { case 0:
-
-      *lumpNum = ((R_Init_MiscValues_t*)&miscValues[0])->TEXTURE1_lumpnum;
-    
-break; case 1:
-
-      R_InitTextures_TT((int*)&lumpBuf[0]);
-
-
-*lumpNum = 0; step = 0; }
 
   }
 };
@@ -102,19 +92,13 @@ R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
   }
 };
 
+struct R_InitTexture_Vertex : public poplar::SupervisorVertex {
+  poplar::Output<poplar::Vector<unsigned>> progBuf;
 
-class R_ExecuteSetViewSize_Vertex : public poplar::SupervisorVertex {
- public:
-  poplar::Input<poplar::Vector<unsigned char>> miscValues;
-  __SUPER__ 
-  void compute() {
-    IPU_R_ExecuteSetViewSize_UnpackMiscValues(
-      (R_ExecuteSetViewSize_MiscValues_t*) &miscValues[0]
-    );
-    R_ExecuteSetViewSize();
+  __SUPER__ void compute() {
+    IPU_R_InitTextureTile(&progBuf[0], progBuf.size()); 
   }
 };
-
 
 struct 
 [[
@@ -129,9 +113,25 @@ R_FulfilColumnRequests_Vertex : public poplar::SupervisorVertex {
   poplar::InOut<poplar::Vector<unsigned>> progBuf;
   poplar::InOut<poplar::Vector<unsigned>> commsBuf;
   poplar::Output<poplar::Vector<unsigned char>> textureBuf;
+  // poplar::Input<poplar::Vector<int>> textureOffsets;
+  // poplar::Input<poplar::Vector<int>> textureRange;
 
   __SUPER__ void compute() {
+    // tileLocalTextureRange = &textureRange[0];
+    // tileLocalTextureOffsets = &textureOffsets[0];
+
     IPU_R_FulfilColumnRequest(&progBuf[0], &textureBuf[0], &commsBuf[0]);
+  }
+};
+
+
+struct R_InitSans_Vertex : public poplar::SupervisorVertex {
+  poplar::Output<poplar::Vector<unsigned>> progBuf;
+
+  __SUPER__ void compute() {
+    // Reuse IPU_R_InitTextureTile because the 'done' flag receiving program
+    // it compiles is perfectly valid for use by a sans tile
+    IPU_R_InitTextureTile(&progBuf[0], progBuf.size());   
   }
 };
 
@@ -148,13 +148,5 @@ R_Sans_Vertex : public poplar::SupervisorVertex {
 
   __SUPER__ void compute() {
     IPU_R_Sans(&progBuf[0], &commsBuf[0]);
-  }
-};
-
-struct R_InitTextureOrSans_Vertex : public poplar::SupervisorVertex {
-  poplar::Output<poplar::Vector<unsigned>> progBuf;
-
-  __SUPER__ void compute() {
-    IPU_R_InitTextureTile(&progBuf[0], progBuf.size());    
   }
 };

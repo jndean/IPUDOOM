@@ -14,6 +14,8 @@
 unsigned* tileLocalProgBuf;
 unsigned* tileLocalCommsBuf;
 unsigned* tileLocalTextureBuf;
+const int* tileLocalTextureRange;
+const int* tileLocalTextureOffsets;
 
 
 //  -------- Components for the tiles that serve textures ------------ //

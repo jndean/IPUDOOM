@@ -646,7 +646,6 @@ void R_ExecuteSetViewSize(void) {
 //
 
 void R_Init(void) {
-  IPU_R_Init();
 
   R_InitData();
   printf(".");
@@ -666,6 +665,8 @@ void R_Init(void) {
   printf(".");
 
   framecount = 0;
+  
+  IPU_R_Init();
 }
 
 //
@@ -741,7 +742,7 @@ void R_RenderPlayerView(player_t *player) {
 
   // The head node is the last node output.
   R_RenderBSPNode(numnodes - 1);
-  // IPU_R_RenderPlayerView();
+  IPU_R_RenderPlayerView();
 
   // Check for new console commands.
   NetUpdate();

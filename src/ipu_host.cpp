@@ -159,6 +159,15 @@ void IpuDoom::buildIpuGraph() {
 
   // -------- R_Init ------ //
 
+  poplar::Tensor textureBuf = m_ipuGraph.addVariable(
+    poplar::UNSIGNED_CHAR, 
+    {IPUNUMTEXTURETILES, IPUTEXTURETILEBUFSIZE}, 
+    "textureBuf");
+  auto textureBufStream = m_ipuGraph.addHostToDeviceFIFO(
+    "textureBuf-stream", 
+    poplar::UNSIGNED_CHAR, 
+    IPUTEXTURETILESPERRENDERTILE * IPUTEXTURETILEBUFSIZE);
+
   poplar::ComputeSet R_Init_CS = m_ipuGraph.addComputeSet("R_Init_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
     int logicalTile = IPUFIRSTRENDERTILE + renderTile;
@@ -171,9 +180,17 @@ void IpuDoom::buildIpuGraph() {
     m_ipuGraph.setTileMapping(vtx, logicalTile);
     m_ipuGraph.setPerfEstimate(vtx, 100);
   }
-  poplar::ComputeSet R_InitTextureOrSans_CS = m_ipuGraph.addComputeSet("R_InitTextureOrSans_CS");
-  for (unsigned tile = IPUFIRSTTEXTURETILE; tile < totalTiles; ++tile) {
-    vtx =  m_ipuGraph.addVertex(R_InitTextureOrSans_CS, "R_InitTextureOrSans_Vertex", {
+  poplar::ComputeSet R_InitTextureAndSans_CS = m_ipuGraph.addComputeSet("R_InitTextureAndSans_CS");
+  for (unsigned textureTile = 0; textureTile < IPUNUMTEXTURETILES; ++textureTile) {
+    int logicalTile = IPUFIRSTTEXTURETILE + textureTile;
+    vtx =  m_ipuGraph.addVertex(R_InitTextureAndSans_CS, "R_InitTexture_Vertex", {
+      {"progBuf", progBuf[logicalTile]}, 
+    });
+    m_ipuGraph.setTileMapping(vtx, logicalTile);
+    m_ipuGraph.setPerfEstimate(vtx, 2000);
+  }
+  for (unsigned tile = IPUFIRSTTEXTURETILE + IPUNUMTEXTURETILES; tile < totalTiles; ++tile) {
+    vtx =  m_ipuGraph.addVertex(R_InitTextureAndSans_CS, "R_InitSans_Vertex", {
       {"progBuf", progBuf[tile]}, 
     });
     m_ipuGraph.setTileMapping(vtx, tile);
@@ -187,8 +204,9 @@ void IpuDoom::buildIpuGraph() {
   );
 
   poplar::program::Sequence R_Init_prog({
-    poplar::program::Execute(R_InitTextureOrSans_CS),
     poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
+    poplar::program::Copy(textureBufStream, textureBuf.slice(0, IPUTEXTURETILESPERRENDERTILE)),
+    poplar::program::Execute(R_InitTextureAndSans_CS),
     poplar::program::Repeat(2, poplar::program::Sequence({ // <- number of R_Init_CS steps
       poplar::program::Execute(R_Init_CS),
       poplar::program::Call(requestLumpFromHost, {m_lumpNum[0]}, {lumpBuf}),
@@ -273,21 +291,24 @@ void IpuDoom::buildIpuGraph() {
 
   // -------- R_RenderPlayerView_CS ------ //
 
-  poplar::Tensor textureBuf = m_ipuGraph.addVariable(
-    poplar::UNSIGNED_CHAR, 
-    {IPUNUMTEXTURETILES, IPUTEXTURETILEBUFSIZE}, 
-    "textureBuf");
   poplar::Tensor textureCache = m_ipuGraph.addVariable(
     poplar::UNSIGNED_INT, 
     { IPUNUMRENDERTILES, 
       IPUNUMTEXTURECACHELINES * IPUTEXTURECACHELINESIZE}, 
     "textureCache");
 
+  poplar::Tensor textureOffsets = m_ipuGraph.addVariable(poplar::INT, {IPUMAXNUMTEXTURES}, "textureOffsets");
+  poplar::Tensor textureRanges = m_ipuGraph.addVariable(poplar::INT, {IPUTEXTURETILESPERRENDERTILE + 1}, "textureRanges");
+  auto textureOffsetStream = m_ipuGraph.addHostToDeviceFIFO("textureOffsets-stream", poplar::INT, IPUMAXNUMTEXTURES);
+  auto textureRangeStream = m_ipuGraph.addHostToDeviceFIFO("textureRanges-stream", poplar::INT, IPUTEXTURETILESPERRENDERTILE + 1);
+  m_ipuGraph.setTileMapping(textureOffsets, IPUFIRSTTEXTURETILE);
+  m_ipuGraph.setTileMapping(textureRanges, IPUFIRSTTEXTURETILE);
+
   poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
     int logicalTile = IPUFIRSTRENDERTILE + renderTile;
     vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", {
-      {"frame", ipuFrameSlices[renderTile]}, 
+      {"frame", ipuFrameSlices[renderTile]},
       {"textureCache", textureCache[renderTile]},
       {"progBuf", progBuf[logicalTile]}, 
       {"commsBuf", commsBuf[logicalTile]},
@@ -300,11 +321,14 @@ void IpuDoom::buildIpuGraph() {
   }
   for (int textureTile = 0; textureTile < IPUNUMTEXTURETILES; ++textureTile) {
     int logicalTile = IPUFIRSTTEXTURETILE + textureTile;
+    // int textureStripeIdx = textureTile % IPUTEXTURETILESPERRENDERTILE;
     vtx =  m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_FulfilColumnRequests_Vertex", {
       {"dummy", nonExecutableDummy[logicalTile]}, 
-      {"textureBuf", textureBuf[textureTile]},
       {"progBuf", progBuf[logicalTile]},
       {"commsBuf", commsBuf[logicalTile]},
+      {"textureBuf", textureBuf[textureTile]},
+      // {"textureOffsets", textureOffsets},
+      // {"textureRange", textureRanges.slice(textureStripeIdx, textureStripeIdx + 2)},
     });
     m_ipuGraph.setTileMapping(vtx, logicalTile);
     m_ipuGraph.setPerfEstimate(vtx, 1000);
@@ -361,6 +385,8 @@ void IpuDoom::buildIpuGraph() {
 
   m_ipuEngine->connectStream("miscValues-stream", m_miscValuesBuf_h);
   m_ipuEngine->connectStream("lumpNum-stream", &m_lumpNum_h);
+  m_ipuEngine->connectStream("textureOffsets-stream", ipuTextureBlobOffsets);
+  m_ipuEngine->connectStream("textureRanges-stream", ipuTextureBlobRanges);
   // Connect frame-instream/outstream later in run_IPU_MiscSetup because 
   // I_VideoBuffer is initialised quite late
 
@@ -411,6 +437,7 @@ void IpuDoom::run_R_ExecuteSetViewSize() {
   m_ipuEngine->run(6);
 }
 void IpuDoom::run_R_Init() {
+  m_ipuEngine->connectStream("textureBuf-stream", ipuTextureBlob);
   IPU_R_Init_PackMiscValues(m_miscValuesBuf_h);
   m_ipuEngine->run(7);
 }

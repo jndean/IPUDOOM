@@ -354,18 +354,22 @@ byte *R_GetColumn_Original(int tex, int col) { // JOSEF: Renamed to `_Original`
 // JOSEF: We dedicate several tiles on the IPU just to storing textures,
 //        so we can afford to preassemble all textures into a big blob
 byte* ipuTextureBlob;
-int* ipuTextureBlobOffsets;
+int ipuTextureBlobOffsets[IPUMAXNUMTEXTURES];
 int ipuTextureBlobRanges[IPUTEXTURETILESPERRENDERTILE + 1];
+
 void GenerateIPUTextureBlob(void) {
+
+  if (numtextures >= IPUMAXNUMTEXTURES) {
+    I_Error("GenerateIPUTextureBlob: numtextures >= IPUMAXNUMTEXTURES");
+  }
   ipuTextureBlob = malloc(IPUTEXTURETILEBUFSIZE * IPUTEXTURETILESPERRENDERTILE);
-  ipuTextureBlobOffsets = malloc(sizeof(*ipuTextureBlobOffsets) * numtextures);
   ipuTextureBlobRanges[0] = 0;
   int tile = 0, pos = 0;
+
   for (int t = 0; t < numtextures; ++t) {
     int tex_width = textures[t]->width;
     int tex_height = textures[t]->height;
     int tex_size = tex_width * tex_height;
-    
     if (pos + tex_size >= IPUTEXTURETILEBUFSIZE) {
       pos = 0;
       tile += 1;
@@ -384,13 +388,13 @@ void GenerateIPUTextureBlob(void) {
     pos += tex_size;
   }
   ipuTextureBlobRanges[tile + 1] = numtextures;
-
 }
 
 //
 // R_GetColumn : JOSEF: The version that uses the IPU texture dump
 //
 byte *R_GetColumn(int tex, int col) {
+  // return R_GetColumn_Original(tex, col); // For checking old behaviour
   int tile;
   col &= texturewidthmask[tex];
   for (tile = 0; tile < IPUTEXTURETILESPERRENDERTILE; ++tile) {
@@ -551,8 +555,6 @@ void R_InitTextures(void) {
       printf("\b");
   }
 
-  int totaltexturesize = 0; // JOSEF TMP
-
   for (i = 0; i < numtextures; i++, directory++) {
     if (!(i & 63))
       printf(".");
@@ -580,8 +582,6 @@ void R_InitTextures(void) {
     texture->height = SHORT(mtexture->height);
     texture->patchcount = SHORT(mtexture->patchcount);
 
-    totaltexturesize += texture->width * texture->height; // JOSEF TMP
-
     memcpy(texture->name, mtexture->name, sizeof(texture->name));
     mpatch = &mtexture->patches[0];
     patch = &texture->patches[0];
@@ -608,12 +608,6 @@ void R_InitTextures(void) {
 
     totalwidth += texture->width;
   }
-
-  printf("\n JOSEF: Total Texture Size = %d bytes (%dKb), numtextures = %d\n",
-    totaltexturesize,
-    totaltexturesize / 1000,
-    numtextures
-  );
 
   Z_Free(patchlookup);
 
