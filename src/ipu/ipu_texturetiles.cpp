@@ -3,6 +3,7 @@
 #include <poplar/Vertex.hpp>
 
 #include "doomtype.h"
+#include "r_data.h"
 
 #include "ipu_interface.h"
 #include "ipu_utils.h"
@@ -16,6 +17,7 @@ unsigned* tileLocalCommsBuf;
 unsigned* tileLocalTextureBuf;
 const int* tileLocalTextureRange;
 const int* tileLocalTextureOffsets;
+
 
 
 //  -------- Components for the tiles that serve textures ------------ //
@@ -75,17 +77,26 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
     auto recvProgram = &progBuf[progBuf[0]];
     auto sendProgram = &progBuf[progBuf[1]];
     auto aggrProgram = &progBuf[progBuf[2]];
-    
-    // for(; textureFetchCount < tmpRepeatCount; textureFetchCount++) {
+
     while (1) {
 
       XCOM_Execute(recvProgram, NULL, textureBuf);
 
       // Unpack received data
       unsigned textureNum = ((IPUColRequest_t*) textureBuf)->texture;
-      unsigned colNum = ((IPUColRequest_t*) textureBuf)->column;
+      unsigned columnOffset = ((IPUColRequest_t*) textureBuf)->columnOffset;
       
-      byte c1 = (textureNum * 9) % 256;
+      byte* col = textureBuf;
+      if (textureNum != 0xffffffff &&
+          textureNum >= tileLocalTextureRange[0] && 
+          textureNum < tileLocalTextureRange[1]) {
+        col = &textureBuf[tileLocalTextureOffsets[textureNum] + columnOffset];
+        // if (firstPrint && tileID >= 32 && tileID < 36) printf("Accepted texture %d\n", (int)textureNum);
+      } else {
+        // if (firstPrint && tileID >= 32 && tileID < 36) printf("Rejected texture %d\n", (int)textureNum);
+      }
+      
+      byte c1 = (17 * 9) % 256;
       byte c2 = (c1 + 1) % 256;
       byte c3 = (c1 + 2) % 256;
       byte c4 = (c1 + 1) % 256;
@@ -93,10 +104,9 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
       for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
         ((unsigned*)textureBuf)[i] = colour;
       }
-      XCOM_Execute(sendProgram, textureBuf, NULL);
+      XCOM_Execute(sendProgram, col, NULL);
 
       XCOM_Execute(aggrProgram, NULL, commsBuf);
-      //   if (tileID == 35) printf ("Texture flag: %d\n", commsBuf[0]);
       if (commsBuf[0]) 
         return;
     }
@@ -190,7 +200,7 @@ byte* IPU_R_RequestColumn(int texture, int column) {
     // Populate buffer with data to be exchanged
     IPUColRequest_t *request = (IPUColRequest_t*) tileLocalTextureBuf;
     request->texture = texture;
-    request->column = column;
+    request->columnOffset = (column & texturewidthmask[texture]) * (textureheight[texture] >> FRACBITS);
     *((unsigned*) &request[1]) = 0; // The Done Flag
     
     XCOM_Execute(
@@ -204,7 +214,14 @@ byte* IPU_R_RequestColumn(int texture, int column) {
         tileLocalCommsBuf[0] = 0;
     }
 
-    int textureSourceTile = 0;
+    int textureSourceTile;
+    for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
+        if (texture >= tileLocalTextureRange[textureSourceTile] && 
+            texture < tileLocalTextureRange[textureSourceTile + 1]) {
+        break;
+        }
+    }
+
     XCOM_PatchMuxAndExecute(
         receiveProg,                      // Prog
         NULL,                             // Read offset
@@ -234,7 +251,7 @@ void IPU_R_RenderTileDone() {
         // Populate buffer with data to be exchanged
         IPUColRequest_t *request = (IPUColRequest_t*) tileLocalTextureBuf;
         request->texture = 0xffffffff;
-        request->column = 0xffffffff;
+        request->columnOffset = 0xffffffff;
         *((unsigned*) &request[1]) = 1; // The `done` Flag
 
         XCOM_Execute(

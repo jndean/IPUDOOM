@@ -21,7 +21,13 @@
 #define __R_DATA__
 
 #include "doomtype.h"
+#include "m_fixed.h"
+
 #include "ipu_utils.h"
+
+
+extern int* texturewidthmask;
+extern fixed_t* textureheight;
 
 // Retrieve column data for span blitting.
 __SUPER__ byte *R_GetColumn(int tex, int col);

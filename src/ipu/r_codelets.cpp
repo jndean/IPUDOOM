@@ -65,7 +65,7 @@ struct
 poplar::constraint("region(*nonExecutableDummy) != region(*progBuf)"),
 poplar::constraint("elem(*textureCache) != elem(*progBuf)"),
 poplar::constraint("elem(*textureCache) != elem(*commsBuf)"),
-poplar::constraint("elem(*progBuf)    != elem(*commsBuf)"),
+poplar::constraint("elem(*progBuf) != elem(*commsBuf)"),
 ]] 
 R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
   poplar::Input<poplar::Vector<unsigned char>> miscValues;
@@ -75,12 +75,14 @@ R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
   poplar::InOut<poplar::Vector<unsigned>> progBuf;
   poplar::InOut<poplar::Vector<unsigned>> commsBuf;
   poplar::InOut<poplar::Vector<unsigned>> textureCache;
+  poplar::Input<poplar::Vector<int>> textureRange;
 
   __SUPER__ void compute() {
     assert(&frame[0] == I_VideoBuffer);
     tileLocalProgBuf = &progBuf[0];
     tileLocalCommsBuf = &commsBuf[0];
     tileLocalTextureBuf = &textureCache[0];
+    tileLocalTextureRange = &textureRange[0];
 
     IPU_R_RenderPlayerView_UnpackMiscValues(
       (R_RenderPlayerView_MiscValues_t*) &miscValues[0]
@@ -113,13 +115,13 @@ R_FulfilColumnRequests_Vertex : public poplar::SupervisorVertex {
   poplar::InOut<poplar::Vector<unsigned>> progBuf;
   poplar::InOut<poplar::Vector<unsigned>> commsBuf;
   poplar::Output<poplar::Vector<unsigned char>> textureBuf;
-  // poplar::Input<poplar::Vector<int>> textureOffsets;
-  // poplar::Input<poplar::Vector<int>> textureRange;
+  poplar::Input<poplar::Vector<int>> textureOffsets;
+  poplar::Input<poplar::Vector<int>> textureRange;
 
   __SUPER__ void compute() {
-    // tileLocalTextureRange = &textureRange[0];
-    // tileLocalTextureOffsets = &textureOffsets[0];
-
+    tileLocalTextureRange = &textureRange[0];
+    tileLocalTextureOffsets = &textureOffsets[0];
+    
     IPU_R_FulfilColumnRequest(&progBuf[0], &textureBuf[0], &commsBuf[0]);
   }
 };

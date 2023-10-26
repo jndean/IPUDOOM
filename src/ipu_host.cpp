@@ -167,6 +167,13 @@ void IpuDoom::buildIpuGraph() {
     "textureBuf-stream", 
     poplar::UNSIGNED_CHAR, 
     IPUTEXTURETILESPERRENDERTILE * IPUTEXTURETILEBUFSIZE);
+    
+  poplar::Tensor textureOffsets = m_ipuGraph.addVariable(poplar::INT, {IPUMAXNUMTEXTURES}, "textureOffsets");
+  poplar::Tensor textureRanges = m_ipuGraph.addVariable(poplar::INT, {IPUTEXTURETILESPERRENDERTILE + 1}, "textureRanges");
+  auto textureOffsetStream = m_ipuGraph.addHostToDeviceFIFO("textureOffsets-stream", poplar::INT, IPUMAXNUMTEXTURES);
+  auto textureRangeStream = m_ipuGraph.addHostToDeviceFIFO("textureRanges-stream", poplar::INT, IPUTEXTURETILESPERRENDERTILE + 1);
+  m_ipuGraph.setTileMapping(textureOffsets, IPUFIRSTTEXTURETILE);
+  m_ipuGraph.setTileMapping(textureRanges, IPUFIRSTRENDERTILE);
 
   poplar::ComputeSet R_Init_CS = m_ipuGraph.addComputeSet("R_Init_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
@@ -206,12 +213,20 @@ void IpuDoom::buildIpuGraph() {
   poplar::program::Sequence R_Init_prog({
     poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
     poplar::program::Copy(textureBufStream, textureBuf.slice(0, IPUTEXTURETILESPERRENDERTILE)),
+    poplar::program::Copy(textureOffsetStream, textureOffsets),
+    poplar::program::Copy(textureRangeStream, textureRanges),
     poplar::program::Execute(R_InitTextureAndSans_CS),
     poplar::program::Repeat(2, poplar::program::Sequence({ // <- number of R_Init_CS steps
       poplar::program::Execute(R_Init_CS),
       poplar::program::Call(requestLumpFromHost, {m_lumpNum[0]}, {lumpBuf}),
     })),
   });
+  for (int i = IPUTEXTURETILESPERRENDERTILE; i < IPUNUMTEXTURETILES; i += IPUTEXTURETILESPERRENDERTILE) {
+    R_Init_prog.add(poplar::program::Copy(
+      textureBuf.slice(0, IPUTEXTURETILESPERRENDERTILE),
+      textureBuf.slice(i, i + IPUTEXTURETILESPERRENDERTILE)
+    ));
+  }
 
   // ---------------- G_Ticker --------------//
 
@@ -297,19 +312,13 @@ void IpuDoom::buildIpuGraph() {
       IPUNUMTEXTURECACHELINES * IPUTEXTURECACHELINESIZE}, 
     "textureCache");
 
-  poplar::Tensor textureOffsets = m_ipuGraph.addVariable(poplar::INT, {IPUMAXNUMTEXTURES}, "textureOffsets");
-  poplar::Tensor textureRanges = m_ipuGraph.addVariable(poplar::INT, {IPUTEXTURETILESPERRENDERTILE + 1}, "textureRanges");
-  auto textureOffsetStream = m_ipuGraph.addHostToDeviceFIFO("textureOffsets-stream", poplar::INT, IPUMAXNUMTEXTURES);
-  auto textureRangeStream = m_ipuGraph.addHostToDeviceFIFO("textureRanges-stream", poplar::INT, IPUTEXTURETILESPERRENDERTILE + 1);
-  m_ipuGraph.setTileMapping(textureOffsets, IPUFIRSTTEXTURETILE);
-  m_ipuGraph.setTileMapping(textureRanges, IPUFIRSTTEXTURETILE);
-
   poplar::ComputeSet R_RenderPlayerView_CS = m_ipuGraph.addComputeSet("R_RenderPlayerView_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
     int logicalTile = IPUFIRSTRENDERTILE + renderTile;
     vtx = m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_RenderPlayerView_Vertex", {
       {"frame", ipuFrameSlices[renderTile]},
       {"textureCache", textureCache[renderTile]},
+      {"textureRange", textureRanges},
       {"progBuf", progBuf[logicalTile]}, 
       {"commsBuf", commsBuf[logicalTile]},
       {"nonExecutableDummy", nonExecutableDummy[logicalTile]}, 
@@ -321,14 +330,14 @@ void IpuDoom::buildIpuGraph() {
   }
   for (int textureTile = 0; textureTile < IPUNUMTEXTURETILES; ++textureTile) {
     int logicalTile = IPUFIRSTTEXTURETILE + textureTile;
-    // int textureStripeIdx = textureTile % IPUTEXTURETILESPERRENDERTILE;
+    int textureStripeIdx = textureTile % IPUTEXTURETILESPERRENDERTILE;
     vtx =  m_ipuGraph.addVertex(R_RenderPlayerView_CS, "R_FulfilColumnRequests_Vertex", {
       {"dummy", nonExecutableDummy[logicalTile]}, 
       {"progBuf", progBuf[logicalTile]},
       {"commsBuf", commsBuf[logicalTile]},
       {"textureBuf", textureBuf[textureTile]},
-      // {"textureOffsets", textureOffsets},
-      // {"textureRange", textureRanges.slice(textureStripeIdx, textureStripeIdx + 2)},
+      {"textureOffsets", textureOffsets},
+      {"textureRange", textureRanges.slice(textureStripeIdx, textureStripeIdx + 2)},
     });
     m_ipuGraph.setTileMapping(vtx, logicalTile);
     m_ipuGraph.setPerfEstimate(vtx, 1000);
