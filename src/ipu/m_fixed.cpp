@@ -55,25 +55,17 @@ fixed_t FixedMul(fixed_t a, fixed_t b)
 struct DivWorker : public poplar::Vertex {
     fixed_t a, b;
     void compute() {
-        // Using int64_ caused some weird errors. So use double instead...?
+        // Using int64_t caused some weird errors. So use double instead...?
         // a = (((int64_t) a) << FRACBITS) / b;
         a = ((double) a * FRACUNIT) / (double) b; 
     }
 };
 
-//
-// FixedDiv, C version.
-//
-extern "C"
-__SUPER__ 
 fixed_t FixedDiv(fixed_t a, fixed_t b)
 {
     if ((abs(a) >> 14) >= abs(b)) {
     	return (a^b) < 0 ? INT_MIN : INT_MAX;
     } else {
-        // int64_t result; // JOSEF
-        // result = ((int64_t) a << FRACBITS) / b;
-        // return (fixed_t) result;
 
         DivWorker workerArgs;
         unsigned workerArgsPtr = (unsigned)&workerArgs - TMEM_BASE_ADDR;
@@ -91,4 +83,3 @@ fixed_t FixedDiv(fixed_t a, fixed_t b)
         return workerArgs.a;
     }
 }
-

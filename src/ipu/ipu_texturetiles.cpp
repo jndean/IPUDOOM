@@ -78,6 +78,8 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
     auto sendProgram = &progBuf[progBuf[1]];
     auto aggrProgram = &progBuf[progBuf[2]];
 
+    int noise = 0;
+
     while (1) {
 
       XCOM_Execute(recvProgram, NULL, textureBuf);
@@ -91,20 +93,37 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
           textureNum >= tileLocalTextureRange[0] && 
           textureNum < tileLocalTextureRange[1]) {
         col = &textureBuf[tileLocalTextureOffsets[textureNum] + columnOffset];
-        // if (firstPrint && tileID >= 32 && tileID < 36) printf("Accepted texture %d\n", (int)textureNum);
-      } else {
-        // if (firstPrint && tileID >= 32 && tileID < 36) printf("Rejected texture %d\n", (int)textureNum);
       }
       
-      byte c1 = (17 * 9) % 256;
-      byte c2 = (c1 + 1) % 256;
-      byte c3 = (c1 + 2) % 256;
-      byte c4 = (c1 + 1) % 256;
-      unsigned colour = c1 | (c2 << 8) | (c3 << 16) | (c4 << 24);
-      for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
-        ((unsigned*)textureBuf)[i] = colour;
-      }
+
+    //   noise = (noise + 1) % 4;
+    //   unsigned renderStripe = (tileID - IPUFIRSTTEXTURETILE) / IPUTEXTURETILESPERRENDERTILE;
+    //   {
+    //     // unsigned colour = (renderStripe * 9) % 256;
+    //     colour = colour | (colour << 8) | (colour << 16) | (colour << 24);
+    //     for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
+    //         if (noise == 0) {
+    //             ((unsigned*)col)[i] += 0x01010101;
+    //         }
+    //         // ((unsigned*)col)[i] = colour;
+    //     }
+    //   }
+      
+    //   {
+    //     // Render Tile Stripes
+    //     unsigned colour = renderStripe * 16;
+    //     for (int i = 0; i < IPUTEXTURECACHELINESIZE * sizeof(int); i++) {
+    //         if (renderStripe % 2) {
+    //             textureBuf[i] = (col[i] % 4); //(col[i] % 30) + 20;
+    //         } else {
+    //             textureBuf[i] = (col[i] % 30) + 80; //(col[i] % 4);
+    //         }
+    //     }
+    //     col = textureBuf;
+    //   }
+
       XCOM_Execute(sendProgram, col, NULL);
+      // XCOM_Execute(sendProgram, col, NULL);
 
       XCOM_Execute(aggrProgram, NULL, commsBuf);
       if (commsBuf[0]) 

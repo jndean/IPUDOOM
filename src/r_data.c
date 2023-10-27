@@ -333,7 +333,7 @@ void R_GenerateLookup(int texnum) {
 //
 // R_GetColumn
 //
-byte *R_GetColumn_Original(int tex, int col) { // JOSEF: Renamed to `_Original`
+byte *R_GetColumn(int tex, int col) { // JOSEF: Renamed to `_Original`
   int lump;
   int ofs;
 
@@ -382,7 +382,7 @@ void GenerateIPUTextureBlob(void) {
     ipuTextureBlobOffsets[t] = pos;
     byte* dst = &ipuTextureBlob[tile * IPUTEXTURETILEBUFSIZE + pos];
     for (int x = 0; x < tex_width; x += 1, dst += tex_height) {
-      byte* col = R_GetColumn_Original(t, x);
+      byte* col = R_GetColumn(t, x);
       memcpy(dst, col, tex_height);
     }
     pos += tex_size;
@@ -393,8 +393,7 @@ void GenerateIPUTextureBlob(void) {
 //
 // R_GetColumn : JOSEF: The version that uses the IPU texture dump
 //
-byte *R_GetColumn(int tex, int col) {
-  // return R_GetColumn_Original(tex, col); // For checking old behaviour
+byte *R_GetColumn_LikeIPU(int tex, int col) {
   int tile;
   col &= texturewidthmask[tex];
   for (tile = 0; tile < IPUTEXTURETILESPERRENDERTILE; ++tile) {
