@@ -32,17 +32,19 @@ Activity Log:
 - [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU. CPU still renders everything else.
 ![gameplay gif](README_imgs/flats.gif)
 
+- [x] Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices.
+![gameplay gif](README_imgs/WallsTextured_noCPU.gif)
+
+
 Immediate next steps:
-- [ ] Textures are too large to fit on a singe tile, so devise a mechanism for tiles to cooperate on texturing wall, probably by JIT-fetching textures
 - [ ] Port visplane system to get IPU rendering floors and ceilings
 
 Longer term next steps:
 
-- [ ] Render other things in the level
+- [ ] Render other things in the level (sprites and masked components, HUD (using dedicated HUD tiles))
 - [ ] Move beyond just the rendering?
-
 
   ...
 
-- [ ] Profit
+- [ ] Profit?
 
