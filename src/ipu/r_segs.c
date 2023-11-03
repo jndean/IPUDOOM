@@ -90,7 +90,9 @@ fixed_t topstep;
 fixed_t bottomfrac;
 fixed_t bottomstep;
 
-lighttable_t **walllights;
+// lighttable_t **walllights; // JOSEF: texture tiles handle light scaling
+int lightnum; // JOSEF: Make this a global to pass to texture tiles
+unsigned walllightindex; // JOSEF
 
 short *maskedtexturecol;
 
@@ -102,7 +104,7 @@ int abs(int); // JOSEF
 // R_RenderMaskedSegRange
 //
 void R_RenderMaskedSegRange(drawseg_t *ds, int x1, int x2) {
-  unsigned index;
+  // unsigned index; // Replace with wallightindex?
   column_t *col;
   int lightnum;
   int texnum;
@@ -195,7 +197,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, int x1, int x2) {
 __SUPER__ 
 void R_RenderSegLoop(void) {
   angle_t angle;
-  unsigned index;
+  // unsigned index; // JOSEF: Replaced with walllightindex
   int yl;
   int yh;
   int mid;
@@ -247,12 +249,16 @@ void R_RenderSegLoop(void) {
       texturecolumn = rw_offset - FixedMul(finetangent[angle], rw_distance);
       texturecolumn >>= FRACBITS;
       // calculate lighting
-      index = rw_scale >> LIGHTSCALESHIFT;
+      walllightindex = rw_scale >> LIGHTSCALESHIFT; // JOSEF: walllightindex
 
-      if (index >= MAXLIGHTSCALE)
-        index = MAXLIGHTSCALE - 1;
+      if (walllightindex >= MAXLIGHTSCALE) // JOSEF: walllightindex
+        walllightindex = MAXLIGHTSCALE - 1; // JOSEF: walllightindex
 
-      // dc_colormap = walllights[index]; // LATER
+      // if (tileID == 0 && curline->v1->x == -30932992 && curline->v1->y == -31457280 && curline->v2->x ==-30932992 && curline->v2->y == -14155776)
+
+      // dc_colormap = walllights[index]; // JOSEF: Texturetile handles this
+
+
       dc_x = rw_x;
       dc_iscale = 0xffffffffu / (unsigned)rw_scale;
     } else {
@@ -336,7 +342,6 @@ void R_RenderSegLoop(void) {
   }
 }
 
-int lightnum; // JOSEF: Temprarily made this global for vis
 
 //
 // R_StoreWallRange
@@ -349,7 +354,8 @@ void R_StoreWallRange(int start, int stop) {
   fixed_t sineval;
   angle_t distangle, offsetangle;
   fixed_t vtop;
-  // int lightnum; // JOSEF: Temprarily made this global for vis
+  // int lightnum; // JOSEF: Made this a global to pass to texture tiles
+
   // don't overflow and crash
   if (ds_p == &drawsegs[MAXDRAWSEGS])
     return;
@@ -562,16 +568,14 @@ void R_StoreWallRange(int start, int stop) {
       else if (curline->v1->x == curline->v2->x)
         lightnum++;
 
-      // JOSEF: TMP FOR SHADING FLATS
-      lightnum = (lightnum < 0)? 0: ((lightnum >= LIGHTLEVELS)? LIGHTLEVELS - 1: lightnum);
-
-    //   LATER
-    //   if (lightnum < 0)
-    //     walllights = scalelight[0];
-    //   else if (lightnum >= LIGHTLEVELS)
-    //     walllights = scalelight[LIGHTLEVELS - 1];
-    //   else
-    //     walllights = scalelight[lightnum];
+      // JOSEF: Clip now, then let the texture tile do the walllights lookup later
+      lightnum = (lightnum < 0) ? 0 : ((lightnum >= LIGHTLEVELS) ? LIGHTLEVELS - 1 : lightnum);
+      // if (lightnum < 0)
+      //   walllights = scalelight[0];
+      // else if (lightnum >= LIGHTLEVELS)
+      //   walllights = scalelight[LIGHTLEVELS - 1];
+      // else
+      //   walllights = scalelight[lightnum];
     }
   }
 

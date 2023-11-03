@@ -170,10 +170,13 @@ void IpuDoom::buildIpuGraph() {
     
   poplar::Tensor textureOffsets = m_ipuGraph.addVariable(poplar::INT, {IPUMAXNUMTEXTURES}, "textureOffsets");
   poplar::Tensor textureRanges = m_ipuGraph.addVariable(poplar::INT, {IPUTEXTURETILESPERRENDERTILE + 1}, "textureRanges");
+  poplar::Tensor colourMap = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {COLOURMAPSIZE}, "colourMap");
   auto textureOffsetStream = m_ipuGraph.addHostToDeviceFIFO("textureOffsets-stream", poplar::INT, IPUMAXNUMTEXTURES);
   auto textureRangeStream = m_ipuGraph.addHostToDeviceFIFO("textureRanges-stream", poplar::INT, IPUTEXTURETILESPERRENDERTILE + 1);
+  auto colourMapStream = m_ipuGraph.addHostToDeviceFIFO("colourMap-stream", poplar::UNSIGNED_CHAR, COLOURMAPSIZE);
   m_ipuGraph.setTileMapping(textureOffsets, IPUFIRSTTEXTURETILE);
   m_ipuGraph.setTileMapping(textureRanges, IPUFIRSTRENDERTILE);
+  m_ipuGraph.setTileMapping(colourMap, IPUFIRSTTEXTURETILE);
 
   poplar::ComputeSet R_Init_CS = m_ipuGraph.addComputeSet("R_Init_CS");
   for (int renderTile = 0; renderTile < IPUNUMRENDERTILES; ++renderTile) {
@@ -192,6 +195,7 @@ void IpuDoom::buildIpuGraph() {
     int logicalTile = IPUFIRSTTEXTURETILE + textureTile;
     vtx =  m_ipuGraph.addVertex(R_InitTextureAndSans_CS, "R_InitTexture_Vertex", {
       {"progBuf", progBuf[logicalTile]}, 
+      {"colourMap", colourMap}, 
     });
     m_ipuGraph.setTileMapping(vtx, logicalTile);
     m_ipuGraph.setPerfEstimate(vtx, 2000);
@@ -215,6 +219,7 @@ void IpuDoom::buildIpuGraph() {
     poplar::program::Copy(textureBufStream, textureBuf.slice(0, IPUTEXTURETILESPERRENDERTILE)),
     poplar::program::Copy(textureOffsetStream, textureOffsets),
     poplar::program::Copy(textureRangeStream, textureRanges),
+    poplar::program::Copy(colourMapStream, colourMap),
     poplar::program::Execute(R_InitTextureAndSans_CS),
     poplar::program::Repeat(2, poplar::program::Sequence({ // <- number of R_Init_CS steps
       poplar::program::Execute(R_Init_CS),
@@ -400,13 +405,17 @@ void IpuDoom::buildIpuGraph() {
   // I_VideoBuffer is initialised quite late
 
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
-    IPU_LoadLumpForTransfer(m_lumpNum_h, (byte*) p);
+    IPU_LoadLumpNum(m_lumpNum_h, (byte*) p, IPUMAXLUMPBYTES);
+  });
+  m_ipuEngine->connectStreamToCallback("colourMap-stream", [this](void* p) {
+    int size = IPU_LoadLumpName("COLORMAP", (byte*) p, COLOURMAPSIZE);
+    assert(size == 8704); // The size of the colour mapping we expect in Doom 1
   });
   m_ipuEngine->connectHostFunction(
     "requestLumpFromHost", 0, [](poplar::ArrayRef<const void *> inputs, poplar::ArrayRef<void *> outputs) {
       const int* _lumpNum = static_cast<const int *>(inputs[0]);
       unsigned char* _lumpBuf = static_cast<unsigned char *>(outputs[0]);
-      IPU_LoadLumpForTransfer(*_lumpNum, _lumpBuf);
+      IPU_LoadLumpNum(*_lumpNum, _lumpBuf, IPUMAXLUMPBYTES);
   });
   m_ipuEngine->connectStreamToCallback("marknumSpriteBuf-stream", [this](void* p) {
     IPU_Setup_PackMarkNums(p);

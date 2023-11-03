@@ -99,9 +99,10 @@ R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
 
 struct R_InitTexture_Vertex : public poplar::SupervisorVertex {
   poplar::Output<poplar::Vector<unsigned>> progBuf;
+  poplar::Input<poplar::Vector<unsigned char>> colourMap;
 
   __SUPER__ void compute() {
-    IPU_R_InitTextureTile(&progBuf[0], progBuf.size()); 
+    IPU_R_InitTextureTile(&progBuf[0], progBuf.size(), &colourMap[sizeof(int)]);
   }
 };
 
@@ -132,11 +133,8 @@ R_FulfilColumnRequests_Vertex : public poplar::SupervisorVertex {
 
 struct R_InitSans_Vertex : public poplar::SupervisorVertex {
   poplar::Output<poplar::Vector<unsigned>> progBuf;
-
   __SUPER__ void compute() {
-    // Reuse IPU_R_InitTextureTile because the 'done' flag receiving program
-    // it compiles is perfectly valid for use by a sans tile
-    IPU_R_InitTextureTile(&progBuf[0], progBuf.size());   
+    IPU_R_InitSansTile(&progBuf[0], progBuf.size());   
   }
 };
 

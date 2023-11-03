@@ -708,8 +708,6 @@ void R_InitTextures_TT(void) {
       printf("\b");
   }
 
-  int totaltexturesize = 0; // JOSEF TMP
-
   for (i = 0; i < numtextures; i++, directory++) {
     if (!(i & 63))
       printf(".");
@@ -737,8 +735,6 @@ void R_InitTextures_TT(void) {
     texture->height = SHORT(mtexture->height);
     texture->patchcount = SHORT(mtexture->patchcount);
 
-    totaltexturesize += texture->width * texture->height; // JOSEF TMP
-
     memcpy(texture->name, mtexture->name, sizeof(texture->name));
     mpatch = &mtexture->patches[0];
     patch = &texture->patches[0];
@@ -765,12 +761,6 @@ void R_InitTextures_TT(void) {
 
     totalwidth += texture->width;
   }
-
-  printf("\n JOSEF: Total Texture Size = %d bytes (%dKb), numtextures = %d\n",
-    totaltexturesize,
-    totaltexturesize / 1000,
-    numtextures
-  );
 
   Z_Free(patchlookup);
 

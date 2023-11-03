@@ -12,7 +12,7 @@ extern "C" {
 
 
 typedef struct {
-    unsigned texture, columnOffset;
+    unsigned texture, columnOffset, lightNum, lightScale;
 } IPUColRequest_t;
 
 
@@ -24,8 +24,9 @@ extern const int* tileLocalTextureOffsets;
 
 
 
-__SUPER__ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize);
+__SUPER__ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize, const pixel_t* colourMap);
 __SUPER__ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize);
+__SUPER__ void IPU_R_InitSansTile(unsigned* progBuf, int progBufSize);
 
 __SUPER__ byte* IPU_R_RequestColumn(int texture, int column);
 __SUPER__ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, unsigned* commsBuf);

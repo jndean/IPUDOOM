@@ -136,9 +136,9 @@ void IPU_Setup_PackMarkNums(void* buf) {
   }
 }
 
-void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
-    int size = W_LumpLength(lumpnum);
-    int required = size + sizeof(int); // Space for size field
+int IPU_LoadLumpNum(int lumpnum, byte* buf, int maxSize) {
+    const int size = W_LumpLength(lumpnum);
+    const int required = size + sizeof(int); // Space for size field
     if (required > IPUMAXLUMPBYTES) {
         I_Error("\nERROR: Need %d bytes to transfer lump %d to IPU, only have %d\n",
         required, lumpnum, IPUMAXLUMPBYTES);
@@ -147,5 +147,11 @@ void IPU_LoadLumpForTransfer(int lumpnum, byte* buf) {
     byte* data = W_CacheLumpNum(lumpnum, PU_STATIC);
     memcpy(buf + sizeof(int), data, size);
     W_ReleaseLumpNum(lumpnum);
+    return size;
+}
+
+
+int IPU_LoadLumpName(const char* name, byte* buf, int maxSize) {
+  return IPU_LoadLumpNum(W_GetNumForName(name), buf, maxSize);
 }
 

@@ -34,6 +34,8 @@ extern "C" {
 #define IPUMAXNUMTEXTURES (130)
 #define IPUCOMMSBUFSIZE (IPUNUMRENDERTILES)
 
+#define COLOURMAPSIZE (8704)
+
 
 typedef struct {
     int gameepisode;

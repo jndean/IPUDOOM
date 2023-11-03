@@ -102,9 +102,9 @@ int viewangletox[FINEANGLES / 2];
 // from clipangle to -clipangle.
 angle_t xtoviewangle[SCREENWIDTH + 1];
 
-// lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE]; // JOSEF: TODO
-// lighttable_t *scalelightfixed[MAXLIGHTSCALE]; // JOSEF: TODO
-// lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO
+// lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];// JOSEF: This lives on texture tile instead
+// lighttable_t *scalelightfixed[MAXLIGHTSCALE]; 
+// lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO (on texture/flats tile?)
 
 // bumped light from gun blasts
 int extralight;
@@ -532,14 +532,13 @@ void R_InitTextureMapping(void) {
   clipangle = xtoviewangle[0];
 }
 
-/*
 //
 // R_InitLightTables
 // Only inits the zlight table,
 //  because the scalelight table changes with view size.
 //
-#define DISTMAP 2
 
+/*
 void R_InitLightTables(void) {
   int i;
   int j;
@@ -635,8 +634,6 @@ void R_ExecuteSetViewSize(void) {
   // JOSEF
   tileLeftClip = tileID * IPUCOLSPERRENDERTILE;
   tileRightClip = tileLeftClip + IPUCOLSPERRENDERTILE;
-  // tileLeftClip += 1;  // Helps visualise multitil rendering :)
-  // tileRightClip -= 1;
 
   R_InitBuffer(scaledviewwidth, viewheight);
 
@@ -664,24 +661,25 @@ void R_ExecuteSetViewSize(void) {
     cosadj = abs(finecosine[xtoviewangle[i] >> ANGLETOFINESHIFT]);
     distscale[i] = FixedDiv(FRACUNIT, cosadj);
   }
+  */
 
+  // JOSEF: Texture tiles handle light levels
   // Calculate the light levels to use
   //  for each level / scale combination.
-  for (i = 0; i < LIGHTLEVELS; i++) {
-    startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
-    for (j = 0; j < MAXLIGHTSCALE; j++) {
-      level = startmap - j * SCREENWIDTH / (viewwidth << detailshift) / DISTMAP;
+  // for (i = 0; i < LIGHTLEVELS; i++) {
+  //   startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
+  //   for (j = 0; j < MAXLIGHTSCALE; j++) {
+  //     level = startmap - j * SCREENWIDTH / (viewwidth << detailshift) / DISTMAP;
 
-      if (level < 0)
-        level = 0;
+  //     if (level < 0)
+  //       level = 0;
 
-      if (level >= NUMCOLORMAPS)
-        level = NUMCOLORMAPS - 1;
+  //     if (level >= NUMCOLORMAPS)
+  //       level = NUMCOLORMAPS - 1;
 
-      scalelight[i][j] = colormaps + level * 256;
-    }
-  }
-  */
+  //     scalelight[i][j] = colormaps + level * 256; // LATER
+  //   }
+  // }
 }
 
 /*
@@ -764,17 +762,17 @@ void R_SetupFrame(player_t *player) {
 
   sscount = 0;
 
-  /* Later
   if (player->fixedcolormap) {
-    fixedcolormap = colormaps + player->fixedcolormap * 256;
+    printf("JOSEF: Warning: Fixed colourmap being used, need to implement that on texture tiles (send them a special value?)");
+    // fixedcolormap = colormaps + player->fixedcolormap * 256; // LATER
 
-    walllights = scalelightfixed;
+    // walllights = scalelightfixed; // LATER
 
-    for (i = 0; i < MAXLIGHTSCALE; i++)
-      scalelightfixed[i] = fixedcolormap;
+    // for (i = 0; i < MAXLIGHTSCALE; i++) // LATER
+    //   scalelightfixed[i] = fixedcolormap;
   } else
     fixedcolormap = 0;
-  */
+
 
   framecount++;
   validcount++;

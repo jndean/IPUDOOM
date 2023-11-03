@@ -123,7 +123,7 @@ void R_DrawColumn(void) {
   if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT) {
     printf("ERROR: R_DrawColumn: %u to %u at %u\n", dc_yl, dc_yh, dc_x);
   }
-  char colour = (bspnum - (lightnum & 1)) % 256; // JOSEF: TMP!
+  // if (tileID >= 16) return; // JOSEF: TMP, Show CPU & IPU side-by-side
 
   // Framebuffer destination address.
   // Use ylookup LUT to avoid multiply with ScreenWidth.
@@ -143,7 +143,6 @@ void R_DrawColumn(void) {
     //  using a lighting/special effects LUT.
     
     // LATER: *dest = dc_colormap[dc_source[(frac >> FRACBITS) & 127]]; // LATER
-    // *dest = colour;
     *dest = dc_source[(frac >> FRACBITS) & 127];
 
     dest += IPUCOLSPERRENDERTILE; // JOSEF: SCREENWIDTH;

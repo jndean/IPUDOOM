@@ -22,6 +22,9 @@
 #include "ipu_texturetiles.h"
 #include "r_defs.h"
 
+extern int lightnum;
+extern unsigned walllightindex;
+
 __SUPER__ void R_RenderMaskedSegRange(drawseg_t *ds, int x1, int x2);
 
 #endif

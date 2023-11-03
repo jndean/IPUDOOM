@@ -61,6 +61,9 @@ extern int loopcount;
 #define MAXLIGHTZ 128
 #define LIGHTZSHIFT 20
 
+#define DISTMAP 2
+
+
 extern lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 extern lighttable_t *scalelightfixed[MAXLIGHTSCALE];
 extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];

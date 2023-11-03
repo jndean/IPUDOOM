@@ -4,6 +4,8 @@
 
 #include "doomtype.h"
 #include "r_data.h"
+#include "r_main.h"
+#include "r_segs.h"
 
 #include "ipu_interface.h"
 #include "ipu_utils.h"
@@ -22,9 +24,12 @@ const int* tileLocalTextureOffsets;
 
 //  -------- Components for the tiles that serve textures ------------ //
 
+static pixel_t colourMap_TT[COLOURMAPSIZE];
+static pixel_t* scalelight_TT[LIGHTLEVELS][MAXLIGHTSCALE];
+
 extern "C" 
-__SUPER__ 
-void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize) {
+__SUPER__
+void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize, const pixel_t* colourMapBuf) {
     // progBuf starts with a directory of 3 program offsets
     unsigned* progHead = progBuf + 3; 
     unsigned* progEnd = &progBuf[progBufSize];
@@ -68,6 +73,23 @@ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize) {
         progHead = assembler.assemble(progHead, progEnd - progHead);
         progHead++;
     }
+
+    // Next, precompute light scales from the colourmap. This normally happens in R_ExecuteSetViewSize
+    memcpy(colourMap_TT, colourMapBuf, sizeof(colourMap_TT));
+    for (int i = 0; i < LIGHTLEVELS; i++) {
+        int startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
+        for (int j = 0; j < MAXLIGHTSCALE; j++) {
+          int level = startmap - j / DISTMAP;
+
+          if (level < 0)
+            level = 0;
+
+          if (level >= NUMCOLORMAPS)
+            level = NUMCOLORMAPS - 1;
+
+          scalelight_TT[i][j] = colourMap_TT + level * 256;
+        }
+    }
 }
 
 extern "C" 
@@ -78,7 +100,7 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
     auto sendProgram = &progBuf[progBuf[1]];
     auto aggrProgram = &progBuf[progBuf[2]];
 
-    int noise = 0;
+    // int noise = 0;
 
     while (1) {
 
@@ -87,23 +109,31 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
       // Unpack received data
       unsigned textureNum = ((IPUColRequest_t*) textureBuf)->texture;
       unsigned columnOffset = ((IPUColRequest_t*) textureBuf)->columnOffset;
+      unsigned lightNum = ((IPUColRequest_t*) textureBuf)->lightNum;
+      unsigned lightScale = ((IPUColRequest_t*) textureBuf)->lightScale;
       
-      byte* col = textureBuf;
+      // TMP: need seperate send buffer for lightscaled output to be sent from, currently use start of textureBuf
+      pixel_t* sendBuf = &textureBuf[IPUTEXTURETILEBUFSIZE - (IPUTEXTURECACHELINESIZE * sizeof(int))];
+
       if (textureNum != 0xffffffff &&
           textureNum >= tileLocalTextureRange[0] && 
           textureNum < tileLocalTextureRange[1]) {
-        col = &textureBuf[tileLocalTextureOffsets[textureNum] + columnOffset];
+        byte* src = &textureBuf[tileLocalTextureOffsets[textureNum] + columnOffset];
+        pixel_t* dc_colourmap = scalelight_TT[lightNum][lightScale];
+        for (int i = 0; i < IPUTEXTURECACHELINESIZE * sizeof(int); ++i) {
+            sendBuf[i] = dc_colourmap[src[i]];
+        }
       }
       
 
-    //   noise = (noise + 1) % 4;
+    //   noise = (noise + 1) % 6;
     //   unsigned renderStripe = (tileID - IPUFIRSTTEXTURETILE) / IPUTEXTURETILESPERRENDERTILE;
     //   {
     //     // unsigned colour = (renderStripe * 9) % 256;
-    //     colour = colour | (colour << 8) | (colour << 16) | (colour << 24);
+    //     // colour = colour | (colour << 8) | (colour << 16) | (colour << 24);
     //     for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
     //         if (noise == 0) {
-    //             ((unsigned*)col)[i] += 0x01010101;
+    //             ((unsigned*)col)[i] += 0x01010101u;
     //         }
     //         // ((unsigned*)col)[i] = colour;
     //     }
@@ -122,7 +152,8 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
     //     col = textureBuf;
     //   }
 
-      XCOM_Execute(sendProgram, col, NULL);
+
+      XCOM_Execute(sendProgram, sendBuf, NULL);
       // XCOM_Execute(sendProgram, col, NULL);
 
       XCOM_Execute(aggrProgram, NULL, commsBuf);
@@ -220,6 +251,8 @@ byte* IPU_R_RequestColumn(int texture, int column) {
     IPUColRequest_t *request = (IPUColRequest_t*) tileLocalTextureBuf;
     request->texture = texture;
     request->columnOffset = (column & texturewidthmask[texture]) * (textureheight[texture] >> FRACBITS);
+    request->lightNum = lightnum;
+    request->lightScale = walllightindex;
     *((unsigned*) &request[1]) = 0; // The Done Flag
     
     XCOM_Execute(
@@ -312,11 +345,27 @@ void IPU_R_RenderTileDone() {
 
 extern "C" 
 __SUPER__ 
+void IPU_R_InitSansTile(unsigned* progBuf, int progBufSize) {
+    // progBuf starts with a directory of 3 program offsets
+    unsigned* progHead = progBuf + 1; 
+    unsigned* progEnd = &progBuf[progBufSize];
+
+    // First program receives the `done` flag
+    progBuf[0] = progHead - progBuf;
+    XCOMAssembler assembler;
+    int aggrTile = XCOM_logical2physical(IPUFIRSTRENDERTILE);
+    int sendCycle = XCOM_WORSTSENDDELAY;
+    int muxCycle = sendCycle + XCOM_TimeToMux(aggrTile, __builtin_ipu_get_tile_id());
+    assembler.addRecv(0, 1, aggrTile, muxCycle);
+    progHead = assembler.assemble(progHead, progEnd - progHead);
+    progHead++;
+}
+
+extern "C" 
+__SUPER__ 
 void IPU_R_Sans(unsigned* progBuf, unsigned* commsBuf) {
     // Start of buffer is a directory of programs
-    auto recvProgram = &progBuf[progBuf[0]];
-    auto sendProgram = &progBuf[progBuf[1]];
-    auto aggrProgram = &progBuf[progBuf[2]];
+    auto aggrProgram = &progBuf[progBuf[0]];
 
     while (1) {
       asm volatile(R"(
