@@ -802,7 +802,7 @@ void R_RenderPlayerView(player_t *player) {
   // Check for new console commands.
   // NetUpdate();  // TODO
 
-  // R_DrawPlanes();  // TODO
+  R_DrawPlanes();
 
   // Check for new console commands.
   // NetUpdate();  // TODO

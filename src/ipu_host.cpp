@@ -149,7 +149,7 @@ void IpuDoom::buildIpuGraph() {
   poplar::program::Sequence G_DoLoadLevel_prog({
       poplar::program::Copy(miscValuesStream, m_miscValuesBuf),
       poplar::program::Execute(G_DoLoadLevel_CS),
-      poplar::program::Repeat(11, poplar::program::Sequence({ // <- number of P_SetupLevel_CS steps
+      poplar::program::Repeat(12, poplar::program::Sequence({ // <- number of P_SetupLevel_CS steps
         poplar::program::Execute(P_SetupLevel_CS),
         poplar::program::Copy(m_lumpNum[0], lumpNumStream), // Only listen to first tile's requests
         poplar::program::Sync(poplar::SyncType::GLOBAL), // lumpnum must arrive before lump is loaded
@@ -170,10 +170,10 @@ void IpuDoom::buildIpuGraph() {
     
   poplar::Tensor textureOffsets = m_ipuGraph.addVariable(poplar::INT, {IPUMAXNUMTEXTURES}, "textureOffsets");
   poplar::Tensor textureRanges = m_ipuGraph.addVariable(poplar::INT, {IPUTEXTURETILESPERRENDERTILE + 1}, "textureRanges");
-  poplar::Tensor colourMap = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {COLOURMAPSIZE}, "colourMap");
+  poplar::Tensor colourMap = m_ipuGraph.addVariable(poplar::UNSIGNED_CHAR, {COLOURMAPSIZE + sizeof(int)}, "colourMap");
   auto textureOffsetStream = m_ipuGraph.addHostToDeviceFIFO("textureOffsets-stream", poplar::INT, IPUMAXNUMTEXTURES);
   auto textureRangeStream = m_ipuGraph.addHostToDeviceFIFO("textureRanges-stream", poplar::INT, IPUTEXTURETILESPERRENDERTILE + 1);
-  auto colourMapStream = m_ipuGraph.addHostToDeviceFIFO("colourMap-stream", poplar::UNSIGNED_CHAR, COLOURMAPSIZE);
+  auto colourMapStream = m_ipuGraph.addHostToDeviceFIFO("colourMap-stream", poplar::UNSIGNED_CHAR, COLOURMAPSIZE + sizeof(int));
   m_ipuGraph.setTileMapping(textureOffsets, IPUFIRSTTEXTURETILE);
   m_ipuGraph.setTileMapping(textureRanges, IPUFIRSTRENDERTILE);
   m_ipuGraph.setTileMapping(colourMap, IPUFIRSTTEXTURETILE);
@@ -405,10 +405,18 @@ void IpuDoom::buildIpuGraph() {
   // I_VideoBuffer is initialised quite late
 
   m_ipuEngine->connectStreamToCallback("lumpBuf-stream", [this](void* p) {
-    IPU_LoadLumpNum(m_lumpNum_h, (byte*) p, IPUMAXLUMPBYTES);
+    if (m_lumpNum_h >= 0) {
+      IPU_LoadLumpNum(m_lumpNum_h, (byte*) p, IPUMAXLUMPBYTES);
+      return;
+    }
+    switch (m_lumpNum_h) {
+      case IPULUMPBUFFLAG_FLATPICS:
+        IPU_LoadSectorPicNums((byte*) p, IPUMAXLUMPBYTES);
+        break;
+    }
   });
   m_ipuEngine->connectStreamToCallback("colourMap-stream", [this](void* p) {
-    int size = IPU_LoadLumpName("COLORMAP", (byte*) p, COLOURMAPSIZE);
+    int size = IPU_LoadLumpName("COLORMAP", (byte*) p, COLOURMAPSIZE + sizeof(int));
     assert(size == 8704); // The size of the colour mapping we expect in Doom 1
   });
   m_ipuEngine->connectHostFunction(

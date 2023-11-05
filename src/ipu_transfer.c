@@ -139,9 +139,9 @@ void IPU_Setup_PackMarkNums(void* buf) {
 int IPU_LoadLumpNum(int lumpnum, byte* buf, int maxSize) {
     const int size = W_LumpLength(lumpnum);
     const int required = size + sizeof(int); // Space for size field
-    if (required > IPUMAXLUMPBYTES) {
+    if (required > maxSize) {
         I_Error("\nERROR: Need %d bytes to transfer lump %d to IPU, only have %d\n",
-        required, lumpnum, IPUMAXLUMPBYTES);
+        required, lumpnum, maxSize);
     }
     ((int*)buf)[0] = size;
     byte* data = W_CacheLumpNum(lumpnum, PU_STATIC);
@@ -155,3 +155,15 @@ int IPU_LoadLumpName(const char* name, byte* buf, int maxSize) {
   return IPU_LoadLumpNum(W_GetNumForName(name), buf, maxSize);
 }
 
+
+void IPU_LoadSectorPicNums(byte* buf, int maxSize) {
+    int required = numsectors * 2 * sizeof(short);
+    if (required > maxSize)
+        I_Error("\nERROR: Need %d bytes to transfer SectorPicNums to IPU, only have %d\n", required, maxSize);
+        
+    short* data = (short*) buf;
+    for (int i = 0; i < numsectors; ++i) {
+      data[2 * i] = sectors[i].floorpic;
+      data[2 * i + 1] = sectors[i].ceilingpic;
+    }
+}

@@ -468,23 +468,23 @@ void R_Subsector(int num) {
   count = sub->numlines;
   line = &segs[sub->firstline];
 
-  /* LATER
   if (frontsector->floorheight < viewz) {
     floorplane = R_FindPlane(frontsector->floorheight, frontsector->floorpic,
                              frontsector->lightlevel);
   } else
     floorplane = NULL;
 
-  if (frontsector->ceilingheight > viewz ||
-      frontsector->ceilingpic == skyflatnum) {
+  if (frontsector->ceilingheight > viewz
+      // || frontsector->ceilingpic == skyflatnum // LATER
+      ) {
     ceilingplane =
         R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic,
                     frontsector->lightlevel);
   } else
     ceilingplane = NULL;
 
-  R_AddSprites(frontsector);
-  */
+  // R_AddSprites(frontsector); // LATER
+  
 
   while (count--) {
     R_AddLine(line);

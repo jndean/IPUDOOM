@@ -36,6 +36,8 @@ extern "C" {
 
 #define COLOURMAPSIZE (8704)
 
+#define IPULUMPBUFFLAG_FLATPICS (-100)
+
 
 typedef struct {
     int gameepisode;

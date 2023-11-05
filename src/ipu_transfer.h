@@ -22,6 +22,7 @@ void IPU_R_ExecuteSetViewSize_PackMiscValues(void* buf);
 void IPU_R_Init_PackMiscValues(void* buf);
 int IPU_LoadLumpNum(int lumpnum, byte* buf, int maxSize);
 int IPU_LoadLumpName(const char* lumpname, byte* buf, int maxSize);
+void IPU_LoadSectorPicNums(byte* buf, int maxSize);
 void IPU_Setup_PackMarkNums(void* buf);
 void IPU_NotifyLineMapped(line_t *line);
 void IPU_CheckAlreadyMappedLines(void);

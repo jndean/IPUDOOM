@@ -214,8 +214,8 @@ void P_LoadSectors(const unsigned char *buf) {
   for (i = 0; i < numsectors; i++, ss++, ms++) {
     ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
     ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
-    // ss->floorpic = R_FlatNumForName(ms->floorpic); // LATER
-    // ss->ceilingpic = R_FlatNumForName(ms->ceilingpic); // LATER
+    // ss->floorpic = R_FlatNumForName(ms->floorpic); // JOSEF: Now don in P_LoadSectorPics
+    // ss->ceilingpic = R_FlatNumForName(ms->ceilingpic); // JOSEF: Now don in P_LoadSectorPics
     ss->lightlevel = SHORT(ms->lightlevel);
     ss->special = SHORT(ms->special);
     ss->tag = SHORT(ms->tag);
@@ -223,6 +223,18 @@ void P_LoadSectors(const unsigned char *buf) {
   }
 }
 
+// Added by JOSEF
+// P_LoadSectorPics
+//
+__SUPER__ 
+void P_LoadSectorPics(const unsigned char *buf) {
+  const short* data = (const short*) buf;
+  sector_t *ss = sectors;
+  for (int i = 0; i < numsectors; i++, ss++) {
+    ss->floorpic = data[2 * i];
+    ss->ceilingpic = data[2 * i + 1];
+  }
+}
 
 //
 // P_LoadNodes

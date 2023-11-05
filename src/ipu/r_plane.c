@@ -39,6 +39,9 @@
 // #include "w_wad.h" // LATER
 // #include "z_zone.h" // LATER
 
+#include "print.h"
+
+
 planefunction_t floorfunc;
 planefunction_t ceilingfunc;
 
@@ -173,9 +176,8 @@ void R_ClearPlanes(void) {
     ceilingclip[i] = -1;
   }
 
-  // LATER
-  // lastvisplane = visplanes;
-  // lastopening = openings;
+  lastvisplane = visplanes;
+  lastopening = openings;
 
   // texture calculation
   memset(cachedheight, 0, sizeof(cachedheight));
@@ -188,17 +190,18 @@ void R_ClearPlanes(void) {
   baseyscale = -FixedDiv(finesine[angle], centerxfrac);
 }
 
-/*
 //
 // R_FindPlane
 //
 visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
   visplane_t *check;
 
+  /* LATER
   if (picnum == skyflatnum) {
     height = 0; // all skys map together
     lightlevel = 0;
   }
+  */
 
   for (check = visplanes; check < lastvisplane; check++) {
     if (height == check->height && picnum == check->picnum &&
@@ -211,7 +214,8 @@ visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
     return check;
 
   if (lastvisplane - visplanes == MAXVISPLANES)
-    I_Error("R_FindPlane: no more visplanes");
+    printf("R_FindPlane: no more visplanes\n");
+    // I_Error("R_FindPlane: no more visplanes");
 
   lastvisplane++;
 
@@ -226,6 +230,7 @@ visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
   return check;
 }
 
+/*
 //
 // R_CheckPlane
 //
@@ -300,11 +305,13 @@ void R_MakeSpans(int x, int t1, int b1, int t2, int b2) {
     b2--;
   }
 }
+*/
 
 //
 // R_DrawPlanes
 // At the end of each frame.
 //
+__SUPER__ 
 void R_DrawPlanes(void) {
   visplane_t *pl;
   int light;
@@ -314,14 +321,18 @@ void R_DrawPlanes(void) {
   int lumpnum;
 
   if (ds_p - drawsegs > MAXDRAWSEGS)
-    I_Error("R_DrawPlanes: drawsegs overflow (%i)", ds_p - drawsegs);
+    printf("R_DrawPlanes: drawsegs overflow (%u)\n", ds_p - drawsegs);
+    // I_Error("R_DrawPlanes: drawsegs overflow (%i)", ds_p - drawsegs);
 
   if (lastvisplane - visplanes > MAXVISPLANES)
-    I_Error("R_DrawPlanes: visplane overflow (%i)", lastvisplane - visplanes);
+    printf("R_DrawPlanes: visplane overflow (%u)\n", lastvisplane - visplanes);
+    // I_Error("R_DrawPlanes: visplane overflow (%i)", lastvisplane - visplanes);
 
   if (lastopening - openings > MAXOPENINGS)
-    I_Error("R_DrawPlanes: opening overflow (%i)", lastopening - openings);
+    printf("R_DrawPlanes: opening overflow (%u)\n", lastopening - openings);
+    // I_Error("R_DrawPlanes: opening overflow (%i)", lastopening - openings);
 
+  /*
   for (pl = visplanes; pl < lastvisplane; pl++) {
     if (pl->minx > pl->maxx)
       continue;
@@ -377,5 +388,5 @@ void R_DrawPlanes(void) {
 
     W_ReleaseLumpNum(lumpnum);
   }
+  */
 }
-*/
