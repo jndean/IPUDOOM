@@ -1,8 +1,7 @@
 
-
 ![IPUDOOM](README_imgs/IPUDOOM.png)
 
-A WIP to put Doom 1993 on the IPU.
+A WIP to put Doom 1993 on the Graphcore Mk2 IPU (an AI accelerator chip).
 
 ```bash
 # Install dependencies
@@ -27,17 +26,22 @@ Activity Log:
 - [x] IPU interacts with host to load and unpack all level geometry from disk whenever a level is loaded
 
 - [x] Implement all methods used by the automap (vector rendering, sprite rendering, AM event responder). Automap is now disabled on CPU, renders entirely on IPU.
-![automap](README_imgs/Automap.gif)
+
+![Automap](README_imgs/Automap.gif)
 
 - [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU. CPU still renders everything else (floors, ceilings, objects, enemies).
-![gameplay with untextured walls](README_imgs/flats.gif)
+
+![Gameplay with untextured walls](README_imgs/flats.gif)
 
 - [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices.
-![gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)
 
+![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)
+
+- [x] Implement lighting model (add shadows to walls): texture tiles translate the colours during texture column fetch requests to save memory on the render tiles.
+
+![Side-by-side of room with and without shadows](README_imgs/WallsLighting.PNG)
 
 Immediate next steps:
-- [x] Get texture tiles to do light level mapping (add shadows to walls)
 - [ ] Implement system to notify IPU of map state changes, so that doors open and close properly.
 - [ ] Port visplane system to get IPU rendering floors and ceilings
 
