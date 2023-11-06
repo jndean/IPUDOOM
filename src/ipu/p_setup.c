@@ -319,7 +319,6 @@ void P_LoadThings(const unsigned char *buf) {
 
     P_SpawnMapThing(&spawnthing); // TODO
   }
-
 }
 
 //

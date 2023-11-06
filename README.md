@@ -33,7 +33,7 @@ Activity Log:
 
 ![Gameplay with untextured walls](README_imgs/flats.gif)
 
-- [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices.
+- [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now IPU can texture walls.
 
 ![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)
 

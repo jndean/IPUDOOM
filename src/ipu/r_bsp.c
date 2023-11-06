@@ -310,7 +310,6 @@ void R_AddLine(seg_t *line) {
       backsector->floorheight != frontsector->floorheight)
     goto clippass;
 
-  /* LATER
   // Reject empty lines used for triggers
   //  and special events.
   // Identical floor and ceiling on both sides,
@@ -322,7 +321,6 @@ void R_AddLine(seg_t *line) {
       curline->sidedef->midtexture == 0) {
     return;
   }
-  */
 
 clippass:
   R_ClipPassWallSegment(x1, x2 - 1);
