@@ -26,6 +26,7 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	r_main.gp \
 	r_plane.gp \
 	r_segs.gp \
+	r_sky.gp \
 	tables.gp \
 	v_video.gp \
 	w_wad.gp \

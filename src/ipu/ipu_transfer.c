@@ -21,6 +21,7 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   gamelumpnum = pack->lumpnum;
   gamemode = pack->gamemode;
   deathmatch = pack->deathmatch;
+  skyflatnum = pack->skyflatnum;
   for (int i = 0; i < MAXPLAYERS; ++i) {
     playeringame[i] = pack->playeringame[i];
   }

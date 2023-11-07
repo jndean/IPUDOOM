@@ -80,11 +80,6 @@ typedef struct {
 cliprange_t *newend;
 cliprange_t solidsegs[MAXSEGS];
 
-// JOSEF: !!!!!!!!!!!!!!!!!!!!!
-// JOSEF: TMP to see if BSP is working
-// JOSEF: !!!!!!!!!!!!!!!!!!!!!
-int bspnum;
-
 
 //
 // R_ClipSolidWallSegment
@@ -472,9 +467,8 @@ void R_Subsector(int num) {
   } else
     floorplane = NULL;
 
-  if (frontsector->ceilingheight > viewz
-      // || frontsector->ceilingpic == skyflatnum // LATER
-      ) {
+  if (frontsector->ceilingheight > viewz || 
+      frontsector->ceilingpic == skyflatnum) {
     ceilingplane =
         R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic,
                     frontsector->lightlevel);
@@ -542,8 +536,7 @@ void R_RenderBSPNodeNonRecursive() {
   int sidestack[maxRecursion];
 
   int depth = 0;
-  // int bspnum = numnodes - 1; // Temporarily make this global for visualising
-  bspnum = numnodes - 1;
+  int bspnum = numnodes - 1; // Temporarily make this global for visualising
 
   while (1) {
     // Loop that descends tree, taking the front side of each node until it

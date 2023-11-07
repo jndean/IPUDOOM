@@ -468,28 +468,28 @@ void R_StoreWallRange(int start, int stop) {
     worldlow = backsector->floorheight - viewz;
 
     // hack to allow height changes in outdoor areas
-    // if (frontsector->ceilingpic == skyflatnum &&  // LATER
-    //     backsector->ceilingpic == skyflatnum) {   // LATER
-    //   worldtop = worldhigh;
-    // }
+    if (frontsector->ceilingpic == skyflatnum &&
+        backsector->ceilingpic == skyflatnum) {
+      worldtop = worldhigh;
+    }
 
-    // if (worldlow != worldbottom ||
-    //     backsector->floorpic != frontsector->floorpic ||      // LATER
-    //     backsector->lightlevel != frontsector->lightlevel) {
-    //   markfloor = true;
-    // } else {
-    //   // same plane on both sides
-    //   markfloor = false;
-    // }
+    if (worldlow != worldbottom ||
+        backsector->floorpic != frontsector->floorpic ||
+        backsector->lightlevel != frontsector->lightlevel) {
+      markfloor = true;
+    } else {
+      // same plane on both sides
+      markfloor = false;
+    }
 
-    // if (worldhigh != worldtop ||
-    //     backsector->ceilingpic != frontsector->ceilingpic ||  // LATER
-    //     backsector->lightlevel != frontsector->lightlevel) {
-    //   markceiling = true;
-    // } else {
-    //   // same plane on both sides
-    //   markceiling = false;
-    // }
+    if (worldhigh != worldtop ||
+        backsector->ceilingpic != frontsector->ceilingpic ||  // LATER
+        backsector->lightlevel != frontsector->lightlevel) {
+      markceiling = true;
+    } else {
+      // same plane on both sides
+      markceiling = false;
+    }
 
     if (backsector->ceilingheight <= frontsector->floorheight || 
         backsector->floorheight >= frontsector->ceilingheight) {
@@ -588,11 +588,11 @@ void R_StoreWallRange(int start, int stop) {
     markfloor = false;
   }
 
-  // if (frontsector->ceilingheight <= viewz &&
-  //     frontsector->ceilingpic != skyflatnum) { // LATER
-  //   // below view plane
-  //   markceiling = false;
-  // }
+  if (frontsector->ceilingheight <= viewz &&
+      frontsector->ceilingpic != skyflatnum) {
+    // below view plane
+    markceiling = false;
+  }
 
   // calculate incremental stepping values for texture edges
   worldtop >>= 4;

@@ -124,37 +124,8 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
             sendBuf[i] = dc_colourmap[src[i]];
         }
       }
-      
-
-    //   noise = (noise + 1) % 6;
-    //   unsigned renderStripe = (tileID - IPUFIRSTTEXTURETILE) / IPUTEXTURETILESPERRENDERTILE;
-    //   {
-    //     // unsigned colour = (renderStripe * 9) % 256;
-    //     // colour = colour | (colour << 8) | (colour << 16) | (colour << 24);
-    //     for (int i = 0; i < IPUTEXTURECACHELINESIZE; i++) {
-    //         if (noise == 0) {
-    //             ((unsigned*)col)[i] += 0x01010101u;
-    //         }
-    //         // ((unsigned*)col)[i] = colour;
-    //     }
-    //   }
-      
-    //   {
-    //     // Render Tile Stripes
-    //     unsigned colour = renderStripe * 16;
-    //     for (int i = 0; i < IPUTEXTURECACHELINESIZE * sizeof(int); i++) {
-    //         if (renderStripe % 2) {
-    //             textureBuf[i] = (col[i] % 4); //(col[i] % 30) + 20;
-    //         } else {
-    //             textureBuf[i] = (col[i] % 30) + 80; //(col[i] % 4);
-    //         }
-    //     }
-    //     col = textureBuf;
-    //   }
-
 
       XCOM_Execute(sendProgram, sendBuf, NULL);
-      // XCOM_Execute(sendProgram, col, NULL);
 
       XCOM_Execute(aggrProgram, NULL, commsBuf);
       if (commsBuf[0]) 

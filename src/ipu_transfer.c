@@ -29,6 +29,7 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   pack.gamemap = gamemap; 
   pack.gamemode = gamemode;
   pack.deathmatch = deathmatch;
+  pack.skyflatnum = skyflatnum;
   for (int i = 0; i < MAXPLAYERS; ++i)
     pack.playeringame[i] = playeringame[i];
   

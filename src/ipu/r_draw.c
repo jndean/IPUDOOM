@@ -95,11 +95,6 @@ byte *dc_source;
 // just for profiling
 int dccount;
 
-
-// !!!!!! JOSEF TMP FOR VISUALISATION  !!!!! //
-extern int bspnum;
-extern int lightnum;
-
 //
 // A column is a vertical slice/span from a wall texture that,
 //  given the DOOM style restrictions on the view orientation,

@@ -196,11 +196,10 @@ void R_ClearPlanes(void) {
 visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
   visplane_t *check;
 
-  // LATER
-  // if (picnum == skyflatnum) {
-  //   height = 0; // all skys map together
-  //   lightlevel = 0;
-  // }
+  if (picnum == skyflatnum) {
+    height = 0; // all skys map together
+    lightlevel = 0;
+  }
 
   for (check = visplanes; check < lastvisplane; check++) {
     if (height == check->height && picnum == check->picnum &&

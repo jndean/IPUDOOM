@@ -42,6 +42,7 @@
 #include "tables.h"
 
 #include "ipu_host.h"
+#include "doomstat.h" // TMP< REMOVEME
 
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
@@ -742,7 +743,7 @@ void R_RenderPlayerView(player_t *player) {
 
   // The head node is the last node output.
   R_RenderBSPNode(numnodes - 1);
-  // IPU_R_RenderPlayerView();
+  IPU_R_RenderPlayerView();
 
   // Check for new console commands.
   NetUpdate();

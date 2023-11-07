@@ -79,9 +79,9 @@ void G_DoLoadLevel(void) {
   //  we look for an actual index, instead of simply
   //  setting one.
 
-    /* LATER
-  skyflatnum = R_FlatNumForName((SKYFLATNAME));
+  // skyflatnum = R_FlatNumForName((SKYFLATNAME)); // JOSEF: Done in G_LoadLevel_UnpackMiscValues
 
+    /* LATER
   // The "Sky never changes in Doom II" bug was fixed in
   // the id Anthology version of doom2.exe for Final Doom.
   if ((gamemode == commercial) &&
