@@ -36,5 +36,4 @@ __SUPER__ fixed_t FixedMul	(fixed_t a, fixed_t b);
 __SUPER__ fixed_t FixedDiv	(fixed_t a, fixed_t b);
 
 
-
 #endif

@@ -13,7 +13,6 @@
 
 extern "C" {
   __SUPER__ void R_InitTextures(int* maptex);
-  __SUPER__ void R_InitTextures_TT(int* maptex);
   __SUPER__ void R_RenderPlayerView(player_t *player);
   __SUPER__ void R_ExecuteSetViewSize(void);
 };

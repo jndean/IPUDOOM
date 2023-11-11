@@ -39,7 +39,9 @@
 // #include "w_wad.h" // LATER
 // #include "z_zone.h" // LATER
 
+#include "ipu_interface.h"
 #include "print.h"
+
 
 
 planefunction_t floorfunc;
@@ -91,6 +93,10 @@ fixed_t cachedheight[SCREENHEIGHT];
 fixed_t cacheddistance[SCREENHEIGHT];
 fixed_t cachedxstep[SCREENHEIGHT];
 fixed_t cachedystep[SCREENHEIGHT];
+
+__SUPER__ 
+int abs(int x); // JOSEF
+
 
 //
 // R_InitPlanes
@@ -193,6 +199,7 @@ void R_ClearPlanes(void) {
 //
 // R_FindPlane
 //
+__SUPER__
 visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
   visplane_t *check;
 
@@ -228,10 +235,10 @@ visplane_t *R_FindPlane(fixed_t height, int picnum, int lightlevel) {
   return check;
 }
 
-/*
 //
 // R_CheckPlane
 //
+__SUPER__
 visplane_t *R_CheckPlane(visplane_t *pl, int start, int stop) {
   int intrl;
   int intrh;
@@ -281,6 +288,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, int start, int stop) {
   return pl;
 }
 
+/*
 //
 // R_MakeSpans
 //
@@ -318,6 +326,7 @@ void R_DrawPlanes(void) {
   int angle;
   int lumpnum;
 
+  // if (tileID == 0) asm("trap 0");
   if (ds_p - drawsegs > MAXDRAWSEGS)
     printf("R_DrawPlanes: drawsegs overflow (%u)\n", ds_p - drawsegs);
     // I_Error("R_DrawPlanes: drawsegs overflow (%i)", ds_p - drawsegs);
@@ -330,13 +339,15 @@ void R_DrawPlanes(void) {
     printf("R_DrawPlanes: opening overflow (%u)\n", lastopening - openings);
     // I_Error("R_DrawPlanes: opening overflow (%i)", lastopening - openings);
 
-  /*
+  // printf("num visplanes = %d\n", lastvisplane - visplanes);
+
   for (pl = visplanes; pl < lastvisplane; pl++) {
     if (pl->minx > pl->maxx)
       continue;
 
     // sky flat
     if (pl->picnum == skyflatnum) {
+      /* LATER
       dc_iscale = pspriteiscale >> detailshift;
 
       // Sky is allways drawn full bright,
@@ -356,12 +367,14 @@ void R_DrawPlanes(void) {
           colfunc();
         }
       }
+      */
       continue;
     }
 
+    // LATER
     // regular flat
-    lumpnum = firstflat + flattranslation[pl->picnum];
-    ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
+    // lumpnum = firstflat + flattranslation[pl->picnum];
+    // ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
 
     planeheight = abs(pl->height - viewz);
     light = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;
@@ -372,7 +385,7 @@ void R_DrawPlanes(void) {
     if (light < 0)
       light = 0;
 
-    planezlight = zlight[light];
+    // // planezlight = zlight[light]; // LATER
 
     pl->top[pl->maxx + 1] = 0xff;
     pl->top[pl->minx - 1] = 0xff;
@@ -380,11 +393,18 @@ void R_DrawPlanes(void) {
     stop = pl->maxx + 1;
 
     for (x = pl->minx; x <= stop; x++) {
-      R_MakeSpans(x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x],
-                  pl->bottom[x]);
+      // LATER
+      // R_MakeSpans(x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x],
+      //             pl->bottom[x]);
+
+      // JOSEF: TMP solid colour visualisation
+      for (int y = pl->top[x]; y <= pl->bottom[x]; y++) {
+        pixel_t* dest = (I_VideoBuffer + (y + viewwindowy) * IPUCOLSPERRENDERTILE) + (viewwindowx + x - tileLeftClip);
+        *dest = 189;
+      }
     }
 
-    W_ReleaseLumpNum(lumpnum);
+    // W_ReleaseLumpNum(lumpnum); // LATER
+    
   }
-  */
 }

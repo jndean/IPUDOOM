@@ -61,6 +61,9 @@ struct DivWorker : public poplar::Vertex {
     }
 };
 
+
+extern "C"
+__SUPER__
 fixed_t FixedDiv(fixed_t a, fixed_t b)
 {
     if ((abs(a) >> 14) >= abs(b)) {

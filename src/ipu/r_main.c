@@ -127,7 +127,8 @@ int tileID;
 int tileLeftClip;
 int tileRightClip;
 
-int abs(int);
+// __SUPER__ 
+int abs(int x); 
 
 //
 // R_AddPointToBox

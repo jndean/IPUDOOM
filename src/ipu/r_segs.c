@@ -96,8 +96,9 @@ unsigned walllightindex; // JOSEF
 
 short *maskedtexturecol;
 
-__SUPER__ 
-int abs(int); // JOSEF
+// __SUPER__ 
+int abs(int x); // JOSEF
+
 
 /*
 //
@@ -213,34 +214,32 @@ void R_RenderSegLoop(void) {
     if (yl < ceilingclip[rw_x] + 1)
       yl = ceilingclip[rw_x] + 1;
 
-    // LATER
-    // if (markceiling) {
-    //   top = ceilingclip[rw_x] + 1;
-    //   bottom = yl - 1;
-    //   if (bottom >= floorclip[rw_x])
-    //     bottom = floorclip[rw_x] - 1;
-    //   if (top <= bottom) {
-    //     ceilingplane->top[rw_x] = top;
-    //     ceilingplane->bottom[rw_x] = bottom;
-    //   }
-    // }
+    if (markceiling) {
+      top = ceilingclip[rw_x] + 1;
+      bottom = yl - 1;
+      if (bottom >= floorclip[rw_x])
+        bottom = floorclip[rw_x] - 1;
+      if (top <= bottom) {
+        ceilingplane->top[rw_x] = top;
+        ceilingplane->bottom[rw_x] = bottom;
+      }
+    }
 
     yh = bottomfrac >> HEIGHTBITS;
 
     if (yh >= floorclip[rw_x])
       yh = floorclip[rw_x] - 1;
 
-    // LATER
-    // if (markfloor) {
-    //   top = yh + 1;
-    //   bottom = floorclip[rw_x] - 1;
-    //   if (top <= ceilingclip[rw_x])
-    //     top = ceilingclip[rw_x] + 1;
-    //   if (top <= bottom) {
-    //     floorplane->top[rw_x] = top;
-    //     floorplane->bottom[rw_x] = bottom;
-    //   }
-    // }
+    if (markfloor) {
+      top = yh + 1;
+      bottom = floorclip[rw_x] - 1;
+      if (top <= ceilingclip[rw_x])
+        top = ceilingclip[rw_x] + 1;
+      if (top <= bottom) {
+        floorplane->top[rw_x] = top;
+        floorplane->bottom[rw_x] = bottom;
+      }
+    }
 
     // texturecolumn and lighting are independent of wall tiers
     if (segtextured) {
@@ -254,11 +253,7 @@ void R_RenderSegLoop(void) {
       if (walllightindex >= MAXLIGHTSCALE) // JOSEF: walllightindex
         walllightindex = MAXLIGHTSCALE - 1; // JOSEF: walllightindex
 
-      // if (tileID == 0 && curline->v1->x == -30932992 && curline->v1->y == -31457280 && curline->v2->x ==-30932992 && curline->v2->y == -14155776)
-
       // dc_colormap = walllights[index]; // JOSEF: Texturetile handles this
-
-
       dc_x = rw_x;
       dc_iscale = 0xffffffffu / (unsigned)rw_scale;
     } else {
@@ -620,11 +615,11 @@ void R_StoreWallRange(int start, int stop) {
   }
 
   // render it
-  // if (markceiling)
-  //   ceilingplane = R_CheckPlane(ceilingplane, rw_x, rw_stopx - 1);  // LATER
+  if (markceiling)
+    ceilingplane = R_CheckPlane(ceilingplane, rw_x, rw_stopx - 1);  // LATER
 
-  // if (markfloor)
-  //   floorplane = R_CheckPlane(floorplane, rw_x, rw_stopx - 1);   // LATER
+  if (markfloor)
+    floorplane = R_CheckPlane(floorplane, rw_x, rw_stopx - 1);   // LATER
 
   R_RenderSegLoop();
 
