@@ -88,7 +88,7 @@ R_RenderPlayerView_Vertex : public poplar::SupervisorVertex {
     );
 
     // For visualisation of progress
-    // memset(I_VideoBuffer, 0, IPUCOLSPERRENDERTILE * SCREENHEIGHT);
+    memset(I_VideoBuffer, 0, IPUCOLSPERRENDERTILE * SCREENHEIGHT);
 
     R_RenderPlayerView(&players[displayplayer]);
     IPU_R_RenderTileDone();

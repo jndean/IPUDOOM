@@ -753,7 +753,7 @@ void R_RenderPlayerView(player_t *player) {
   // Check for new console commands.
   NetUpdate();
 
-  R_DrawMasked();
+  // R_DrawMasked();
 
   // Check for new console commands.
   NetUpdate();

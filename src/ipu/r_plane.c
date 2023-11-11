@@ -398,9 +398,11 @@ void R_DrawPlanes(void) {
       //             pl->bottom[x]);
 
       // JOSEF: TMP solid colour visualisation
+      // pixel_t colour = (140 + (pl - visplanes) * 2) % 256;
+      pixel_t colour = (pl->picnum * 17 + 209) % 256;
       for (int y = pl->top[x]; y <= pl->bottom[x]; y++) {
         pixel_t* dest = (I_VideoBuffer + (y + viewwindowy) * IPUCOLSPERRENDERTILE) + (viewwindowx + x - tileLeftClip);
-        *dest = 189;
+        *dest = colour;
       }
     }
 
