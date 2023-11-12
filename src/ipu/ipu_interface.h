@@ -46,6 +46,7 @@ typedef struct {
     GameMode_t gamemode;
     int deathmatch;
     int skyflatnum;
+    int skytexture;
     boolean playeringame[MAXPLAYERS];
 } G_LoadLevel_MiscValues_t;
 

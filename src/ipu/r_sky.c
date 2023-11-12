@@ -25,6 +25,8 @@
 #include "m_fixed.h"
 #include "r_sky.h"
 
+#include "ipu_utils.h"
+
 //
 // sky mapping
 //
@@ -36,6 +38,7 @@ int skytexturemid;
 // R_InitSkyMap
 // Called whenever the view size changes.
 //
+__SUPER__
 void R_InitSkyMap(void) {
   // skyflatnum = R_FlatNumForName ( SKYFLATNAME );
   skytexturemid = SCREENHEIGHT / 2 * FRACUNIT;

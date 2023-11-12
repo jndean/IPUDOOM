@@ -32,6 +32,7 @@
 #include "r_draw.h"
 #include "r_main.h"
 #include "r_plane.h"
+#include "r_segs.h"
 #include "r_sky.h"
 #include "r_state.h"
 #include "r_things.h"
@@ -40,6 +41,7 @@
 // #include "z_zone.h" // LATER
 
 #include "ipu_interface.h"
+#include "ipu_texturetiles.h"
 #include "print.h"
 
 
@@ -52,7 +54,7 @@ planefunction_t ceilingfunc;
 //
 
 // Here comes the obnoxious "visplane".
-#define MAXVISPLANES 128
+#define MAXVISPLANES 48 // JOSEF: 128
 visplane_t visplanes[MAXVISPLANES];
 visplane_t *lastvisplane;
 visplane_t *floorplane;
@@ -89,6 +91,7 @@ fixed_t distscale[SCREENWIDTH];
 fixed_t basexscale;
 fixed_t baseyscale;
 
+// JOSEF: Tbh, could forgo these caches and just recompute every time on IPU?
 fixed_t cachedheight[SCREENHEIGHT];
 fixed_t cacheddistance[SCREENHEIGHT];
 fixed_t cachedxstep[SCREENHEIGHT];
@@ -107,7 +110,6 @@ void R_InitPlanes(void) {
   // Doh!
 }
 
-/*
 //
 // R_MapPlane
 //
@@ -121,6 +123,7 @@ void R_InitPlanes(void) {
 //
 // BASIC PRIMITIVE
 //
+__SUPER__
 void R_MapPlane(int y, int x1, int x2) {
   angle_t angle;
   fixed_t distance;
@@ -128,7 +131,7 @@ void R_MapPlane(int y, int x1, int x2) {
   unsigned index;
 
   if (x2 < x1 || x1 < 0 || x2 >= viewwidth || y > viewheight) {
-    I_Error("R_MapPlane: %i, %i at %i", x1, x2, y);
+    printf("ERROR: R_MapPlane: %d, %d at %d", x1, x2, y);
   }
 
   if (planeheight != cachedheight[y]) {
@@ -147,6 +150,7 @@ void R_MapPlane(int y, int x1, int x2) {
   ds_xfrac = viewx + FixedMul(finecosine[angle], length);
   ds_yfrac = -viewy - FixedMul(finesine[angle], length);
 
+  /*  LATER
   if (fixedcolormap)
     ds_colormap = fixedcolormap;
   else {
@@ -157,15 +161,15 @@ void R_MapPlane(int y, int x1, int x2) {
 
     ds_colormap = planezlight[index];
   }
+  */
 
   ds_y = y;
   ds_x1 = x1;
   ds_x2 = x2;
 
   // high or low detail
-  spanfunc();
+  // spanfunc(); // LATER
 }
-*/
 
 //
 // R_ClearPlanes
@@ -288,10 +292,10 @@ visplane_t *R_CheckPlane(visplane_t *pl, int start, int stop) {
   return pl;
 }
 
-/*
 //
 // R_MakeSpans
 //
+__SUPER__
 void R_MakeSpans(int x, int t1, int b1, int t2, int b2) {
   while (t1 < t2 && t1 <= b1) {
     R_MapPlane(t1, spanstart[t1], x - 1);
@@ -311,7 +315,7 @@ void R_MakeSpans(int x, int t1, int b1, int t2, int b2) {
     b2--;
   }
 }
-*/
+
 
 //
 // R_DrawPlanes
@@ -326,7 +330,6 @@ void R_DrawPlanes(void) {
   int angle;
   int lumpnum;
 
-  // if (tileID == 0) asm("trap 0");
   if (ds_p - drawsegs > MAXDRAWSEGS)
     printf("R_DrawPlanes: drawsegs overflow (%u)\n", ds_p - drawsegs);
     // I_Error("R_DrawPlanes: drawsegs overflow (%i)", ds_p - drawsegs);
@@ -339,22 +342,21 @@ void R_DrawPlanes(void) {
     printf("R_DrawPlanes: opening overflow (%u)\n", lastopening - openings);
     // I_Error("R_DrawPlanes: opening overflow (%i)", lastopening - openings);
 
-  // printf("num visplanes = %d\n", lastvisplane - visplanes);
-
   for (pl = visplanes; pl < lastvisplane; pl++) {
     if (pl->minx > pl->maxx)
       continue;
 
     // sky flat
     if (pl->picnum == skyflatnum) {
-      /* LATER
       dc_iscale = pspriteiscale >> detailshift;
 
       // Sky is allways drawn full bright,
       //  i.e. colormaps[0] is used.
       // Because of this hack, sky is not affected
       //  by INVUL inverse mapping.
-      dc_colormap = colormaps;
+      // dc_colormap = colormaps; // JOSEF: IPU sends light params to texture tiles instead
+      walllightindex = MAXLIGHTSCALE - 1; // JOSEF
+      lightnum = LIGHTLEVELS - 1; // JOSEF
       dc_texturemid = skytexturemid;
       for (x = pl->minx; x <= pl->maxx; x++) {
         dc_yl = pl->top[x];
@@ -363,11 +365,11 @@ void R_DrawPlanes(void) {
         if (dc_yl <= dc_yh) {
           angle = (viewangle + xtoviewangle[x]) >> ANGLETOSKYSHIFT;
           dc_x = x;
-          dc_source = R_GetColumn(skytexture, angle);
-          colfunc();
+          // dc_source = R_GetColumn(skytexture, angle); // JOSEF
+          dc_source = IPU_R_RequestColumn(skytexture, angle); 
+          R_DrawColumn(); // JOSEF: colfunc();
         }
       }
-      */
       continue;
     }
 
@@ -393,9 +395,8 @@ void R_DrawPlanes(void) {
     stop = pl->maxx + 1;
 
     for (x = pl->minx; x <= stop; x++) {
-      // LATER
-      // R_MakeSpans(x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x],
-      //             pl->bottom[x]);
+      R_MakeSpans(x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x],
+                  pl->bottom[x]);
 
       // JOSEF: TMP solid colour visualisation
       // pixel_t colour = (140 + (pl - visplanes) * 2) % 256;

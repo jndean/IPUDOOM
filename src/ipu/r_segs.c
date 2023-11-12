@@ -269,7 +269,7 @@ void R_RenderSegLoop(void) {
       dc_texturemid = rw_midtexturemid;
       // dc_source = R_GetColumn(midtexture, texturecolumn); // JOSEF
       dc_source = IPU_R_RequestColumn(midtexture, texturecolumn); 
-      colfunc();
+      R_DrawColumn(); // JOSEF: colfunc();
       ceilingclip[rw_x] = viewheight;
       floorclip[rw_x] = -1;
     } else {
@@ -289,7 +289,7 @@ void R_RenderSegLoop(void) {
           // dc_source = R_GetColumn(toptexture, texturecolumn); // JOSEF
           dc_source = IPU_R_RequestColumn(toptexture, texturecolumn); 
           
-          colfunc();
+          R_DrawColumn(); // JOSEF: colfunc();
           ceilingclip[rw_x] = mid;
         } else
           ceilingclip[rw_x] = yl - 1;
@@ -314,7 +314,7 @@ void R_RenderSegLoop(void) {
           dc_texturemid = rw_bottomtexturemid;
           // dc_source = R_GetColumn(bottomtexture, texturecolumn); // JOSEF
           dc_source = IPU_R_RequestColumn(bottomtexture, texturecolumn); 
-          colfunc();
+          R_DrawColumn(); // JOSEF: colfunc();
           floorclip[rw_x] = mid;
         } else
           floorclip[rw_x] = yh + 1;

@@ -13,6 +13,7 @@
 
 extern "C" {
   __SUPER__ void R_InitTextures(int* maptex);
+  __SUPER__ void R_InitSkyMap(void);
   __SUPER__ void R_RenderPlayerView(player_t *player);
   __SUPER__ void R_ExecuteSetViewSize(void);
 };
@@ -50,6 +51,8 @@ struct R_Init_Vertex: public poplar::SupervisorVertex {
     break; case 1:
       R_InitTextures((int*)&lumpBuf[0]);
       IPU_R_InitColumnRequester(&progBuf[0], progBuf.size());
+
+      R_InitSkyMap();
 
       *lumpNum = 0;
       step = 0;

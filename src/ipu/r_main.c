@@ -109,13 +109,7 @@ angle_t xtoviewangle[SCREENWIDTH + 1];
 // bumped light from gun blasts
 int extralight;
 
-// void (*colfunc)(void); // JOSEF
-
-__SUPER__
-void colfunc() { // JOSEF: Don't call through pointer, explicit call
-  if (!detailshift) R_DrawColumn();
-  // else           R_DrawColumnLow(); // LATER
-}
+// void (*colfunc)(void); // JOSEF: No calling through pointer on IPU, replace with explicit calls
 void (*basecolfunc)(void);
 void (*fuzzcolfunc)(void);
 void (*transcolfunc)(void);
@@ -640,18 +634,17 @@ void R_ExecuteSetViewSize(void) {
 
   R_InitTextureMapping();
 
-
-  /* LATER
-
   // psprite scales
   pspritescale = FRACUNIT * viewwidth / SCREENWIDTH;
   pspriteiscale = FRACUNIT * SCREENWIDTH / viewwidth;
 
+  /* LATER
   // thing clipping
   for (i = 0; i < viewwidth; i++)
     screenheightarray[i] = viewheight;
 
   // planes
+  */
   for (i = 0; i < viewheight; i++) {
     dy = ((i - viewheight / 2) << FRACBITS) + FRACUNIT / 2;
     dy = abs(dy);
@@ -662,7 +655,6 @@ void R_ExecuteSetViewSize(void) {
     cosadj = abs(finecosine[xtoviewangle[i] >> ANGLETOFINESHIFT]);
     distscale[i] = FixedDiv(FRACUNIT, cosadj);
   }
-  */
 
   // JOSEF: Texture tiles handle light levels
   // Calculate the light levels to use

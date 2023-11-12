@@ -23,6 +23,8 @@
 #include "m_fixed.h"
 #include "r_defs.h"
 
+#include "ipu_utils.h"
+
 // Visplane related.
 extern short *lastopening;
 

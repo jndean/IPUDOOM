@@ -494,7 +494,7 @@ void R_InitTranslationTables(void) {
     }
   }
 }
-
+*/
 //
 // R_DrawSpan
 // With DOOM style restrictions on view orientation,
@@ -527,6 +527,8 @@ int dscount;
 //
 // Draws the actual span.
 void R_DrawSpan(void) {
+  
+  /* LATER
   unsigned int position, step;
   pixel_t *dest;
   int count;
@@ -565,8 +567,10 @@ void R_DrawSpan(void) {
     position += step;
 
   } while (count--);
+  */
 }
 
+/*
 // UNUSED.
 // Loop unrolled by 4.
 #if 0

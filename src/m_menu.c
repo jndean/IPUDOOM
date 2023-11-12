@@ -846,6 +846,7 @@ void M_ChangeSensitivity(int choice) {
 }
 
 void M_ChangeDetail(int choice) {
+  return; // JOSEF: Unsupported on IPU
   choice = 0;
   detailLevel = 1 - detailLevel;
 
@@ -1241,17 +1242,19 @@ boolean M_Responder(event_t *ev) {
   if (!menuactive) {
     if (key == key_menu_decscreen) // Screen size down
     {
-      if (automapactive || chat_on)
-        return false;
-      M_SizeDisplay(0);
-      S_StartSound(NULL, sfx_stnmov);
+      // JOSEF: Unsupported on IPU
+      // if (automapactive || chat_on)
+      //   return false;
+      // M_SizeDisplay(0);
+      // S_StartSound(NULL, sfx_stnmov);
       return true;
     } else if (key == key_menu_incscreen) // Screen size up
     {
-      if (automapactive || chat_on)
-        return false;
-      M_SizeDisplay(1);
-      S_StartSound(NULL, sfx_stnmov);
+      // JOSEF: Unsupported on IPU
+      // if (automapactive || chat_on)
+      //   return false;
+      // M_SizeDisplay(1);
+      // S_StartSound(NULL, sfx_stnmov);
       return true;
     } else if (key == key_menu_help) // Help key
     {

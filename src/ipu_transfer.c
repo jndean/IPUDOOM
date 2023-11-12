@@ -10,6 +10,7 @@
 #include "m_misc.h"
 #include "r_defs.h"
 #include "r_state.h"
+#include "r_sky.h"
 #include "v_patch.h"
 #include "w_wad.h"
 #include "z_zone.h"
@@ -30,6 +31,7 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
   pack.gamemode = gamemode;
   pack.deathmatch = deathmatch;
   pack.skyflatnum = skyflatnum;
+  pack.skytexture = skytexture;
   for (int i = 0; i < MAXPLAYERS; ++i)
     pack.playeringame[i] = playeringame[i];
   

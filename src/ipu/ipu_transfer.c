@@ -1,6 +1,7 @@
 #include "doomstat.h"
 #include "r_defs.h"
 #include "r_state.h"
+#include "r_sky.h"
 // #include "w_wad.h"
 
 #include "ipu_interface.h"
@@ -22,6 +23,7 @@ void IPU_G_LoadLevel_UnpackMiscValues(G_LoadLevel_MiscValues_t* pack) {
   gamemode = pack->gamemode;
   deathmatch = pack->deathmatch;
   skyflatnum = pack->skyflatnum;
+  skytexture = pack->skytexture;
   for (int i = 0; i < MAXPLAYERS; ++i) {
     playeringame[i] = pack->playeringame[i];
   }
