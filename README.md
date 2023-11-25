@@ -29,9 +29,9 @@ Activity Log:
 
 ![Automap](README_imgs/Automap.gif)
 
-- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU. CPU still renders everything else (floors, ceilings, objects, enemies).
+- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU.
 
-![Gameplay with untextured walls](README_imgs/flats.gif)
+![Gameplay with untextured walls](README_imgs/BlankWalls_noCPU.gif)
 
 - [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now IPU can texture walls.
 
