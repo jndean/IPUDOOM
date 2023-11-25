@@ -2,18 +2,19 @@
 #include <poplar/TileConstants.hpp>
 #include <poplar/Vertex.hpp>
 
-#include "doomtype.h"
-#include "r_data.h"
-#include "r_main.h"
-#include "r_segs.h"
+extern "C" {
+    #include "doomtype.h"
+    #include "r_data.h"
+    #include "r_draw.h"
+    #include "r_main.h"
+    #include "r_segs.h"
 
-#include "ipu_interface.h"
-#include "ipu_utils.h"
-#include "ipu_texturetiles.h"
+    #include "ipu_interface.h"
+    #include "ipu_utils.h"
+    #include "ipu_texturetiles.h"
+}
+
 #include "../../xcom.hpp"
-
-
-#define IS_SPAN (0x800000)
 
 
 // Remeber! Copies of these vars exits independently on each tile
@@ -146,7 +147,6 @@ static int muxInstructionOffset;
 extern "C" 
 __SUPER__ 
 void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
-
     // Figure out which tiles to talk to
     int firstTextureTile = IPUFIRSTTEXTURETILE + (IPUTEXTURETILESPERRENDERTILE * (tileID - IPUFIRSTRENDERTILE));
     for (int i = 0; i < IPUTEXTURETILESPERRENDERTILE; ++i) {
@@ -304,6 +304,10 @@ byte* IPU_R_RequestColumn(int texture, int column) {
 extern "C" 
 __SUPER__ 
 void IPU_R_RenderTileDone() {
+
+    // First flush the last possibly incomplete spanRequest batch
+    IPURequest_R_DrawSpan_FulfillBatch();
+
     // progBuff starts with a program directory
     auto requestProg = &tileLocalProgBuf[tileLocalProgBuf[0]];
     auto aggregateProg = &tileLocalProgBuf[tileLocalProgBuf[2]];

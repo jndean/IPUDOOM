@@ -295,9 +295,6 @@ void R_MakeSpans(int x, int t1, int b1, int t2, int b2) {
   }
 }
 
-//  TMP !!!! DELETE ME
-byte* R_GetColumn_LikeIPU(int tex, int col);
-extern int numtextures;
 
 //
 // R_DrawPlanes

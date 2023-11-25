@@ -8,26 +8,36 @@ extern "C" {
 
 
 #include "doomtype.h"
+#include "ipu_interface.h"
 #include "ipu_utils.h"
 
 
-struct IPUColRequest_t {
+#define IPUTEXREQUESTISSPAN (0x800000)
+#define IPUMAXSPANREQUESTBATCHSIZE (5)
+
+
+typedef struct {
     unsigned columnOffset, lightNum, lightScale;
-};
-struct IPUSpanRequest_t {
+} IPUColRequest_t;
+
+typedef struct {
     unsigned position, step;
-    short ds_x1, ds_x2;
-    unsigned char y, light;
-};
+    unsigned char count, lightNum;
+} IPUSpanRequest_t;
 
 typedef struct {
     unsigned texture;
     union {
-        struct IPUColRequest_t colRequest;
-        struct IPUSpanRequest_t spanRequest;
+        IPUColRequest_t colRequest;
+        IPUSpanRequest_t spanRequests[IPUMAXSPANREQUESTBATCHSIZE];
     };
+    unsigned short numSpanRequests;
 } IPUTextureRequest_t;
 
+#ifdef __cplusplus
+static_assert((IPUTEXTURECACHELINESIZE * sizeof(int)) >= sizeof(IPUTextureRequest_t), 
+              "Texture cache buf is used to store the request at one point");
+#endif
 
 extern unsigned* tileLocalProgBuf;
 extern unsigned* tileLocalCommsBuf;

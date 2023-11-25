@@ -35,7 +35,7 @@ Activity Log:
 
 - [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now IPU can texture walls.
 
-![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)![Gameplay showing rendering striped across 32 tiles](README_imgs/WallsTileGrey_noCPU.gif )
+![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif) ![Gameplay showing rendering striped across 32 tiles](README_imgs/WallsTileGrey_noCPU.gif )
 
 - [x] Implement lighting model (add shadows to walls): texture tiles translate the colours during texture column fetch requests to save memory on the render tiles.
 

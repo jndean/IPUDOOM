@@ -97,6 +97,9 @@ fixed_t cacheddistance[SCREENHEIGHT];
 fixed_t cachedxstep[SCREENHEIGHT];
 fixed_t cachedystep[SCREENHEIGHT];
 
+// JOSEF: Global to pass over exchange
+int flatnum;
+
 __SUPER__ 
 int abs(int x); // JOSEF
 
@@ -170,6 +173,7 @@ void R_MapPlane(int y, int x1, int x2) {
   // high or low detail
   // spanfunc(); // LATER
   // R_DrawSpan();
+  IPURequest_R_DrawSpan();
 }
 
 //
@@ -325,7 +329,7 @@ void R_MakeSpans(int x, int t1, int b1, int t2, int b2) {
 __SUPER__ 
 void R_DrawPlanes(void) {
   visplane_t *pl;
-  int light;
+  // int light; JOSEF: store in `lightnum` instead herein
   int x;
   int stop;
   int angle;
@@ -374,21 +378,22 @@ void R_DrawPlanes(void) {
       continue;
     }
 
-    // LATER
+    // JOSEF: Don't load lump, just record flatnum to send over exchange later
+    flatnum = pl->picnum; // LATER: flattranslation[pl->picnum];
     // regular flat
     // lumpnum = firstflat + flattranslation[pl->picnum];
     // ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
 
     planeheight = abs(pl->height - viewz);
-    light = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;
+    lightnum = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;
 
-    if (light >= LIGHTLEVELS)
-      light = LIGHTLEVELS - 1;
+    if (lightnum >= LIGHTLEVELS)
+      lightnum = LIGHTLEVELS - 1;
 
-    if (light < 0)
-      light = 0;
+    if (lightnum < 0)
+      lightnum = 0;
 
-    // // planezlight = zlight[light]; // LATER
+    // // planezlight = zlight[light]; // Texture tiles are in charge of scaling by light
 
     pl->top[pl->maxx + 1] = 0xff;
     pl->top[pl->minx - 1] = 0xff;
@@ -400,15 +405,15 @@ void R_DrawPlanes(void) {
                   pl->bottom[x]);
 
       // JOSEF: TMP solid colour visualisation
-      pixel_t colour = (140 + (pl - visplanes) * 2) % 256;
+      // pixel_t colour = (140 + (pl - visplanes) * 2) % 256;
       // pixel_t colour = (pl->picnum * 17 + 209) % 256;
-      for (int y = pl->top[x]; y <= pl->bottom[x]; y++) {
-        pixel_t* dest = (I_VideoBuffer + (y + viewwindowy) * IPUCOLSPERRENDERTILE) + (viewwindowx + x - tileLeftClip);
-        *dest = colour;
-      }
+      // for (int y = pl->top[x]; y <= pl->bottom[x]; y++) {
+      //   pixel_t* dest = (I_VideoBuffer + (y + viewwindowy) * IPUCOLSPERRENDERTILE) + (viewwindowx + x - tileLeftClip);
+      //   *dest = colour;
+      // }
     }
 
-    // W_ReleaseLumpNum(lumpnum); // LATER
+    // W_ReleaseLumpNum(lumpnum); // JOSEF
     
   }
 }

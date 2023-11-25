@@ -96,6 +96,10 @@ extern void (*spanfunc)(void);
 // JOSEF
 extern int tileLeftClip;
 extern int tileRightClip;
+extern int lightnum;
+extern unsigned walllightindex;
+extern int flatnum;
+
 
 //
 // Utility functions.

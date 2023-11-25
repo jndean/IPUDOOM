@@ -837,7 +837,6 @@ void R_PrecacheLevel(void) {
     if (flatpresent[i]) {
       lump = firstflat + i;
       flatmemory += lumpinfo[lump]->size;
-      printf("Flat size = %d\n", lumpinfo[lump]->size);
       W_CacheLumpNum(lump, PU_CACHE);
     }
   }

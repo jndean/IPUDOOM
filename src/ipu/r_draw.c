@@ -41,6 +41,7 @@
 
 #include <print.h>
 #include "ipu_interface.h"
+#include "ipu_texturetiles.h"
 
 // ?
 #define MAXWIDTH 1120
@@ -575,6 +576,68 @@ void R_DrawSpan(void) {
   } while (count--);
   
 }
+
+
+//
+// On the IPU, each render tile accrues a batch of R_DrawSpan requests 
+// then exchanges them with texture tiles for fulfilment
+//
+
+static IPUTextureRequest_t requestBatch;
+static pixel_t* spanDests[IPUMAXSPANREQUESTBATCHSIZE];
+
+__SUPER__
+void IPURequest_R_DrawSpan_FulfillBatch(void) {
+  IPUTextureRequest_t* requestBuf = (IPUTextureRequest_t*) tileLocalTextureBuf;
+  memcpy(requestBuf, &requestBatch, sizeof(requestBatch));
+  requestBuf->texture |= IPUTEXREQUESTISSPAN;
+
+  // TMP: Fill the span with fixed colour
+  for (int i = 0; i < requestBatch.numSpanRequests; ++i) {
+    IPUSpanRequest_t* spanRequest = &requestBatch.spanRequests[i];
+    pixel_t* dest = spanDests[i];
+    for (int i = 0; i <= spanRequest->count; i++) {
+      *dest++ = 20;
+    }
+  }
+  
+  requestBatch.numSpanRequests = 0;
+}
+
+// The render-tile side of the span requesting system
+__SUPER__
+void IPURequest_R_DrawSpan(void) {
+  unsigned int position, step;
+  pixel_t *dest;
+  int count;
+
+  if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH ||
+      (unsigned)ds_y > SCREENHEIGHT) {
+    printf("ERROR: R_DrawSpan: %d to %d at %d\n", ds_x1, ds_x2, ds_y);
+    return;
+  }
+
+  if (requestBatch.numSpanRequests > 0 && requestBatch.texture != flatnum) {
+    IPURequest_R_DrawSpan_FulfillBatch();
+  }
+  requestBatch.texture = flatnum;
+  
+  IPUSpanRequest_t* spanRequest = &requestBatch.spanRequests[requestBatch.numSpanRequests];
+  spanRequest->position = ((ds_xfrac << 10) & 0xffff0000) | ((ds_yfrac >> 6) & 0x0000ffff);
+  spanRequest->step = ((ds_xstep << 10) & 0xffff0000) | ((ds_ystep >> 6) & 0x0000ffff);
+  spanRequest->count = ds_x2 - ds_x1;
+  spanRequest->lightNum = lightnum;
+
+  spanDests[requestBatch.numSpanRequests] = ylookup[ds_y] + columnofs[ds_x1];
+
+  requestBatch.numSpanRequests += 1;
+  if (requestBatch.numSpanRequests >= IPUMAXSPANREQUESTBATCHSIZE) {
+    IPURequest_R_DrawSpan_FulfillBatch();
+  }
+
+}
+
+
 
 /*
 // UNUSED.

@@ -71,6 +71,8 @@ extern byte *dc_translation;
 // Span blitting for rows, floor/ceiling.
 // No Sepctre effect needed.
 void R_DrawSpan(void);
+__SUPER__ void IPURequest_R_DrawSpan(void);
+__SUPER__ void IPURequest_R_DrawSpan_FulfillBatch(void);
 
 // Low resolution mode, 160x200?
 void R_DrawSpanLow(void);
