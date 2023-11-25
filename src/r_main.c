@@ -747,8 +747,7 @@ void R_RenderPlayerView(player_t *player) {
   // Check for new console commands.
   NetUpdate();
 
-  R_DrawPlanes();
-  IPU_R_RenderPlayerView();
+  // R_DrawPlanes();
 
   // Check for new console commands.
   NetUpdate();
@@ -757,4 +756,5 @@ void R_RenderPlayerView(player_t *player) {
 
   // Check for new console commands.
   NetUpdate();
+  IPU_R_RenderPlayerView();
 }

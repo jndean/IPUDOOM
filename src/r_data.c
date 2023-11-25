@@ -359,13 +359,14 @@ int ipuTextureBlobRanges[IPUTEXTURETILESPERRENDERTILE + 1];
 
 void GenerateIPUTextureBlob(void) {
 
-  if (numtextures >= IPUMAXNUMTEXTURES) {
-    I_Error("GenerateIPUTextureBlob: numtextures >= IPUMAXNUMTEXTURES");
+  if (numtextures + numflats >= IPUMAXNUMTEXTURES) {
+    I_Error("GenerateIPUTextureBlob: numtextures + numflats >= IPUMAXNUMTEXTURES");
   }
   ipuTextureBlob = malloc(IPUTEXTURETILEBUFSIZE * IPUTEXTURETILESPERRENDERTILE);
   ipuTextureBlobRanges[0] = 0;
   int tile = 0, pos = 0;
 
+  // First, pack up all wall textures into the blob
   for (int t = 0; t < numtextures; ++t) {
     int tex_width = textures[t]->width;
     int tex_height = textures[t]->height;
@@ -387,7 +388,33 @@ void GenerateIPUTextureBlob(void) {
     }
     pos += tex_size;
   }
-  ipuTextureBlobRanges[tile + 1] = numtextures;
+
+  // Next, pack in all the flats
+  for (int i = 0, t = numtextures; i < numflats; ++i, ++t) {
+    int lump_num = firstflat + i;
+    int lump_size = W_LumpLength(lump_num);
+
+
+    if (pos + lump_size >= IPUTEXTURETILEBUFSIZE) {
+      pos = 0;
+      tile += 1;
+      if (tile > IPUTEXTURETILESPERRENDERTILE) {
+        I_Error("GenerateIPUTextureDump: insufficient texture tiles");
+      }
+      ipuTextureBlobRanges[tile] = t;
+    }
+
+    ipuTextureBlobOffsets[t] = pos;
+    byte* flat = W_CacheLumpNum(lump_num, PU_STATIC);
+    byte* dst = &ipuTextureBlob[tile * IPUTEXTURETILEBUFSIZE + pos];
+    memcpy(dst, flat, lump_size);
+    pos += lump_size;
+    W_ReleaseLumpNum(lump_num);
+  }
+
+  // Set the upper texture index bound on the final tile 
+  // (by setting the lower bound on a fake subsequent tile)
+  ipuTextureBlobRanges[tile + 1] = numtextures + numflats;
 }
 
 //
@@ -627,8 +654,6 @@ void R_InitTextures(void) {
     texturetranslation[i] = i;
 
   GenerateTextureHashTable();
-
-  GenerateIPUTextureBlob();
 }
 
 
@@ -707,6 +732,8 @@ void R_InitData(void) {
   R_InitSpriteLumps();
   printf(".");
   R_InitColormaps();
+
+  GenerateIPUTextureBlob(); // JOSEF
 }
 
 //
@@ -810,6 +837,7 @@ void R_PrecacheLevel(void) {
     if (flatpresent[i]) {
       lump = firstflat + i;
       flatmemory += lumpinfo[lump]->size;
+      printf("Flat size = %d\n", lumpinfo[lump]->size);
       W_CacheLumpNum(lump, PU_CACHE);
     }
   }

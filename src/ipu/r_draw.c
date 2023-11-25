@@ -526,10 +526,9 @@ int dscount;
 
 //
 // Draws the actual span.
+__SUPER__
 void R_DrawSpan(void) {
-  
-  /* LATER
-  unsigned int position, step;
+  // unsigned int position, step;
   pixel_t *dest;
   int count;
   int spot;
@@ -537,25 +536,29 @@ void R_DrawSpan(void) {
 
   if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH ||
       (unsigned)ds_y > SCREENHEIGHT) {
-    I_Error("R_DrawSpan: %i to %i at %i", ds_x1, ds_x2, ds_y);
+    printf("ERROR: R_DrawSpan: %d to %d at %d\n", ds_x1, ds_x2, ds_y);
+    return;
   }
-  //	dscount++;
+  //	dscount++; // NOT JOSEF :)
 
   // Pack position and step variables into a single 32-bit integer,
   // with x in the top 16 bits and y in the bottom 16 bits.  For
   // each 16-bit part, the top 6 bits are the integer part and the
   // bottom 10 bits are the fractional part of the pixel position.
 
-  position = ((ds_xfrac << 10) & 0xffff0000) | ((ds_yfrac >> 6) & 0x0000ffff);
-  step = ((ds_xstep << 10) & 0xffff0000) | ((ds_ystep >> 6) & 0x0000ffff);
+  // LATER
+  // position = ((ds_xfrac << 10) & 0xffff0000) | ((ds_yfrac >> 6) & 0x0000ffff);
+  // step = ((ds_xstep << 10) & 0xffff0000) | ((ds_ystep >> 6) & 0x0000ffff);
 
   dest = ylookup[ds_y] + columnofs[ds_x1];
 
   // We do not check for zero spans here?
   count = ds_x2 - ds_x1;
 
+  
   do {
     // Calculate current texture index in u,v.
+    /* LATER
     ytemp = (position >> 4) & 0x0fc0;
     xtemp = (position >> 26);
     spot = xtemp | ytemp;
@@ -565,9 +568,12 @@ void R_DrawSpan(void) {
     *dest++ = ds_colormap[ds_source[spot]];
 
     position += step;
+    */
+
+    *dest++ = 20;
 
   } while (count--);
-  */
+  
 }
 
 /*

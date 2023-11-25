@@ -16,7 +16,9 @@
 
 ### Places could save memory
  - Transcendental lookups -> live calc
- - Move scalelight table from render tiles to texture tiles, include light level in column request. Saves 8K
+ - `openings` (used for masked objects) is 40K, surely can be smaller on striped render tiles
+ - cut down on width of `visplane.top/bottom`, `columnofs`, etc due to samller screen widths
+ - remove cachedheight, cacheddistance, cachedxstep, cachedystep?
 
 
 ### Things I don't support, to make my life easier:

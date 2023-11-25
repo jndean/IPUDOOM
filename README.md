@@ -35,15 +35,19 @@ Activity Log:
 
 - [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now IPU can texture walls.
 
-![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)
+![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif)![Gameplay showing rendering striped across 32 tiles](README_imgs/WallsTileGrey_noCPU.gif )
 
 - [x] Implement lighting model (add shadows to walls): texture tiles translate the colours during texture column fetch requests to save memory on the render tiles.
 
 ![Side-by-side of room with and without shadows](README_imgs/WallsLighting.PNG)
 
+- [x] Port the visplane system to the render tiles, so IPU can render floors and ceilings, (untextured for now, instead coloured to show the visplane subdivision). Also implement skybox.
+
+![Gameplay with visplanes and skybox visible](README_imgs/VisplanesSkybox_noCPU.gif)
+
 Immediate next steps:
+- [ ] Port 'flats' and zlight so IPU can texture and light floors + ceilings.
 - [ ] Implement system to notify IPU of map state changes, so that doors open and close properly.
-- [ ] Port visplane system to get IPU rendering floors and ceilings
 
 Longer term next steps:
 

@@ -104,7 +104,7 @@ angle_t xtoviewangle[SCREENWIDTH + 1];
 
 // lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];// JOSEF: This lives on texture tile instead
 // lighttable_t *scalelightfixed[MAXLIGHTSCALE]; 
-// lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO (on texture/flats tile?)
+lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO (on texture/flats tile?)
 
 // bumped light from gun blasts
 int extralight;

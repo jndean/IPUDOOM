@@ -13,6 +13,9 @@
 #include "../../xcom.hpp"
 
 
+#define IS_SPAN (0x800000)
+
+
 // Remeber! Copies of these vars exits independently on each tile
 unsigned* tileLocalProgBuf;
 unsigned* tileLocalCommsBuf;
@@ -43,7 +46,7 @@ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize, const pixel_t* co
         XCOMAssembler assembler;
         int sendCycle = XCOM_WORSTSENDDELAY;
         int muxCycle = sendCycle + XCOM_TimeToMux(renderTile, __builtin_ipu_get_tile_id());
-        int messageSize = sizeof(IPUColRequest_t) / sizeof(int);
+        int messageSize = sizeof(IPUTextureRequest_t) / sizeof(int);
         assembler.addRecv(0, messageSize, renderTile, muxCycle);
         progHead = assembler.assemble(progHead, progEnd - progHead);
         progHead++; // This program returns control flow, so don't override the `br $m10`
@@ -107,10 +110,10 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
       XCOM_Execute(recvProgram, NULL, textureBuf);
 
       // Unpack received data
-      unsigned textureNum = ((IPUColRequest_t*) textureBuf)->texture;
-      unsigned columnOffset = ((IPUColRequest_t*) textureBuf)->columnOffset;
-      unsigned lightNum = ((IPUColRequest_t*) textureBuf)->lightNum;
-      unsigned lightScale = ((IPUColRequest_t*) textureBuf)->lightScale;
+      unsigned textureNum = ((IPUTextureRequest_t*) textureBuf)->texture;
+      unsigned lightNum = ((IPUTextureRequest_t*) textureBuf)->colRequest.lightNum;
+      unsigned columnOffset = ((IPUTextureRequest_t*) textureBuf)->colRequest.columnOffset;
+      unsigned lightScale = ((IPUTextureRequest_t*) textureBuf)->colRequest.lightScale;
       
       // TMP: need seperate send buffer for lightscaled output to be sent from, currently use start of textureBuf
       pixel_t* sendBuf = &textureBuf[IPUTEXTURETILEBUFSIZE - (IPUTEXTURECACHELINESIZE * sizeof(int))];
@@ -158,7 +161,7 @@ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
     
     // First Program: performs the column request and sends flags to aggrTile
     progBuf[0] = progHead - progBuf;
-    int messageSize = sizeof(IPUColRequest_t) / sizeof(int);
+    int messageSize = sizeof(IPUTextureRequest_t) / sizeof(int);
     assembler.addSend(0, messageSize, XCOM_BROADCAST, XCOM_WORSTSENDDELAY);
     // Do the first step of the `done` flag aggregation
     if (__builtin_ipu_get_tile_id() == aggrTile) {
@@ -174,7 +177,7 @@ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
         int direction = XCOM_EastOrWest(__builtin_ipu_get_tile_id(), aggrTile);
         int muxCycle = XCOM_WORSTRECVDELAY + XCOM_WORSTRECVDELAY + myTimeSlot;
         int sendCycle = muxCycle - XCOM_TimeToMux(__builtin_ipu_get_tile_id(), aggrTile);
-        unsigned* addr = (unsigned*) sizeof(IPUColRequest_t);
+        unsigned* addr = (unsigned*) sizeof(IPUTextureRequest_t);
         assembler.addSend(addr, 1, direction, sendCycle);
     }
     progHead = assembler.assemble(progHead, progEnd - progHead);
@@ -210,20 +213,16 @@ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
     
 }
 
-extern "C" 
+static
 __SUPER__ 
-byte* IPU_R_RequestColumn(int texture, int column) {
+byte* renderTileExchange(int textureSourceTile) {
     // progBuff starts with a program directory
     auto requestProg = &tileLocalProgBuf[tileLocalProgBuf[0]];
     auto receiveProg = &tileLocalProgBuf[tileLocalProgBuf[1]];
     auto aggregateProg = &tileLocalProgBuf[tileLocalProgBuf[2]];
 
-    // Populate buffer with data to be exchanged
-    IPUColRequest_t *request = (IPUColRequest_t*) tileLocalTextureBuf;
-    request->texture = texture;
-    request->columnOffset = (column & texturewidthmask[texture]) * (textureheight[texture] >> FRACBITS);
-    request->lightNum = lightnum;
-    request->lightScale = walllightindex;
+    // Request will be populated by the caller, but we follow it up by setting the 'done' flag to 0
+    IPUTextureRequest_t *request = (IPUTextureRequest_t*) tileLocalTextureBuf;
     *((unsigned*) &request[1]) = 0; // The Done Flag
     
     XCOM_Execute(
@@ -235,14 +234,6 @@ byte* IPU_R_RequestColumn(int texture, int column) {
     // aggrTile aggregates
     if (tileID == IPUFIRSTRENDERTILE) {
         tileLocalCommsBuf[0] = 0;
-    }
-
-    int textureSourceTile;
-    for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
-        if (texture >= tileLocalTextureRange[textureSourceTile] && 
-            texture < tileLocalTextureRange[textureSourceTile + 1]) {
-        break;
-        }
     }
 
     XCOM_PatchMuxAndExecute(
@@ -262,6 +253,54 @@ byte* IPU_R_RequestColumn(int texture, int column) {
     return (byte*) tileLocalTextureBuf;
 }
 
+
+extern "C" 
+__SUPER__ 
+byte* IPU_R_RequestColumn(int texture, int column) {
+
+    // Populate buffer with data to be exchanged
+    IPUTextureRequest_t *request = (IPUTextureRequest_t*) tileLocalTextureBuf;
+    request->texture = texture;
+    request->colRequest.columnOffset = (column & texturewidthmask[texture]) * (textureheight[texture] >> FRACBITS);
+    request->colRequest.lightNum = lightnum;
+    request->colRequest.lightScale = walllightindex;
+
+    // Figure out which texture tile is going to respond
+    int textureSourceTile;
+    for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
+        if (texture >= tileLocalTextureRange[textureSourceTile] && 
+            texture < tileLocalTextureRange[textureSourceTile + 1]) {
+        break;
+        }
+    }
+
+    return renderTileExchange(textureSourceTile);
+}
+
+
+// extern "C" 
+// __SUPER__ 
+// byte* IPU_R_RequestSpan() {
+
+//     // Populate buffer with data to be exchanged
+//     IPUTextureRequest_t *request = (IPUTextureRequest_t*) tileLocalTextureBuf;
+//     request->texture = texture | IS_SPAN; // Set the request type to SPAN instead of COLUMN
+//     // request->spanRequest. = (column & texturewidthmask[texture]) * (textureheight[texture] >> FRACBITS);
+//     // request->colRequest.lightNum = lightnum;
+//     // request->colRequest.lightScale = walllightindex;
+
+//     // Figure out which texture tile is going to respond
+//     // int textureSourceTile;
+//     // for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
+//     //     if (texture >= tileLocalTextureRange[textureSourceTile] && 
+//     //         texture < tileLocalTextureRange[textureSourceTile + 1]) {
+//     //     break;
+//     //     }
+//     // }
+
+//     return renderTileExchange(textureSourceTile);
+// }
+
 extern "C" 
 __SUPER__ 
 void IPU_R_RenderTileDone() {
@@ -272,9 +311,8 @@ void IPU_R_RenderTileDone() {
     while (1) {
 
         // Populate buffer with data to be exchanged
-        IPUColRequest_t *request = (IPUColRequest_t*) tileLocalTextureBuf;
+        IPUTextureRequest_t *request = (IPUTextureRequest_t*) tileLocalTextureBuf;
         request->texture = 0xffffffff;
-        request->columnOffset = 0xffffffff;
         *((unsigned*) &request[1]) = 1; // The `done` Flag
 
         XCOM_Execute(

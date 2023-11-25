@@ -11,9 +11,22 @@ extern "C" {
 #include "ipu_utils.h"
 
 
+struct IPUColRequest_t {
+    unsigned columnOffset, lightNum, lightScale;
+};
+struct IPUSpanRequest_t {
+    unsigned position, step;
+    short ds_x1, ds_x2;
+    unsigned char y, light;
+};
+
 typedef struct {
-    unsigned texture, columnOffset, lightNum, lightScale;
-} IPUColRequest_t;
+    unsigned texture;
+    union {
+        struct IPUColRequest_t colRequest;
+        struct IPUSpanRequest_t spanRequest;
+    };
+} IPUTextureRequest_t;
 
 
 extern unsigned* tileLocalProgBuf;

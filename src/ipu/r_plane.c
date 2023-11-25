@@ -61,7 +61,7 @@ visplane_t *floorplane;
 visplane_t *ceilingplane;
 
 // ?
-#define MAXOPENINGS SCREENWIDTH * 64
+#define MAXOPENINGS SCREENWIDTH * 64 // JOSEF: Surely this can be smaller on IPU
 short openings[MAXOPENINGS];
 short *lastopening;
 
@@ -169,6 +169,7 @@ void R_MapPlane(int y, int x1, int x2) {
 
   // high or low detail
   // spanfunc(); // LATER
+  // R_DrawSpan();
 }
 
 //
@@ -399,8 +400,8 @@ void R_DrawPlanes(void) {
                   pl->bottom[x]);
 
       // JOSEF: TMP solid colour visualisation
-      // pixel_t colour = (140 + (pl - visplanes) * 2) % 256;
-      pixel_t colour = (pl->picnum * 17 + 209) % 256;
+      pixel_t colour = (140 + (pl - visplanes) * 2) % 256;
+      // pixel_t colour = (pl->picnum * 17 + 209) % 256;
       for (int y = pl->top[x]; y <= pl->bottom[x]; y++) {
         pixel_t* dest = (I_VideoBuffer + (y + viewwindowy) * IPUCOLSPERRENDERTILE) + (viewwindowx + x - tileLeftClip);
         *dest = colour;
