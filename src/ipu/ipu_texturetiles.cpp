@@ -104,33 +104,64 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
     auto sendProgram = &progBuf[progBuf[1]];
     auto aggrProgram = &progBuf[progBuf[2]];
 
-    // int noise = 0;
+    // !! TMP !! need seperate send buffer for lightscaled output to be sent from, currently use end of textureBuf
+    pixel_t* sendBuf = &textureBuf[IPUTEXTURETILEBUFSIZE - (IPUTEXTURECACHELINESIZE * sizeof(int))];
+    IPUTextureRequest_t* incomingRequest = (IPUTextureRequest_t*) textureBuf; // Err...? Overwriting texture? replace this with sendBuf?
 
     while (1) {
+      // Receive a request
+      XCOM_Execute(recvProgram, NULL, incomingRequest);
 
-      XCOM_Execute(recvProgram, NULL, textureBuf);
+      unsigned textureNum = incomingRequest->texture;
+      // Check for dummy request
+      if (textureNum != 0xffffffff) { 
 
-      // Unpack received data
-      unsigned textureNum = ((IPUTextureRequest_t*) textureBuf)->texture;
-      unsigned lightNum = ((IPUTextureRequest_t*) textureBuf)->colRequest.lightNum;
-      unsigned columnOffset = ((IPUTextureRequest_t*) textureBuf)->colRequest.columnOffset;
-      unsigned lightScale = ((IPUTextureRequest_t*) textureBuf)->colRequest.lightScale;
-      
-      // TMP: need seperate send buffer for lightscaled output to be sent from, currently use start of textureBuf
-      pixel_t* sendBuf = &textureBuf[IPUTEXTURETILEBUFSIZE - (IPUTEXTURECACHELINESIZE * sizeof(int))];
+        unsigned isSpanRequest = textureNum & IPUTEXREQUESTISSPAN;
+        textureNum ^= isSpanRequest; // Actual texture number
 
-      if (textureNum != 0xffffffff &&
-          textureNum >= tileLocalTextureRange[0] && 
-          textureNum < tileLocalTextureRange[1]) {
-        byte* src = &textureBuf[tileLocalTextureOffsets[textureNum] + columnOffset];
-        pixel_t* dc_colourmap = scalelight_TT[lightNum][lightScale];
-        for (int i = 0; i < IPUTEXTURECACHELINESIZE * sizeof(int); ++i) {
-            sendBuf[i] = dc_colourmap[src[i]];
+        // Check if the texture lives on this tile
+        if (textureNum >= tileLocalTextureRange[0] && 
+            textureNum < tileLocalTextureRange[1]) {
+
+            // Find the start of the texture
+            byte* texture = &textureBuf[tileLocalTextureOffsets[textureNum]];
+
+            if (isSpanRequest) {
+                // Is a Span request (batch)
+                
+                pixel_t *dest = sendBuf;
+                for (int i = 0; i < incomingRequest->numSpanRequests; ++i) {
+                    IPUSpanRequest_t* req = &incomingRequest->spanRequests[i];
+                    unsigned position = req->position;
+                    unsigned step = req->step;
+                    unsigned count = req->count;
+                    do {
+                        unsigned ytemp = (position >> 4) & 0x0fc0;
+                        unsigned xtemp = (position >> 26);
+                        int spot = xtemp | ytemp;
+                        *dest++ = texture[spot]; // LATER: ds_colormap[texture[spot]];
+                        position += step;
+                    } while (count--);
+                }
+
+            } else { 
+                // Is a Column request
+                unsigned lightNum = incomingRequest->colRequest.lightNum;
+                unsigned columnOffset = incomingRequest->colRequest.columnOffset;
+                unsigned lightScale = incomingRequest->colRequest.lightScale;
+                byte* src = &texture[columnOffset];
+                pixel_t* dc_colourmap = scalelight_TT[lightNum][lightScale];
+                for (int i = 0; i < IPUTEXTURECACHELINESIZE * sizeof(int); ++i) {
+                    sendBuf[i] = dc_colourmap[src[i]];
+                }
+            }
         }
       }
-
+      
+      // Send response to request
       XCOM_Execute(sendProgram, sendBuf, NULL);
 
+      // Find out if we're done
       XCOM_Execute(aggrProgram, NULL, commsBuf);
       if (commsBuf[0]) 
         return;
@@ -215,11 +246,20 @@ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize) {
 
 static
 __SUPER__ 
-byte* renderTileExchange(int textureSourceTile) {
+byte* renderTileExchange(int textureNum) {
     // progBuff starts with a program directory
     auto requestProg = &tileLocalProgBuf[tileLocalProgBuf[0]];
     auto receiveProg = &tileLocalProgBuf[tileLocalProgBuf[1]];
     auto aggregateProg = &tileLocalProgBuf[tileLocalProgBuf[2]];
+
+    // Figure out which texture tile is going to respond
+    int textureSourceTile;
+    for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
+        if (textureNum >= tileLocalTextureRange[textureSourceTile] && 
+            textureNum < tileLocalTextureRange[textureSourceTile + 1]) {
+        break;
+        }
+    }
 
     // Request will be populated by the caller, but we follow it up by setting the 'done' flag to 0
     IPUTextureRequest_t *request = (IPUTextureRequest_t*) tileLocalTextureBuf;
@@ -265,16 +305,19 @@ byte* IPU_R_RequestColumn(int texture, int column) {
     request->colRequest.lightNum = lightnum;
     request->colRequest.lightScale = walllightindex;
 
-    // Figure out which texture tile is going to respond
-    int textureSourceTile;
-    for (textureSourceTile = 0; textureSourceTile < IPUTEXTURETILESPERRENDERTILE; ++textureSourceTile) {
-        if (texture >= tileLocalTextureRange[textureSourceTile] && 
-            texture < tileLocalTextureRange[textureSourceTile + 1]) {
-        break;
-        }
-    }
+    return renderTileExchange(texture);
+}
 
-    return renderTileExchange(textureSourceTile);
+extern "C" 
+__SUPER__ 
+byte* IPU_R_RequestSpanBatch(IPUTextureRequest_t *requestBatch) {
+
+    // Populate buffer with data to be exchanged
+    IPUTextureRequest_t* sendBuf = (IPUTextureRequest_t*) tileLocalTextureBuf;
+    memcpy(sendBuf, requestBatch, sizeof(*requestBatch));
+    sendBuf->texture |= IPUTEXREQUESTISSPAN; // Flag saying this is a span request not a col request
+
+    return renderTileExchange(requestBatch->texture);
 }
 
 

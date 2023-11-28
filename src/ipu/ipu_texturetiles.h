@@ -52,6 +52,7 @@ __SUPER__ void IPU_R_InitColumnRequester(unsigned* progBuf, int progBufSize);
 __SUPER__ void IPU_R_InitSansTile(unsigned* progBuf, int progBufSize);
 
 __SUPER__ byte* IPU_R_RequestColumn(int texture, int column);
+__SUPER__ byte* IPU_R_RequestSpanBatch(IPUTextureRequest_t *requestBatch);
 __SUPER__ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, unsigned* commsBuf);
 __SUPER__ void IPU_R_Sans(unsigned* progBuf, unsigned* commsBuf);
 __SUPER__ void IPU_R_RenderTileDone(void);

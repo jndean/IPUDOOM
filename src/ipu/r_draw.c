@@ -585,31 +585,29 @@ void R_DrawSpan(void) {
 
 static IPUTextureRequest_t requestBatch;
 static pixel_t* spanDests[IPUMAXSPANREQUESTBATCHSIZE];
+static int spanBatchTotalCount = 0;
 
 __SUPER__
 void IPURequest_R_DrawSpan_FulfillBatch(void) {
-  IPUTextureRequest_t* requestBuf = (IPUTextureRequest_t*) tileLocalTextureBuf;
-  memcpy(requestBuf, &requestBatch, sizeof(requestBatch));
-  requestBuf->texture |= IPUTEXREQUESTISSPAN;
+  
+  pixel_t* src = IPU_R_RequestSpanBatch(&requestBatch);
 
   // TMP: Fill the span with fixed colour
   for (int i = 0; i < requestBatch.numSpanRequests; ++i) {
     IPUSpanRequest_t* spanRequest = &requestBatch.spanRequests[i];
     pixel_t* dest = spanDests[i];
     for (int i = 0; i <= spanRequest->count; i++) {
-      *dest++ = 20;
+      *dest++ = *src++; //requestBatch.texture % 256;
     }
   }
   
+  spanBatchTotalCount = 0;
   requestBatch.numSpanRequests = 0;
 }
 
 // The render-tile side of the span requesting system
 __SUPER__
 void IPURequest_R_DrawSpan(void) {
-  unsigned int position, step;
-  pixel_t *dest;
-  int count;
 
   if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH ||
       (unsigned)ds_y > SCREENHEIGHT) {
@@ -621,16 +619,25 @@ void IPURequest_R_DrawSpan(void) {
     IPURequest_R_DrawSpan_FulfillBatch();
   }
   requestBatch.texture = flatnum;
+
+  // The response is fixed size, so send the existing batch if there's 
+  // no space to fulfil the next request
+  int count = ds_x2 - ds_x1;
+  if (spanBatchTotalCount + count > IPUTEXTURECACHELINESIZE * sizeof(int)) {
+    IPURequest_R_DrawSpan_FulfillBatch();
+  }
   
   IPUSpanRequest_t* spanRequest = &requestBatch.spanRequests[requestBatch.numSpanRequests];
   spanRequest->position = ((ds_xfrac << 10) & 0xffff0000) | ((ds_yfrac >> 6) & 0x0000ffff);
   spanRequest->step = ((ds_xstep << 10) & 0xffff0000) | ((ds_ystep >> 6) & 0x0000ffff);
-  spanRequest->count = ds_x2 - ds_x1;
+  spanRequest->count = count;
   spanRequest->lightNum = lightnum;
 
   spanDests[requestBatch.numSpanRequests] = ylookup[ds_y] + columnofs[ds_x1];
 
+  spanBatchTotalCount += count;
   requestBatch.numSpanRequests += 1;
+
   if (requestBatch.numSpanRequests >= IPUMAXSPANREQUESTBATCHSIZE) {
     IPURequest_R_DrawSpan_FulfillBatch();
   }

@@ -26,6 +26,8 @@
 #include "ipu_utils.h"
 
 
+extern int numtextures;
+
 extern int* texturewidthmask;
 extern fixed_t* textureheight;
 

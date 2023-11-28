@@ -379,7 +379,7 @@ void R_DrawPlanes(void) {
     }
 
     // JOSEF: Don't load lump, just record flatnum to send over exchange later
-    flatnum = pl->picnum; // LATER: flattranslation[pl->picnum];
+    flatnum = numtextures + pl->picnum; // LATER: numtextures + flattranslation[pl->picnum];
     // regular flat
     // lumpnum = firstflat + flattranslation[pl->picnum];
     // ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
