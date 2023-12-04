@@ -102,9 +102,10 @@ int viewangletox[FINEANGLES / 2];
 // from clipangle to -clipangle.
 angle_t xtoviewangle[SCREENWIDTH + 1];
 
-// lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];// JOSEF: This lives on texture tile instead
+// JOSEF: These live on the texture tiles now
+// lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 // lighttable_t *scalelightfixed[MAXLIGHTSCALE]; 
-lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; // JOSEF: TODO (on texture/flats tile?)
+// lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 
 // bumped light from gun blasts
 int extralight;
@@ -757,6 +758,8 @@ void R_SetupFrame(player_t *player) {
 
   if (player->fixedcolormap) {
     printf("JOSEF: Warning: Fixed colourmap being used, need to implement that on texture tiles (send them a special value?)");
+    fixedcolormap = 0; // JOSEF
+
     // fixedcolormap = colormaps + player->fixedcolormap * 256; // LATER
 
     // walllights = scalelightfixed; // LATER

@@ -16,42 +16,44 @@ wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 ```
 
 
-Vanilla Doom runs on the CPU, have started offloading subsystems to IPU Tile 0.
-Activity Log:
+### Progress Log:
+Started with vanilla Doom running on the CPU, began started offloading subsystems to the IPU (just Tile 0  at first): 
 
-- [x] Create IPU hooks for key methods like G_Ticker, G_Responder so IPU can step game time and respond to keypresses in real time. (Also setviewsize etc)
+- [x] Create IPU hooks for key methods like G_Ticker and G_Responder so IPU can step game time and respond to keypresses in real time. IPU uses callbacks on the host to load and unpack all level geometry from disk whenever the player starts a new level.
 
-- [x] Implement IPU memory allocator for level state, i.e., anything with lifetime PU_LEVEL
-
-- [x] IPU interacts with host to load and unpack all level geometry from disk whenever a level is loaded
+- [x] Implement an IPU-specific memory allocator with seperate memory pools for different lifetimes: static lifetime, level lifetime, frame lifetime. Makes fragmanetation easy to avoid => reduces SRAM footprint.
 
 - [x] Implement all methods used by the automap (vector rendering, sprite rendering, AM event responder). Automap is now disabled on CPU, renders entirely on IPU.
 
 ![Automap](README_imgs/Automap.gif)
 
-- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on the IPU.
+- [x] Implement BinarySpacePartion search (stackless recursion version for IPU), solidseg occlusion and floor/ceiling clipping to get (untextured) rendering of vertical walls running on a sinlge IPU tile.
 
 ![Gameplay with untextured walls](README_imgs/BlankWalls_noCPU.gif)
 
-- [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now IPU can texture walls.
+- [x] Split rendering across 32 render tiles. Reformat textures into a big buffer that can be striped over other dedicated texture tiles, and accessed by the render tiles using JIT-patched exchange programs to enable fetches based on dynamic indices. So now the IPU can texture walls in real time.
 
 ![Gameplay with textured walls (but nothing else)](README_imgs/WallsTextured_noCPU.gif) ![Gameplay showing rendering striped across 32 tiles](README_imgs/WallsTileGrey_noCPU.gif )
 
-- [x] Implement lighting model (add shadows to walls): texture tiles translate the colours during texture column fetch requests to save memory on the render tiles.
+- [x] Implement lighting model (add shadows to walls): the texture tiles translate the colours during texture column fetch requests to save SRAM on the render tiles.
 
 ![Side-by-side of room with and without shadows](README_imgs/WallsLighting.PNG)
 
-- [x] Port the visplane system to the render tiles, so IPU can render floors and ceilings, (untextured for now, instead coloured to show the visplane subdivision). Also implement skybox.
+- [x] Port the visplane system to the render tiles, so IPU can render floors and ceilings, (untextured for now - instead coloured to show the visplane subdivision). Also implement skybox.
 
 ![Gameplay with visplanes and skybox visible](README_imgs/VisplanesSkybox_noCPU.gif)
 
+- [x] Extend the JIT-patching texture exchange to support span textures and zlighting, so IPU can texture and shade floors + ceilings.
+
+[GIF TODO]
+
 Immediate next steps:
-- [ ] Port 'flats' and zlight so IPU can texture and light floors + ceilings.
-- [ ] Implement system to notify IPU of map state changes, so that doors open and close properly.
+- [ ] Implement temporary(?) system to notify IPU of map state changes, so that doors open and close properly. Perhaps the same could work for enemys and projectiles.
+- [ ] Implement vissprite system and masked col rendering to add objects / enemies to levels. 
 
 Longer term next steps:
 
-- [ ] Render other things in the level (sprites and masked components, HUD (using dedicated HUD tiles))
+- [ ] Render HUD (probably using dedicated HUD tiles)
 - [ ] Move beyond just the rendering?
 
   ...

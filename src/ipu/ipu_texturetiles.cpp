@@ -30,6 +30,7 @@ const int* tileLocalTextureOffsets;
 
 static pixel_t colourMap_TT[COLOURMAPSIZE];
 static pixel_t* scalelight_TT[LIGHTLEVELS][MAXLIGHTSCALE];
+static pixel_t* zlight_TT[LIGHTLEVELS][MAXLIGHTZ];
 
 extern "C" 
 __SUPER__
@@ -80,6 +81,7 @@ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize, const pixel_t* co
 
     // Next, precompute light scales from the colourmap. This normally happens in R_ExecuteSetViewSize
     memcpy(colourMap_TT, colourMapBuf, sizeof(colourMap_TT));
+    // Firstly do scalelight_TT, which is used for cols
     for (int i = 0; i < LIGHTLEVELS; i++) {
         int startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
         for (int j = 0; j < MAXLIGHTSCALE; j++) {
@@ -92,6 +94,23 @@ void IPU_R_InitTextureTile(unsigned* progBuf, int progBufSize, const pixel_t* co
             level = NUMCOLORMAPS - 1;
 
           scalelight_TT[i][j] = colourMap_TT + level * 256;
+        }
+    }
+    // Next do zlight_TT, which is used for spans
+    for (int i = 0; i < LIGHTLEVELS; i++) {
+        int startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
+        for (int j = 0; j < MAXLIGHTZ; j++) {
+            int scale = FixedDiv((SCREENWIDTH / 2 * FRACUNIT), (j + 1) << LIGHTZSHIFT);
+            scale >>= LIGHTSCALESHIFT;
+            int level = startmap - scale / DISTMAP;
+
+            if (level < 0)
+                level = 0;
+
+            if (level >= NUMCOLORMAPS)
+                level = NUMCOLORMAPS - 1;
+
+            zlight_TT[i][j] = colourMap_TT + level * 256;
         }
     }
 }
@@ -135,19 +154,24 @@ void IPU_R_FulfilColumnRequest(unsigned* progBuf, unsigned char* textureBuf, uns
                     unsigned position = req->position;
                     unsigned step = req->step;
                     unsigned count = req->count;
+                    unsigned lightNum = req->lightNum;
+                    unsigned lightScale = req->lightScale;
+                    ds_colormap = zlight_TT[lightNum][lightScale];
+                    // Do the render loop for this line of pixels
                     do {
+                        // Does 6 levels of indentation count as code smell?
                         unsigned ytemp = (position >> 4) & 0x0fc0;
                         unsigned xtemp = (position >> 26);
                         int spot = xtemp | ytemp;
-                        *dest++ = texture[spot]; // LATER: ds_colormap[texture[spot]];
+                        *dest++ = ds_colormap[texture[spot]];
                         position += step;
                     } while (count--);
                 }
 
             } else { 
                 // Is a Column request
-                unsigned lightNum = incomingRequest->colRequest.lightNum;
                 unsigned columnOffset = incomingRequest->colRequest.columnOffset;
+                unsigned lightNum = incomingRequest->colRequest.lightNum;
                 unsigned lightScale = incomingRequest->colRequest.lightScale;
                 byte* src = &texture[columnOffset];
                 pixel_t* dc_colourmap = scalelight_TT[lightNum][lightScale];

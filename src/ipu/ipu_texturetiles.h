@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     unsigned position, step;
-    unsigned char count, lightNum;
+    unsigned char count, lightNum, lightScale;
 } IPUSpanRequest_t;
 
 typedef struct {

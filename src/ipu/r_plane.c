@@ -131,7 +131,7 @@ void R_MapPlane(int y, int x1, int x2) {
   angle_t angle;
   fixed_t distance;
   fixed_t length;
-  unsigned index;
+  // unsigned index; // JOSEF: store in walllightindex instead
 
   if (x2 < x1 || x1 < 0 || x2 >= viewwidth || y > viewheight) {
     printf("ERROR: R_MapPlane: %d, %d at %d", x1, x2, y);
@@ -153,18 +153,16 @@ void R_MapPlane(int y, int x1, int x2) {
   ds_xfrac = viewx + FixedMul(finecosine[angle], length);
   ds_yfrac = -viewy - FixedMul(finesine[angle], length);
 
-  /*  LATER
   if (fixedcolormap)
     ds_colormap = fixedcolormap;
   else {
-    index = distance >> LIGHTZSHIFT;
+    walllightindex = distance >> LIGHTZSHIFT;
 
-    if (index >= MAXLIGHTZ)
-      index = MAXLIGHTZ - 1;
+    if (walllightindex >= MAXLIGHTZ)
+      walllightindex = MAXLIGHTZ - 1;
 
-    ds_colormap = planezlight[index];
+    // ds_colormap = planezlight[index]; // JOSEF: LATER, store this in lightscale
   }
-  */
 
   ds_y = y;
   ds_x1 = x1;
@@ -393,7 +391,8 @@ void R_DrawPlanes(void) {
     if (lightnum < 0)
       lightnum = 0;
 
-    // // planezlight = zlight[light]; // Texture tiles are in charge of scaling by light
+    // JOSEF: Texture tiles are in charge of scaling by lightnum now
+    // planezlight = zlight[lightnum]; 
 
     pl->top[pl->maxx + 1] = 0xff;
     pl->top[pl->minx - 1] = 0xff;

@@ -615,29 +615,35 @@ void IPURequest_R_DrawSpan(void) {
     return;
   }
 
+  // All requests in batch should share a texture
+  // If not, dispatch old batch first
   if (requestBatch.numSpanRequests > 0 && requestBatch.texture != flatnum) {
     IPURequest_R_DrawSpan_FulfillBatch();
   }
   requestBatch.texture = flatnum;
 
   // The response is fixed size, so send the existing batch if there's 
-  // no space to fulfil the next request
+  // no space to fulfil this next request in the same response.
   int count = ds_x2 - ds_x1;
   if (spanBatchTotalCount + count > IPUTEXTURECACHELINESIZE * sizeof(int)) {
     IPURequest_R_DrawSpan_FulfillBatch();
   }
   
+  // Serialise request
   IPUSpanRequest_t* spanRequest = &requestBatch.spanRequests[requestBatch.numSpanRequests];
   spanRequest->position = ((ds_xfrac << 10) & 0xffff0000) | ((ds_yfrac >> 6) & 0x0000ffff);
   spanRequest->step = ((ds_xstep << 10) & 0xffff0000) | ((ds_ystep >> 6) & 0x0000ffff);
   spanRequest->count = count;
   spanRequest->lightNum = lightnum;
+  spanRequest->lightScale = walllightindex;
 
+  // Record where the response should be written to when it is fulfilled
   spanDests[requestBatch.numSpanRequests] = ylookup[ds_y] + columnofs[ds_x1];
 
   spanBatchTotalCount += count;
   requestBatch.numSpanRequests += 1;
 
+  // Send full batches
   if (requestBatch.numSpanRequests >= IPUMAXSPANREQUESTBATCHSIZE) {
     IPURequest_R_DrawSpan_FulfillBatch();
   }
