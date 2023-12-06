@@ -1,13 +1,20 @@
 
 ![IPUDOOM](README_imgs/IPUDOOM.png)
 
-A WIP to put Doom 1993 on the Graphcore Mk2 IPU (an AI accelerator chip).
+A WIP to fit Doom 1993 into the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
+
+### Build and Run
+Due to the use of mutable global state and a custom exchange compiler, IPUDOOM requires a real IPU and will not run on the IPUModel (CPU simulating an IPU).
 
 ```bash
 # Install dependencies
 sudo apt update 
 sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev g++-7
-# Build binary
+# Activate your poplar SDK
+source ~/path/to/poplar/build_release/activate.sh
+# Clone and build
+git clone git@github.com:jndean/IPUDOOM.git
+cd IPUDOOM
 make
 # Download shareware resource pack
 wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
@@ -17,7 +24,7 @@ wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 
 
 ### Progress Log:
-Started with vanilla Doom running on the CPU, began started offloading subsystems to the IPU (just Tile 0  at first): 
+Started with vanilla Doom running on the CPU, began offloading subsystems to the IPU (just Tile 0 at first): 
 
 - [x] Create IPU hooks for key methods like G_Ticker and G_Responder so IPU can step game time and respond to keypresses in real time. IPU uses callbacks on the host to load and unpack all level geometry from disk whenever the player starts a new level.
 
@@ -45,15 +52,16 @@ Started with vanilla Doom running on the CPU, began started offloading subsystem
 
 - [x] Extend the JIT-patching texture exchange to support span textures and zlighting, so IPU can texture and shade floors + ceilings.
 
-[GIF TODO]
+![Gameplay with textured and shaded floors and ceilings](README_imgs/TexturedFlats_noCPU.gif)
 
 Immediate next steps:
 - [ ] Implement temporary(?) system to notify IPU of map state changes, so that doors open and close properly. Perhaps the same could work for enemys and projectiles.
 - [ ] Implement vissprite system and masked col rendering to add objects / enemies to levels. 
+- [ ] Set up the animation indirection tables so that animated texures work
 
 Longer term next steps:
 
-- [ ] Render HUD (probably using dedicated HUD tiles)
+- [ ] Render HUD (probably easy using dedicated HUD-rendering tiles)
 - [ ] Move beyond just the rendering?
 
   ...
