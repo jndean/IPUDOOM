@@ -1243,19 +1243,19 @@ boolean M_Responder(event_t *ev) {
     if (key == key_menu_decscreen) // Screen size down
     {
       // JOSEF: Unsupported on IPU
-      // if (automapactive || chat_on)
-      //   return false;
+      if (automapactive || chat_on)
+        return false;
       // M_SizeDisplay(0);
       // S_StartSound(NULL, sfx_stnmov);
-      return true;
+      // return true;
     } else if (key == key_menu_incscreen) // Screen size up
     {
       // JOSEF: Unsupported on IPU
-      // if (automapactive || chat_on)
-      //   return false;
+      if (automapactive || chat_on)
+        return false;
       // M_SizeDisplay(1);
       // S_StartSound(NULL, sfx_stnmov);
-      return true;
+      // return true;
     } else if (key == key_menu_help) // Help key
     {
       M_StartControlPanel();

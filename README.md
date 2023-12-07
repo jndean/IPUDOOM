@@ -1,30 +1,36 @@
 
 ![IPUDOOM](README_imgs/IPUDOOM.png)
 
-A WIP to fit Doom 1993 into the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
+A WIP to run Doom 1993 into the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
 
-### Build and Run
+## Build and Run
+I use Ubuntu20 and Poplar SDK 3.3, but recent versions of either should be fine.
 Due to the use of mutable global state and a custom exchange compiler, IPUDOOM requires a real IPU and will not run on the IPUModel (CPU simulating an IPU).
+Make sure you have X11 fowarding over SSH working (use `ssh -X <address>` and have a local X server, e.g. Quartz on Mac, Xming on Windows). If your connection is fast enough, you should be able to get > 30 fps.
 
 ```bash
 # Install dependencies
 sudo apt update 
 sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev g++-7
+
 # Activate your poplar SDK
 source ~/path/to/poplar/build_release/activate.sh
+
 # Clone and build
 git clone git@github.com:jndean/IPUDOOM.git
 cd IPUDOOM
-make
-# Download shareware resource pack
+make -j4
+
+# Download the doom shareware resource pack (contains the free levels)
 wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
-# Run
+
+# To play the game, run. Press any key to bring up the menu.
 ./build/doom -iwad doom1.wad -width 320 -nosound -nomouse
 ```
 
 
-### Progress Log:
-Started with vanilla Doom running on the CPU, began offloading subsystems to the IPU (just Tile 0 at first): 
+## Progress Log:
+Started with Chocolate Doom running on the CPU, began offloading subsystems to the IPU (just Tile 0 at first): 
 
 - [x] Create IPU hooks for key methods like G_Ticker and G_Responder so IPU can step game time and respond to keypresses in real time. IPU uses callbacks on the host to load and unpack all level geometry from disk whenever the player starts a new level.
 
@@ -50,7 +56,7 @@ Started with vanilla Doom running on the CPU, began offloading subsystems to the
 
 ![Gameplay with visplanes and skybox visible](README_imgs/VisplanesSkybox_noCPU.gif)
 
-- [x] Extend the JIT-patching texture exchange to support span textures and zlighting, so IPU can texture and shade floors + ceilings.
+- [x] Extend the JIT-patching texture exchange to support span textures and zlighting, so IPU can texture and shade floors + ceilings. (The flashing in the gif below comes from gunfire, though enemies and weapons are not yet rendered).
 
 ![Gameplay with textured and shaded floors and ceilings](README_imgs/TexturedFlats_noCPU.gif)
 

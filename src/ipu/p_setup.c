@@ -417,6 +417,8 @@ void P_LoadLineDefs(const unsigned char *buf) {
     else
       ld->backsector = 0;
   }
+
+  
 }
 
 //

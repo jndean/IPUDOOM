@@ -13,7 +13,7 @@ extern "C" {
 #include "tables.h"
 
 
-#define IPUMAXLUMPBYTES (32000)
+#define IPUMAXLUMPBYTES (40000)
 #define IPUMISCVALUESSIZE (116)
 #define IPUMAXEVENTSPERTIC (5)
 #define IPUAMMARKBUFSIZE (544)

@@ -208,14 +208,15 @@ void D_Display(void) {
 
     if (automapactive)
       AM_Drawer();
-    // IPU_AM_Drawer(); // JOSEF. Disabled while I split render tiles
+    // IPU_AM_Drawer(); // JOSEF. TMP Disabled while I split render tiles
     
     
     if (wipe || (viewheight != SCREENHEIGHT && fullscreen))
       redrawsbar = true;
     if (inhelpscreensstate && !inhelpscreens)
       redrawsbar = true; // just put away the help screen
-    ST_Drawer(viewheight == SCREENHEIGHT, redrawsbar);
+    ST_Drawer(viewheight == SCREENHEIGHT, redrawsbar); 
+    // (void) redrawsbar;  // JOSEF: for disabling ST_Drawer
     fullscreen = viewheight == SCREENHEIGHT;
     break;
 

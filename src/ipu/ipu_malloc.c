@@ -9,9 +9,9 @@
 // #define IPUMALLOC_DEBUGPRINT 0
 
 __attribute__ ((aligned (4)))
-static unsigned char IPUMALLOC_STATIC_pool[10000];
+static unsigned char IPUMALLOC_STATIC_pool[8000];
 __attribute__ ((aligned (4)))
-static unsigned char IPUMALLOC_LEVEL_pool[200000];
+static unsigned char IPUMALLOC_LEVEL_pool[250000];
 __attribute__ ((aligned (4)))
 static unsigned char IPUMALLOC_TMP_pool[512]; // This is a category I made up, for fleeting allocations
 
