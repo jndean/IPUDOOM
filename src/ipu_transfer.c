@@ -47,7 +47,7 @@ void IPU_G_LoadLevel_PackMiscValues(void* buf) {
 }
 
 
-#define MAX_BUFFERED_MAPPED_LINES 1000
+#define MAX_BUFFERED_MAPPED_LINES (1000)
 static int mapped_line_buf[MAX_BUFFERED_MAPPED_LINES];
 static int mapped_line_count = 0;
 
@@ -64,6 +64,33 @@ void IPU_CheckAlreadyMappedLines(void) {
     if (lines[i].flags & ML_MAPPED) {
       IPU_NotifyLineMapped(&lines[i]);
    }
+  }
+}
+
+#define MAX_BUFFERED_SECTOR_HEIGHT_CHANGES (300)
+static IPUSectorHeightUpdate_t sector_height_updates[MAX_BUFFERED_SECTOR_HEIGHT_CHANGES];
+static int sector_height_update_count = 0;
+
+void IPU_NotifySectorHeightChanged(sector_t *sector) {
+  if (sector_height_update_count == MAX_BUFFERED_SECTOR_HEIGHT_CHANGES) {
+    I_Error("\nERROR: sector_height_updates buffer is overflowing, dropping updates\n");
+    return;
+  }
+
+  int sectornum = sector - sectors;
+  int updateidx = sector_height_update_count;
+  for (int i = 0; i < sector_height_update_count; ++i) {
+    if (sector_height_updates[i].sectornum == sectornum) {
+      updateidx = i;
+      break;
+    }
+  }
+  sector_height_updates[updateidx].sectornum = sectornum;
+  sector_height_updates[updateidx].ceilingheight = sector->ceilingheight;
+  sector_height_updates[updateidx].floorheight = sector->floorheight;
+
+  if (updateidx == sector_height_update_count) {
+    sector_height_update_count++;
   }
 }
 
@@ -91,6 +118,14 @@ void IPU_G_Ticker_PackMiscValues(void* buf) {
       break;  
     }
     pack->mappedline_updates[i] = mapped_line_buf[--mapped_line_count];
+  }
+
+  for (int i = 0; i < IPUSECTORHEIGHTUPDATES; ++i) {
+    if (!sector_height_update_count) {
+      pack->sectorheight_updates[i].sectornum = -1;
+      break;  
+    }
+    pack->sectorheight_updates[i] = sector_height_updates[--sector_height_update_count];
   }
 }
 

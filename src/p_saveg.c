@@ -43,6 +43,8 @@
 #include "r_state.h"
 #include "z_zone.h"
 
+#include "ipu_transfer.h"
+
 FILE *save_stream;
 int savegamelength;
 boolean savegame_error;
@@ -1453,6 +1455,7 @@ void P_UnArchiveWorld(void) {
     sec->tag = saveg_read16();     // needed?
     sec->specialdata = 0;
     sec->soundtarget = 0;
+    IPU_NotifySectorHeightChanged(sec);
   }
 
   // do lines

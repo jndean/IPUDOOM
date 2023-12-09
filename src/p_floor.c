@@ -34,6 +34,8 @@
 #include "sounds.h"
 #include "z_zone.h"
 
+#include "ipu_transfer.h"
+
 //
 // FLOORS
 //
@@ -41,8 +43,11 @@
 //
 // Move a plane (floor or ceiling) and check for crushing
 //
-result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest,
-                     boolean crush, int floorOrCeiling, int direction) {
+// JOSEF: Wrap T_MovePlane in a wrapper that notifies IPU of changes, and
+// rename T_MovePlan as T_MovePlane_impl
+result_e T_MovePlane_impl(sector_t *sector, fixed_t speed, fixed_t dest,
+                          boolean crush, int floorOrCeiling, int direction) {
+
   boolean flag;
   fixed_t lastpos;
 
@@ -167,6 +172,15 @@ result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest,
   }
   return ok;
 }
+
+// JOSEF: IPU-notifying wrapper
+result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest,
+                     boolean crush, int floorOrCeiling, int direction) {
+  result_e result = T_MovePlane_impl(sector, speed, dest, crush, floorOrCeiling, direction);
+  IPU_NotifySectorHeightChanged(sector);
+  return result;
+}
+
 
 //
 // MOVE A FLOOR TO IT'S DESTINATION (UP OR DOWN)

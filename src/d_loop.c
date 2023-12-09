@@ -458,6 +458,8 @@ boolean D_InitNetGame(net_connect_data_t *connect_data)
     if (M_CheckParm("-server") > 0
      || M_CheckParm("-privateserver") > 0)
     {
+        printf("JOSEF SAYS: I do not support multiplayer :)\n");
+        exit(0); // But if you remove this return statement it might just work :)
         NET_SV_Init();
         NET_SV_AddModule(&net_loop_server_module);
         NET_SV_AddModule(&net_sdl_module);

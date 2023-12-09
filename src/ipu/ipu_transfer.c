@@ -53,8 +53,14 @@ void IPU_G_Ticker_UnpackMiscValues(G_Ticker_MiscValues_t* pack) {
     if (update == -1) break;
     lines[update].flags |= ML_MAPPED;
   }
-
-
+  
+  for (int i = 0; i < IPUSECTORHEIGHTUPDATES; ++i) {
+    int sectornum = pack->sectorheight_updates[i].sectornum;
+    if (sectornum == -1) break;
+    sector_t *sector = &sectors[sectornum];
+    sector->ceilingheight = pack->sectorheight_updates[i].ceilingheight;
+    sector->floorheight = pack->sectorheight_updates[i].floorheight;
+  }
 }
 
 __SUPER__

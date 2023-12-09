@@ -18,6 +18,7 @@ extern "C" {
 #define IPUMAXEVENTSPERTIC (5)
 #define IPUAMMARKBUFSIZE (544)
 #define IPUMAPPEDLINEUPDATES (2)
+#define IPUSECTORHEIGHTUPDATES (4)
 #define IPUPROGBUFSIZE (128)
 
 
@@ -60,11 +61,17 @@ typedef struct {
 } IPUTransfer_playerstate_t;
 
 typedef struct {
+    fixed_t ceilingheight, floorheight;
+    int sectornum;
+} IPUSectorHeightUpdate_t;
+
+typedef struct {
     int consoleplayer;
     gamestate_t gamestate;
     IPUTransfer_playerstate_t player;
 
     int mappedline_updates[IPUMAPPEDLINEUPDATES];
+    IPUSectorHeightUpdate_t sectorheight_updates[IPUSECTORHEIGHTUPDATES];
 } G_Ticker_MiscValues_t;
 
 typedef struct {

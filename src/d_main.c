@@ -145,7 +145,7 @@ void D_ProcessEvents(void) {
     if (ev_buf.num_ev < IPUMAXEVENTSPERTIC) {
       ev_buf.events[ev_buf.num_ev++] = *ev;
     } else {
-      printf("WARNING: exceeding %d events per tic, keypresses may be dropped\n", IPUMAXEVENTSPERTIC);
+      printf("LAG SPIKE WARNING: exceeded %d events per tic, keypresses will be dropped\n", IPUMAXEVENTSPERTIC);
     }
   }
 

@@ -26,6 +26,7 @@ void IPU_LoadSectorPicNums(byte* buf, int maxSize);
 void IPU_Setup_PackMarkNums(void* buf);
 void IPU_NotifyLineMapped(line_t *line);
 void IPU_CheckAlreadyMappedLines(void);
+void IPU_NotifySectorHeightChanged(sector_t *sector);
 
 
 
