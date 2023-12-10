@@ -4,7 +4,7 @@
 A WIP to run Doom 1993 in the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
 
 ## Build and Run
-I use Ubuntu20 and Poplar SDK 3.3, but recent versions of either should be fine.
+I use Ubuntu20 and Poplar SDK 3.3, but recent versions of either will probably work fine.
 
 Due to the use of mutable global state and a custom exchange compiler, IPUDOOM requires a real IPU and will not run on the IPUModel (CPU simulating an IPU).
 
@@ -26,8 +26,13 @@ make -j4
 # Download the doom shareware resource pack (contains the free levels)
 wget https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 
-# Run the game. It will start a demo - press any key to bring up the main menu.
-./build/doom -iwad doom1.wad -width 320 -nosound -nomouse
+# Run the game - it will start a demo, press any key bring up the menu.
+# Uses the CPU to overdraw the components that are not yet ported to IPU 
+./build/doom -iwad doom1.wad -width 320 -nosound
+
+# Run the game without the CPU adding the bits missing from the IPU port, 
+# so you can see IPUDoom in its raw ipu-only glory
+./build/doom -iwad doom1.wad -width 320 -nosound -ipuonly
 ```
 
 

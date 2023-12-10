@@ -106,6 +106,8 @@ lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 // bumped light from gun blasts
 int extralight;
 
+int renderIPUonly; // JOSEF
+
 void (*colfunc)(void);
 void (*basecolfunc)(void);
 void (*fuzzcolfunc)(void);
@@ -750,11 +752,12 @@ void R_RenderPlayerView(player_t *player) {
   // R_DrawPlanes();
 
   // Check for new console commands.
-  NetUpdate();
+  // NetUpdate();
 
-  // R_DrawMasked();
+  IPU_R_RenderPlayerView();
+
+  if (!renderIPUonly) R_DrawMasked();
 
   // Check for new console commands.
   NetUpdate();
-  IPU_R_RenderPlayerView();
 }

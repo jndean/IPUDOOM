@@ -976,8 +976,10 @@ void I_GraphicsCheckCommandLine(void)
     // Disable the mouse.
     //
 
-    nomouse = M_CheckParm("-nomouse") > 0;
-
+    // JOSEF: Disable mouse input
+    // nomouse = M_CheckParm("-nomouse") > 0;
+    nomouse = 1; 
+    
     //!
     // @category video
     // @arg <x>

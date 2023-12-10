@@ -7,7 +7,6 @@ IPU_OBJ = $(addprefix build/ipu_obj/, \
 	ipu_vertices.gp \
 	ipu_transfer.gp \
 	ipu_malloc.gp \
-	ipu_texturetiles.gp \
 	i_video.gp \
 	g_game.gp \
 	g_game_codelets.gp \
@@ -58,7 +57,7 @@ build/cpu_obj/%.o: src/%.cpp #src/*.h
 	gcc-7 src/$*.cpp $(CPU_FLAGS) -c -o $@
 
 build/ipu_rt.gp: $(IPU_OBJ)
-	popc $^ $(IPU_FLAGS) -o $@
+	popc $^ src/ipu/ipu_texturetiles.gp $(IPU_FLAGS) -o $@
 
 build/ipu_obj/%.gp: src/ipu/%.c src/ipu/*.h
 	popc $< $(IPU_FLAGS) -o $@

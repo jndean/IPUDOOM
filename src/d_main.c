@@ -215,8 +215,12 @@ void D_Display(void) {
       redrawsbar = true;
     if (inhelpscreensstate && !inhelpscreens)
       redrawsbar = true; // just put away the help screen
-    ST_Drawer(viewheight == SCREENHEIGHT, redrawsbar); 
-    // (void) redrawsbar;  // JOSEF: for disabling ST_Drawer
+
+    if (!renderIPUonly) { // JOSEF
+      ST_Drawer(viewheight == SCREENHEIGHT, redrawsbar);
+    } else {
+      memset(&I_VideoBuffer[SCREENWIDTH * (SCREENHEIGHT - 32)], 0, SCREENWIDTH * 32);
+    }
     fullscreen = viewheight == SCREENHEIGHT;
     break;
 
@@ -913,6 +917,15 @@ void D_DoomMain(void) {
   devparm = M_CheckParm("-devparm");
 
   I_DisplayFPSDots(devparm);
+  
+  //!
+  // @JOSEF
+  //
+  // Only use the IPU for rendering, disable CPU overdraw of missing elements
+  //
+
+  renderIPUonly = M_CheckParm("-ipuonly");
+
 
   //!
   // @category net

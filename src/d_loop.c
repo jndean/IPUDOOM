@@ -443,6 +443,7 @@ boolean D_InitNetGame(net_connect_data_t *connect_data)
     net_addr_t *addr = NULL;
     int i;
 
+
     // Call D_QuitNetGame on exit:
 
     I_AtExit(D_QuitNetGame, true);
@@ -458,7 +459,7 @@ boolean D_InitNetGame(net_connect_data_t *connect_data)
     if (M_CheckParm("-server") > 0
      || M_CheckParm("-privateserver") > 0)
     {
-        printf("JOSEF SAYS: I do not support multiplayer :)\n");
+        printf("JOSEF SAYS: I have disabled multiplayer :)\n");
         exit(0); // But if you remove this return statement it might just work :)
         NET_SV_Init();
         NET_SV_AddModule(&net_loop_server_module);
