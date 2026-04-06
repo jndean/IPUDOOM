@@ -1,7 +1,10 @@
 
 ![IPUDOOM](README_imgs/IPUDOOM.png)
 
-A WIP to run Doom 1993 in the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
+Running Doom (1993) in the SRAM (~L1 cache) of the Graphcore MkII IPU (an AI accelerator chip which was definitely not designed to play video games). This is a hobby project, not a Graphcore product.
+
+
+See it in action in this progress video: https://www.youtube.com/watch?v=XLtp3eWG8HQ
 
 ## Build and Run
 I use Ubuntu20 and Poplar SDK 3.3, but recent versions of either will probably work fine.
@@ -84,3 +87,5 @@ Longer term next steps:
 
 - [ ] Profit?
 
+# Fin
+I stopped development on this project when it was announced that the IPU processor would be discontinued. 🫡
